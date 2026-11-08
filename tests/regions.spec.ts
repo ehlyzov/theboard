@@ -1,5 +1,38 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
+test("MASK-12/UI-03 contextual screen marker and UI-04 footer hint", async ({ page }) => {
+  await page.goto("/?board=contextual-marker-test");
+  await page.getByLabel("Загрузить скриншоты").setInputFiles([
+    path.resolve("tests/fixtures/Вход.png"),
+    path.resolve("tests/fixtures/Вход.png"),
+  ]);
+  const screens = page.getByTestId("screen-node");
+  await expect(screens).toHaveCount(2);
+  await expect(page.getByRole("toolbar").getByRole("button", { name: "Кисть выделения", exact: true })).toHaveCount(0);
+  const marker = (index: number) => screens.nth(index).getByRole("button", { name: "Кисть выделения", exact: true });
+  await marker(0).click();
+  await expect(marker(0)).toHaveAttribute("aria-pressed", "true");
+  await expect(marker(1)).toBeDisabled();
+  const image = await screens.nth(0).getByTestId("annotation-image").boundingBox();
+  await page.mouse.move(image!.x + image!.width * .3, image!.y + image!.height * .3);
+  await page.mouse.down();
+  await page.mouse.move(image!.x + image!.width * .6, image!.y + image!.height * .6, { steps: 5 });
+  await page.mouse.up();
+  await expect(screens.nth(0).locator(".brush-draft")).toHaveCount(1);
+  await expect(screens.nth(1).locator(".brush-draft")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(marker(1)).toBeEnabled();
+  await screens.nth(1).hover();
+  await page.keyboard.press("b");
+  await expect(marker(1)).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape");
+  await expect(screens.locator(".brush-draft")).toHaveCount(0);
+  const hint = page.locator(".status-bar .canvas-tip");
+  await expect(hint).toBeVisible();
+  const hintBox = await hint.boundingBox();
+  const canvasBox = await page.getByLabel("Полотно пользовательского потока").boundingBox();
+  expect(hintBox!.y).toBeGreaterThanOrEqual(canvasBox!.y + canvasBox!.height);
+});
 async function paint(page: any) {
   await page
     .getByRole("button", { name: "Кисть выделения", exact: true })

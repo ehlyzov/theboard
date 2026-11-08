@@ -65,3 +65,14 @@ invented from screenshot numbering.
 D3 (GitHub exchange/conflict policy) and D4 (real-time collaboration) remain
 `proposed`, not implicitly approved. GitHub access and license remain undecided.
 No functional human acceptance is inferred from a technical PASS.
+
+## Additional interaction requirements
+
+- UI-02 (`approved_by_human`, relayed screenshot defect): opaque transition
+  labels above every edge line; readable when several transitions converge.
+- VIEW-03 (`approved_by_human`, direct instruction): a modifier-drag gesture
+  pans the canvas regardless of the object under the pointer. Use familiar
+  Space-drag behavior, with Alt-drag as an alternative; preserve text typing.
+
+Delivery order: the PlanItForMe local blockers (UI-02, MASK-01..10) are a bounded
+first slice. Markdown documents remain required but do not block that slice.

@@ -19,7 +19,7 @@ repository documentation is English. Last reconciled: 2026-11-08.
 ## Current editing increment
 
 All requirements below are `approved_by_human`; runtime claims require the
-current candidate's checks and independent review. W004 is in technical review;
+current candidate's checks and independent review. W004 has technical PASS;
 human visual feedback is positive, while full functional acceptance is pending.
 
 | ID | Required behavior | Status / verification |
@@ -166,7 +166,7 @@ suite; it is not reported as passing or implemented.
 W004's full independent integration review and targeted repair reviews cover
 MASK/VIEW/NOTE/IMAGE/DOCK/FOCUS, archive replacement, measured automatic layout,
 manual cancellation and hover-only leaders. The latest contextual-marker/footer
-delta has a test-first regression and is undergoing a narrow recheck. See
+delta has a test-first regression and independently passed its narrow recheck. See
 [W004](../work/W004-region-comments.md) for exact candidate provenance.
 Proper edge crossings remain; zero crossings/global optimality are not promised.
 DOC-01..04, GitHub exchange and offline application startup remain unimplemented.

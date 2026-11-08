@@ -14,7 +14,7 @@ archives, offline startup, and GitHub remain product obligations; W003 addresses
 local persistence and archives. D3/D4 do not block editor investigation, but
 must be resolved before dependent synchronization or collaboration promises.
 
-| [W004](W004-region-comments.md) | Brush masks, note links, workspace and composite layout | review | TheBoard chat; independent reviewer | Integration independently reviewed; final contextual marker/footer recheck and CI |
+| [W004](W004-region-comments.md) | Brush masks, note links, workspace and composite layout | done | TheBoard chat; independent reviewer | Technical PASS; PR #3 integration record; next W005, human functional acceptance pending |
 
 | W005 | Markdown document nodes, screen links, deep-linked text-to-note annotations | queued | Unassigned | Implement after bounded W004; failing draft retained |
 
@@ -22,5 +22,7 @@ must be resolved before dependent synchronization or collaboration promises.
 
 The historical preparation notes above predate the completed independent main
 review and its targeted focus/dock/handle repairs. Current local suite:23/23 PASS;
-4102e4a required CI PASS. Latest contextual marker/footer delta is in narrow
-review before final-head CI and merge. The W004 card carries current provenance.
+59418c8 required CI and narrow contextual-marker/footer review PASS. W004 is
+technically complete; PR #3 carries the protected merge record. Only final
+report/status changes follow that reviewed code; no unrelated audit is repeated.
+The W004 card carries provenance, human acceptance and pending product scope.

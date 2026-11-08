@@ -12,7 +12,9 @@ data/asset equality. Its focus finding was repaired and independently rechecked
 at1870b78. Hidden dock-coordinate fidelity was independently checked at68a08d;
 manual SVG handles and navigation test synchronization passed targeted review
 at4102e4a, whose required CI passed. Latest source builds and23/23 browser tests
-PASS locally; contextual marker/footer recheck and final-head CI remain pending.
+PASS locally at59418c8. Its narrow independent contextual-marker/footer review
+and required GitHub CI both PASS. Final report-only status commit retains that
+reviewed source; the protected PR merge checks remain mandatory.
 The new scenario was red in test-only45bb609 before implementation.
 
 Human acceptance: positive layout feedback and source-operator private-board
@@ -21,7 +23,7 @@ Markdown nodes/fragment annotations. GitHub synchronization, offline startup,
 and fixed-node obstacle routing remain separate; proper crossings remain.
 
 
-Status: review. Owner: TheBoard chat. Source: direct owner request for a mask-like
+Status: done (bounded W004 outcome). Owner: TheBoard chat. Source: direct owner request for a mask-like
 region selector, linked highlighted comments, additional replies, and completion
 without removing comments from history. No new approval required.
 
@@ -204,3 +206,27 @@ Test-only45bb609 on4102e4a failed meaningfully because the brush remained in the
 common toolbar. The added scenario checks contextual activation, another screen
 being locked, cancellation, B on a hovered screen, and footer/canvas separation.
 Earlier common-toolbar descriptions in this card are historical.
+
+## Final bounded technical verdict
+
+Candidate59418c8d63d8214550d990f54fed97d690caa857, base4102e4a:
+**PASS**, fresh-context main integration review retained plus targeted UI recheck.
+The independent reviewer used an isolated checkout/server and synthetic boards;
+no shared production build or user browser was mutated. Build, diff check and
+all four region scenarios PASS. Additional checks exercised Highlighter beside
+delete on both headers, zero common-toolbar markers, B for hovered/selected/sole
+screen, preservation of an unfinished draft after another marker/B attempt,
+multiple strokes, radius change, Undo, Enter and Escape.
+
+Main editor and freshly generated standalone example were checked at1440,768
+and390px: hint visible inside footer/viewport, below canvas; zero diagram hints.
+The brush-mode narrow footer also PASS. Screenshots were visually inspected.
+No new finding or blocker. Earlier data/ELK audits were deliberately not rerun.
+Local full suite23/23 PASS; Node25.3.0/npm11.7.0. Required
+[editor-checks CI](https://github.com/ehlyzov/theboard/actions/runs/42517542150/job/128843747232)
+PASS on exact59418c8. This final follow-up changes only reports/status, and
+retains the source/build/test/independent evidence above.
+
+[PR3](https://github.com/ehlyzov/theboard/pull/3) is the integration record.
+W004 is technically complete; full human functional acceptance remains pending.
+W005 Markdown and the explicitly listed product boundaries remain required work.

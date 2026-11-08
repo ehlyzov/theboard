@@ -17,3 +17,19 @@ typing, source isolation, provisional export, cancel and commit regression.
 Run it red, build and affected cases, then one fresh-context independent review
 and protected CI. No private board or user-browser changes.
 Technical verdict: NOT_RUN. Next: reproduce, implement, verify and review.
+
+## Linked-note placement amendment
+
+The owner also reported a newly linked note far from its source with global
+automatic layout enabled. Existing layout treated undocked notes as disconnected
+roots: mask noteIds were absent from its constraints. MASK-15 requires ordinary
+linked notes to remain near their source in automatic and temporary focus
+layouts, while preserving note IDs/content, explicit docks and navigation edges.
+Manual mode remains manually placed. Shared notes have one deterministic
+primary visible source (lowest stable screen ID), retaining every semantic link.
+The annotation cluster is layout-only; never silently dock or duplicate a note.
+
+Check both RIGHT/DOWN, multiple and shared links, source composites, absence of
+phantom transitions, linking an existing note and focus export restoration.
+The algorithm will reserve measured space for annotation satellites before ELK,
+keeping navigation ports on actual screen/composite boundaries.

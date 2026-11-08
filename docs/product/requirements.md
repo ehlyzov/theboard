@@ -192,3 +192,9 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   visible over its source screenshot while creating or choosing its linked note.
   Pending geometry is a passive preview, not saved board data; successful
   attachment commits one mask, while cancellation discards only the draft.
+
+- MASK-15 (`approved_by_human`, reported linked-note layout defect): automatic
+  layout must keep mask-linked ordinary notes near their source screen rather
+  than treating them as unrelated components. Preserve identities/content, all
+  mask links and explicit docking; do not add semantic navigation transitions.
+  Apply this to temporary focus geometry as well. Manual placement stays manual.

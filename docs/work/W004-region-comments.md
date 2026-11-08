@@ -35,3 +35,16 @@ canonical docs immediately. They are now recorded explicitly, with supersession
 and truthful implementation status. Do not reuse old green results to accept
 the changed model. Complete focused checks, record a candidate, then request
 one independent review plus targeted repair recheck before integration.
+
+## Current bounded slice
+
+The latest implementation uses freehand strokes with per-stroke normalized
+radius and points, linked ordinary note IDs, and compatibility migration of
+old comment texts into notes. Saved mask deletion retains notes and supports
+Undo. Space/Alt modifier panning, viewport restoration, 400% zoom, header layout,
+and portal labels above edge lines are included.
+
+Local build PASS; eight current browser scenarios PASS. The earlier document
+check failed on missing Create document UI; its draft is now explicitly outside
+the executable suite under docs/work/drafts, for W005. It is not a green claim.
+Do not delay the current bounded PlanItForMe blockers for W005.

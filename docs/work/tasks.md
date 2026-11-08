@@ -15,3 +15,5 @@ local persistence and archives. D3/D4 do not block editor investigation, but
 must be resolved before dependent synchronization or collaboration promises.
 
 | [W004](W004-region-comments.md) | Brush masks, note links, Markdown, workspace and layout | active | TheBoard chat | Tests before implementation, review |
+
+| W005 | Markdown document nodes, screen links, deep-linked text-to-note annotations | queued | Unassigned | Implement after bounded W004; failing draft retained |

@@ -50,9 +50,18 @@ import {
   exportBoard,
   type BoardNode,
   type BoardData,
+  type Region,
 } from "./boards";
 
+import RegionImage from "./RegionImage";
+import LabeledEdge from "./LabeledEdge";
+const edgeTypes = { smoothstep: LabeledEdge };
+
 type Actions = {
+  createRegion: (screenId: string, region: Region) => void;
+  linkedNoteIds: string[];
+  regionSelection: { screenId: string; regionId: string } | null;
+  selectRegion: (screenId: string, regionId: string) => void;
   update: (id: string, patch: Partial<BoardNode["data"]>) => void;
   remove: (id: string) => void;
   begin: (id: string) => void;
@@ -81,13 +90,18 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
           <Trash2 size={14} />
         </button>
       </div>
-      <div className="screen-image">
-        <img
-          src={data.image}
-          alt={data.title || "Экран приложения"}
-          draggable={false}
-        />
-      </div>
+      <RegionImage
+        image={data.image!}
+        title={data.title}
+        regions={data.regions ?? []}
+        selected={
+          actions.regionSelection?.screenId === id
+            ? actions.regionSelection.regionId
+            : undefined
+        }
+        onCreate={(r) => actions.createRegion(id, r)}
+        onSelect={(r) => actions.selectRegion(id, r)}
+      />
       <div className="screen-caption">
         <input
           className="nodrag"
@@ -142,7 +156,7 @@ function NoteNode({ id, data, selected }: NodeProps<BoardNode>) {
   return (
     <article
       data-testid="note-node"
-      className={`note-card ${selected ? "is-selected" : ""}`}
+      className={`note-card ${selected ? "is-selected" : ""} ${actions.linkedNoteIds.includes(id) ? "is-linked" : ""}`}
     >
       <div className="node-grip">
         <span>
@@ -189,16 +203,107 @@ async function readImage(file: File): Promise<string> {
   });
 }
 
+function workspace(id: string) {
+  try {
+    const w = JSON.parse(
+      localStorage.getItem("theboard:workspace:" + id) || "null",
+    );
+    if (
+      w &&
+      [w.x, w.y, w.zoom].every(Number.isFinite) &&
+      w.zoom >= 0.05 &&
+      w.zoom <= 4
+    )
+      return w;
+  } catch {}
+  return { x: 0, y: 0, zoom: 0.9 };
+}
+function currentBoard() {
+  try {
+    return (
+      new URLSearchParams(location.search).get("board") ||
+      localStorage.getItem("theboard:last-board") ||
+      "default"
+    );
+  } catch {
+    return new URLSearchParams(location.search).get("board") || "default";
+  }
+}
 function Editor() {
   const [nodes, setNodes, onNodesChange] = useNodesState<BoardNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [help, setHelp] = useState(false);
-  const [boardId] = useState(
-    () => new URLSearchParams(location.search).get("board") || "default",
+  const [regionSelection, setRegionSelection] = useState<{
+    screenId: string;
+    regionId: string;
+  } | null>(null);
+  const [pendingRegion, setPendingRegion] = useState<{
+    screenId: string;
+    region: Region;
+    existing?: boolean;
+  } | null>(null);
+  const [noteChoice, setNoteChoice] = useState("");
+  const [newNoteText, setNewNoteText] = useState("");
+  const [deletedRegion, setDeletedRegion] = useState<{
+    screenId: string;
+    region: Region;
+  } | null>(null);
+  const selectedScreen = nodes.find((n) => n.id === regionSelection?.screenId);
+  const selectedRegion = selectedScreen?.data.regions?.find(
+    (r) => r.id === regionSelection?.regionId,
   );
+  useEffect(() => {
+    setNoteChoice("");
+    setNewNoteText("");
+  }, [regionSelection?.screenId, regionSelection?.regionId]);
+  function attachNote(existingId: string | undefined) {
+    if (!pendingRegion) return;
+    if (!existingId && !newNoteText.trim()) return;
+    const noteId = existingId || crypto.randomUUID();
+    const { screenId, region, existing } = pendingRegion;
+    setNodes((current) => {
+      const screen = current.find((n) => n.id === screenId);
+      if (!screen) return current;
+      const linked = {
+        ...region,
+        noteIds: Array.from(new Set([...(region.noteIds ?? []), noteId])),
+      };
+      const result = current.map((n) =>
+        n.id === screenId
+          ? {
+              ...n,
+              data: {
+                ...n.data,
+                regions: existing
+                  ? (n.data.regions ?? []).map((r) =>
+                      r.id === region.id ? linked : r,
+                    )
+                  : [...(n.data.regions ?? []), linked],
+              },
+            }
+          : n,
+      );
+      if (!existingId)
+        result.push({
+          id: noteId,
+          type: "note",
+          dragHandle: ".node-grip",
+          position: { x: screen.position.x + 280, y: screen.position.y + 80 },
+          data: {
+            title: "Заметка области",
+            text: newNoteText.trim(),
+            status: "open",
+          },
+        });
+      return result;
+    });
+    setRegionSelection({ screenId, regionId: region.id });
+    setPendingRegion(null);
+  }
+  const [help, setHelp] = useState(false);
+  const [boardId] = useState(() => currentBoard());
   const [title, setTitle] = useState("Новый поток");
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Загрузка…");
@@ -284,11 +389,62 @@ function Editor() {
     }
   }
 
+  const spaceDown = useRef(false);
+  const panGesture = useRef<{
+    x: number;
+    y: number;
+    viewport: { x: number; y: number; zoom: number };
+  } | null>(null);
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (
+        e.code === "Space" &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement) &&
+        !(e.target instanceof HTMLElement && e.target.isContentEditable)
+      ) {
+        spaceDown.current = true;
+        e.preventDefault();
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code === "Space") spaceDown.current = false;
+    };
+    const blur = () => {
+      spaceDown.current = false;
+      panGesture.current = null;
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", blur);
+    };
+  }, []);
   const input = useRef<HTMLInputElement>(null);
   const board = useRef<HTMLDivElement>(null);
-  const { fitView, zoomIn, zoomOut, screenToFlowPosition } =
-    useReactFlow<BoardNode>();
-  const { zoom } = useViewport();
+  const {
+    fitView,
+    zoomIn,
+    zoomOut,
+    screenToFlowPosition,
+    getViewport,
+    setViewport,
+  } = useReactFlow<BoardNode>();
+  const viewport = useViewport();
+  const { zoom } = viewport;
+  const [initialViewport] = useState(() => workspace(boardId));
+  useEffect(() => {
+    try {
+      localStorage.setItem("theboard:last-board", boardId);
+      localStorage.setItem(
+        "theboard:workspace:" + boardId,
+        JSON.stringify(viewport),
+      );
+    } catch {}
+  }, [viewport.x, viewport.y, viewport.zoom, boardId]);
   const screens = nodes.filter((n) => n.type === "screen");
   const notes = nodes.filter((n) => n.type === "note");
 
@@ -306,6 +462,7 @@ function Editor() {
     const cancel = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setConnecting(null);
+        setPendingRegion(null);
         setHelp(false);
       }
     };
@@ -320,7 +477,20 @@ function Editor() {
       ),
     );
   const remove = (id: string) => {
-    setNodes((current) => current.filter((n) => n.id !== id));
+    setNodes((current) =>
+      current
+        .filter((n) => n.id !== id)
+        .map((n) => ({
+          ...n,
+          data: {
+            ...n.data,
+            regions: n.data.regions?.map((r) => ({
+              ...r,
+              noteIds: r.noteIds?.filter((noteId) => noteId !== id),
+            })),
+          },
+        })),
+    );
     setEdges((current) =>
       current.filter((e) => e.source !== id && e.target !== id),
     );
@@ -407,6 +577,15 @@ function Editor() {
     <ActionsContext.Provider
       value={{
         update,
+        regionSelection,
+        linkedNoteIds: selectedRegion?.noteIds ?? [],
+        createRegion: (screenId, region) => {
+          setNoteChoice("");
+          setNewNoteText("");
+          setPendingRegion({ screenId, region });
+        },
+        selectRegion: (screenId, regionId) =>
+          setRegionSelection({ screenId, regionId }),
         remove,
         begin: (id) => setConnecting(id),
         finish,
@@ -551,7 +730,42 @@ function Editor() {
               <span>THEBOARD / FIRST CANVAS</span>
             </div>
           </aside>
-          <main className="canvas" ref={board}>
+          <main
+            className="canvas"
+            ref={board}
+            onPointerDownCapture={(e) => {
+              if (e.button !== 0 || (!e.altKey && !spaceDown.current)) return;
+              e.preventDefault();
+              e.stopPropagation();
+              panGesture.current = {
+                x: e.clientX,
+                y: e.clientY,
+                viewport: getViewport(),
+              };
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }}
+            onPointerMoveCapture={(e) => {
+              if (!panGesture.current) return;
+              e.preventDefault();
+              e.stopPropagation();
+              const p = panGesture.current;
+              void setViewport({
+                ...p.viewport,
+                x: p.viewport.x + e.clientX - p.x,
+                y: p.viewport.y + e.clientY - p.y,
+              });
+            }}
+            onPointerUpCapture={(e) => {
+              if (panGesture.current) {
+                e.stopPropagation();
+                panGesture.current = null;
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+            }}
+            onPointerCancelCapture={() => {
+              panGesture.current = null;
+            }}
+          >
             <div className="canvas-heading">
               <h1>{title}</h1>
               <p>От первого экрана до последнего шага</p>
@@ -600,6 +814,7 @@ function Editor() {
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={connect}
@@ -609,9 +824,9 @@ function Editor() {
                 if (deleted.some((n) => n.id === connecting))
                   setConnecting(null);
               }}
-              defaultViewport={{ x: 0, y: 0, zoom: 0.9 }}
-              minZoom={0.2}
-              maxZoom={2}
+              defaultViewport={initialViewport}
+              minZoom={0.05}
+              maxZoom={4}
               deleteKeyCode={["Backspace", "Delete"]}
               isValidConnection={(c) => c.source !== c.target}
               aria-label="Полотно пользовательского потока"
@@ -718,8 +933,151 @@ function Editor() {
               </button>
             </div>
             <div className="canvas-tip">
-              Перетаскивайте фон для навигации <span>·</span> Колесо — масштаб
+              Пробел / Alt + перетаскивание — навигация <span>·</span> Колесо —
+              масштаб
             </div>
+            {pendingRegion && (
+              <section className="region-discussion">
+                <h2>Связать с заметкой</h2>
+                <label>
+                  Существующая заметка
+                  <select
+                    aria-label="Заметка для области"
+                    value={noteChoice}
+                    onChange={(e) => setNoteChoice(e.target.value)}
+                  >
+                    <option value="">Выберите заметку</option>
+                    {notes.map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.data.text?.slice(0, 100) || n.data.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  disabled={!noteChoice}
+                  onClick={() => attachNote(noteChoice)}
+                >
+                  Связать с заметкой
+                </button>
+                <label>
+                  Новая заметка
+                  <textarea
+                    aria-label="Текст новой заметки"
+                    value={newNoteText}
+                    maxLength={4000}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                  />
+                </label>
+                <button
+                  disabled={!newNoteText.trim()}
+                  onClick={() => attachNote(undefined)}
+                >
+                  Создать и связать
+                </button>
+                <button onClick={() => setPendingRegion(null)}>
+                  Отменить выбор заметки
+                </button>
+              </section>
+            )}
+            {selectedRegion && selectedScreen && !pendingRegion && (
+              <section className="region-discussion">
+                <header>
+                  <h2>Связанные заметки</h2>
+                  <button
+                    aria-label="Закрыть связанные заметки"
+                    onClick={() => setRegionSelection(null)}
+                  >
+                    ×
+                  </button>
+                </header>
+                {(selectedRegion.noteIds ?? []).map((noteId) => {
+                  const note = nodes.find((n) => n.id === noteId);
+                  return (
+                    note && (
+                      <article
+                        key={noteId}
+                        className="region-comment highlighted"
+                      >
+                        <textarea
+                          aria-label="Текст связанной заметки"
+                          value={note.data.text ?? ""}
+                          onChange={(e) =>
+                            update(noteId, { text: e.target.value })
+                          }
+                        />
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={note.data.status === "done"}
+                            onChange={(e) =>
+                              update(noteId, {
+                                status: e.target.checked ? "done" : "open",
+                                resolvedAt: e.target.checked
+                                  ? new Date().toISOString()
+                                  : undefined,
+                              })
+                            }
+                          />
+                          Выполнена · остаётся на доске
+                        </label>
+                      </article>
+                    )
+                  );
+                })}
+                <button
+                  onClick={() => {
+                    setNoteChoice("");
+                    setNewNoteText("");
+                    setPendingRegion({
+                      screenId: selectedScreen.id,
+                      region: selectedRegion,
+                      existing: true,
+                    });
+                  }}
+                >
+                  Добавить связь с заметкой
+                </button>
+                <button
+                  onClick={() => {
+                    setDeletedRegion({
+                      screenId: selectedScreen.id,
+                      region: selectedRegion,
+                    });
+                    update(selectedScreen.id, {
+                      regions: (selectedScreen.data.regions ?? []).filter(
+                        (r) => r.id !== selectedRegion.id,
+                      ),
+                    });
+                    setRegionSelection(null);
+                  }}
+                >
+                  Удалить выбранную область
+                </button>
+              </section>
+            )}
+            {deletedRegion && (
+              <div className="connection-hint" role="status">
+                Область удалена; заметки сохранены
+                <button
+                  onClick={() => {
+                    const screen = nodes.find(
+                      (n) => n.id === deletedRegion.screenId,
+                    );
+                    if (screen)
+                      update(screen.id, {
+                        regions: [
+                          ...(screen.data.regions ?? []),
+                          deletedRegion.region,
+                        ],
+                      });
+                    setDeletedRegion(null);
+                  }}
+                >
+                  Отменить удаление области
+                </button>
+              </div>
+            )}
             {help && (
               <section className="help-panel">
                 <div>

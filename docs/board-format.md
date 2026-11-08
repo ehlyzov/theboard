@@ -55,3 +55,22 @@ browser/profile/origin needs the ZIP; the ID alone does not transfer the data.
 Wait for the saved indicator before closing. Save errors are shown explicitly;
 export an archive when browser storage is unavailable or full. Simultaneous
 editing of the same ID in multiple tabs is not coordinated.
+
+## Image masks and note links
+
+Screen `data.regions` is optional (up to 200). Each region has a stable `id`,
+normalized bounding box `x/y/width/height`, `noteIds` pointing to ordinary note
+nodes, and `strokes`: arrays of `{radius, points:[{x,y}]}`. Coordinates range
+from 0 to 1 relative to the original image; radius is a fraction of image width
+(up to 0.2), retained per stroke. Screenshots remain unmodified. Up to 1,000
+strokes per mask and 20,000 points per stroke are accepted.
+
+Optional legacy `comments` are migrated into ordinary note nodes, retaining
+text, open/done status, and timestamps; new masks use note links, not a separate
+comment workflow. Notes optionally store `status: open|done`, `createdAt`, and
+`resolvedAt`. Done notes remain present. Deleting a region removes only the
+mask/links; Undo restores it, while notes and images remain unchanged.
+
+Canvas viewport and last opened board are browser-local workspace preferences
+in localStorage, separate from portable content. They restore after reload;
+portable archives retain all board geometry and mask-to-note relationships.

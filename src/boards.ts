@@ -1,7 +1,122 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 import { MarkerType, type Node, type Edge } from "@xyflow/react";
+export type RegionComment = {
+  id: string;
+  text: string;
+  status: "open" | "done";
+  createdAt: string;
+  resolvedAt?: string;
+};
+export type Stroke = { radius: number; points: { x: number; y: number }[] };
+export type Region = {
+  strokes?: Stroke[];
+  noteIds?: string[];
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  comments: RegionComment[];
+};
+function regions(value: unknown): Region[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 200) fail();
+  const ids = new Set<string>();
+  return value.map((r) => {
+    const id = text(r.id, 150);
+    if (!id || ids.has(id)) fail();
+    ids.add(id);
+    if (
+      ![r.x, r.y, r.width, r.height].every((v) => Number.isFinite(v)) ||
+      r.x < 0 ||
+      r.y < 0 ||
+      r.width <= 0 ||
+      r.height <= 0 ||
+      r.x + r.width > 1.000001 ||
+      r.y + r.height > 1.000001 ||
+      !Array.isArray(r.comments) ||
+      r.comments.length > 500
+    )
+      fail();
+    const commentIds = new Set<string>();
+    const comments = r.comments.map((c: any) => {
+      const cid = text(c.id, 150);
+      if (!cid || commentIds.has(cid) || !["open", "done"].includes(c.status))
+        fail();
+      commentIds.add(cid);
+      const createdAt = text(c.createdAt, 50);
+      if (!Number.isFinite(Date.parse(createdAt))) fail();
+      const resolvedAt =
+        c.resolvedAt === undefined ? undefined : text(c.resolvedAt, 50);
+      if (resolvedAt !== undefined && !Number.isFinite(Date.parse(resolvedAt)))
+        fail();
+      return {
+        id: cid,
+        text: text(c.text, 4000),
+        status: c.status,
+        createdAt,
+        ...(resolvedAt ? { resolvedAt } : {}),
+      };
+    });
+    const noteIds = r.noteIds ?? [];
+    if (
+      !Array.isArray(noteIds) ||
+      noteIds.length > 500 ||
+      noteIds.some((n: unknown) => typeof n !== "string")
+    )
+      fail();
+    let strokes: Stroke[] | undefined;
+    if (r.strokes !== undefined) {
+      if (!Array.isArray(r.strokes) || r.strokes.length > 1000) fail();
+      strokes = r.strokes.map((s: any) => {
+        if (
+          !Number.isFinite(s.radius) ||
+          s.radius <= 0 ||
+          s.radius > 0.2 ||
+          !Array.isArray(s.points) ||
+          s.points.length > 20000 ||
+          s.points.length < 1
+        )
+          fail();
+        return {
+          radius: s.radius,
+          points: s.points.map((p: any) => {
+            if (
+              !Number.isFinite(p.x) ||
+              !Number.isFinite(p.y) ||
+              p.x < 0 ||
+              p.x > 1 ||
+              p.y < 0 ||
+              p.y > 1
+            )
+              fail();
+            return { x: p.x, y: p.y };
+          }),
+        };
+      });
+    }
+    return {
+      id,
+      x: r.x,
+      y: r.y,
+      width: r.width,
+      height: r.height,
+      comments,
+      noteIds,
+      strokes,
+    };
+  });
+}
 export type BoardNode = Node<
-  { title: string; image?: string; text?: string },
+  {
+    title: string;
+    image?: string;
+    text?: string;
+    regions?: Region[];
+    status?: "open" | "done";
+    createdAt?: string;
+    resolvedAt?: string;
+  },
   "screen" | "note"
 >;
 export type BoardData = {
@@ -24,7 +139,8 @@ export async function loadBoard(id: string): Promise<BoardData | undefined> {
   try {
     return await new Promise((resolve, reject) => {
       const request = db.transaction("boards").objectStore("boards").get(id);
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () =>
+        resolve(request.result ? migrateBoard(request.result) : undefined);
       request.onerror = () => reject(request.error);
     });
   } finally {
@@ -45,9 +161,9 @@ export async function saveBoard(id: string, data: BoardData) {
     db.close();
   }
 }
-const fail = () => {
+function fail(): never {
   throw new Error("Некорректный архив доски");
-};
+}
 function text(v: unknown, max: number) {
   if (typeof v !== "string" || v.length > max) fail();
   return v as string;
@@ -87,9 +203,17 @@ export async function importBoard(file: File): Promise<BoardData> {
       fail();
     ids.add(id);
     const data: BoardNode["data"] = { title: text(n.data?.title, 300) };
-    if (n.type === "note") data.text = text(n.data?.text ?? "", 12000);
-    else {
+    if (n.type === "note") {
+      data.text = text(n.data?.text ?? "", 12000);
+      if (n.data?.status !== undefined) {
+        if (!["open", "done"].includes(n.data.status)) fail();
+        data.status = n.data.status;
+      }
+      if (n.data?.createdAt) data.createdAt = text(n.data.createdAt, 50);
+      if (n.data?.resolvedAt) data.resolvedAt = text(n.data.resolvedAt, 50);
+    } else {
       screens.add(id);
+      data.regions = regions(n.data?.regions);
       const path = text(n.data?.image, 300);
       if (
         !/^assets\/[^\\\x00-\x1f]+\.(png|jpe?g|webp)$/i.test(path) ||
@@ -146,7 +270,17 @@ export async function importBoard(file: File): Promise<BoardData> {
       style: { stroke: "#7c879d", strokeWidth: 2 },
     };
   });
-  return { version: 1, title: text(raw.title, 300), nodes, edges };
+  for (const n of nodes)
+    for (const region of n.data.regions ?? [])
+      for (const noteId of region.noteIds ?? [])
+        if (!nodes.some((note) => note.id === noteId && note.type === "note"))
+          fail();
+  return migrateBoard({
+    version: 1,
+    title: text(raw.title, 300),
+    nodes,
+    edges,
+  });
 }
 export function exportBoard(board: BoardData): Uint8Array {
   if (board.nodes.length > 500 || board.edges.length > 2000)
@@ -154,6 +288,7 @@ export function exportBoard(board: BoardData): Uint8Array {
   text(board.title, 300);
   board.nodes.forEach((n) => {
     text(n.data.title, 300);
+    regions(n.data.regions);
     if (n.type === "note") text(n.data.text ?? "", 12000);
   });
   board.edges.forEach((e) => text(e.label ?? "", 500));
@@ -192,4 +327,39 @@ export function exportBoard(board: BoardData): Uint8Array {
   if (Object.values(files).reduce((size, file) => size + file.length, 0) > MAX)
     throw new Error("Archive size limit");
   return zipSync(files, { level: 3 });
+}
+
+export function migrateBoard(board: BoardData): BoardData {
+  const additions: BoardNode[] = [];
+  const nodes = board.nodes.map((n) => ({
+    ...n,
+    data: {
+      ...n.data,
+      regions: n.data.regions?.map((r) => {
+        const noteIds = [...(r.noteIds ?? [])];
+        for (const c of r.comments ?? []) {
+          const id = crypto.randomUUID();
+          additions.push({
+            id,
+            type: "note",
+            position: {
+              x: n.position.x + 280,
+              y: n.position.y + additions.length * 210,
+            },
+            dragHandle: ".node-grip",
+            data: {
+              title: "Migrated annotation",
+              text: c.text,
+              status: c.status,
+              createdAt: c.createdAt,
+              resolvedAt: c.resolvedAt,
+            },
+          });
+          noteIds.push(id);
+        }
+        return { ...r, noteIds, comments: [] };
+      }),
+    },
+  }));
+  return { ...board, nodes: [...nodes, ...additions] };
 }

@@ -120,7 +120,7 @@ a {
   border-radius: 20px;
   padding: 7px 10px;
 }
-.session-badge > span,
+.session-badge > span:first-child,
 .status-dot {
   width: 6px;
   height: 6px;
@@ -887,3 +887,153 @@ a {
     display: none;
   }
 }
+
+.annotation-image {
+  position: relative;
+  flex-shrink: 0;
+  touch-action: none;
+}
+.annotation-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.annotation-image.drawing {
+  cursor: crosshair;
+}
+.region-mask,
+.region-draft {
+  position: absolute;
+  border: 2px solid #aa83ef;
+  background: #9b71df22;
+  padding: 0;
+  z-index: 2;
+}
+.region-mask.selected {
+  border-color: #6a3bc0;
+  background: #8953dc55;
+  box-shadow: 0 0 0 3px #bb94f544;
+}
+.region-mask span {
+  position: absolute;
+  left: -2px;
+  top: -19px;
+  background: #7551bb;
+  color: white;
+  font-size: 10px;
+  border-radius: 3px;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.region-draft {
+  pointer-events: none;
+  border-style: dashed;
+}
+.region-tool {
+  display: block;
+  margin: 0 10px 8px;
+  border: 1px solid #ddd4ee;
+  background: #f9f7ff;
+  color: #7659ad;
+  font-size: 10px;
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+.region-tool.active {
+  background: #ded3f8;
+}
+.region-discussion {
+  position: absolute;
+  z-index: 8;
+  right: 20px;
+  top: 90px;
+  width: 310px;
+  max-width: 90%;
+  max-height: calc(100% - 170px);
+  overflow: auto;
+  background: white;
+  border: 1px solid #d7c5ee;
+  border-radius: 9px;
+  padding: 16px;
+  box-shadow: 0 8px 30px #38264b22;
+}
+.region-discussion header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+.region-discussion h2 {
+  font-size: 14px;
+  margin: 0;
+}
+.region-discussion header p {
+  font-size: 11px;
+  color: #8f85a0;
+}
+.comment-history > p {
+  font-size: 12px;
+  color: #8d8399;
+  line-height: 1.7;
+}
+.region-comment {
+  border-left: 3px solid #a281d2;
+  padding: 10px;
+  margin: 12px 0;
+  background: #f7f2ff;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.region-comment p {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 9px;
+}
+.region-comment small {
+  color: #8a6caf;
+  font-size: 10px;
+}
+.region-comment.done {
+  background: #f3f7f3;
+  border-color: #8caa92;
+}
+.region-comment button {
+  display: block;
+  font-size: 10px;
+  margin-top: 9px;
+  border: 1px solid #cfc0e6;
+  background: white;
+  border-radius: 4px;
+  padding: 5px;
+}
+.region-discussion label {
+  font-size: 11px;
+}
+.region-discussion textarea {
+  display: block;
+  resize: vertical;
+  min-height: 70px;
+  width: 100%;
+  border: 1px solid #d9cde9;
+  border-radius: 5px;
+  margin: 8px 0;
+  padding: 8px;
+  font-size: 12px;
+}
+.region-discussion .primary-button {
+  font-size: 11px;
+  padding: 9px;
+}
+@media (max-width: 760px) {
+  .region-discussion {
+    top: 125px;
+    right: 10px;
+    max-height: calc(100% - 210px);
+  }
+}
+
+.session-badge [role="status"]{white-space:nowrap;flex-shrink:0;display:inline;width:auto;height:auto;background:transparent}.session-badge{flex-shrink:0}.app-header .breadcrumb{min-width:0}.breadcrumb strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:1200px){.breadcrumb{display:none}.brand{min-width:0}.app-header{gap:12px}}
+html,body,#root{height:100%;overflow:hidden}.sidebar{min-height:0;overflow-y:auto}.sidebar-bottom{flex-shrink:0}
+.brush-mask,.brush-draft{position:absolute;inset:0;width:100%;height:100%;color:#9f72dc;opacity:.4;overflow:hidden;pointer-events:none}.brush-mask g{pointer-events:stroke;cursor:pointer}.brush-mask.selected{color:#6c32d2;opacity:.7}.brush-draft{color:#a66be4;opacity:.5}.brush-cursor{position:absolute;transform:translate(-50%,-50%);border:1px solid #6232b0;border-radius:50%;background:#a46ee41a;pointer-events:none}.annotation-image.drawing{cursor:none}.brush-tools{padding:8px;display:flex;gap:4px;flex-wrap:wrap;background:#f5f0ff;font-size:10px}.brush-tools label{width:100%}.brush-tools input{width:100%}.brush-tools button,.region-discussion>button{font-size:10px;padding:5px;border:1px solid #d6c8ec;background:white;border-radius:4px;margin:3px}.region-discussion select{display:block;max-width:100%;margin:8px 0}.note-card.is-linked{box-shadow:0 0 0 4px #a37ddb,0 4px 14px #674e9b44}.region-discussion input[type=checkbox]{margin-right:6px}
+.react-flow__edgelabel-renderer{z-index:5}.transition-label{position:absolute;background:#fff;color:#37415a;border:1px solid #e5dfec;border-radius:4px;padding:4px 7px;font-size:11px;line-height:1.4;max-width:240px;white-space:normal;box-shadow:0 1px 3px #28213c12;z-index:5;pointer-events:none}

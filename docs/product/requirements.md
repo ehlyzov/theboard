@@ -23,24 +23,24 @@ current candidate's checks and independent review. W004 is active, not accepted.
 
 | ID | Required behavior | Status / verification |
 | --- | --- | --- |
-| MASK-01 | Paint a freehand selection over a screenshot using a brush; do not modify source image pixels | In implementation; replaces initial rectangle-only interpretation |
-| MASK-02 | Adjustable brush radius with a visible circle showing brush size; radius changes affect subsequent strokes | In implementation |
-| MASK-03 | Preserve mask geometry in image coordinates through zoom and movement | In implementation; needs focused zoom test |
-| MASK-04 | Undo last draft stroke, clear draft mask, finish or cancel drawing; preserve saved annotations | In implementation; needs focused checks |
+| MASK-01 | Paint a freehand selection over a screenshot using a brush; do not modify source image pixels | Implemented locally; independent review pending |
+| MASK-02 | Adjustable brush radius with a visible circle showing brush size; radius changes affect subsequent strokes | Implemented locally; independent review pending |
+| MASK-03 | Preserve mask geometry in image coordinates through zoom and movement | Implemented in normalized image coordinates; focused review pending |
+| MASK-04 | Undo last draft stroke, clear draft mask, finish or cancel drawing; preserve saved annotations | Implemented; focused review pending |
 | MASK-05 | Link a finished mask to an existing ordinary note OR create and link a new ordinary note | Latest clarification; tests/regions.spec.ts updated before implementation |
-| MASK-06 | Selecting a saved mask highlights its linked notes; allow another note link | In implementation |
-| MASK-07 | Cancel drawing/note selection without empty notes or damage to existing data | Test drafted; implementation pending review |
-| MASK-08 | Delete the selected saved region with Undo; delete mask/link only, retain image and ordinary notes | Explicit relayed owner addition; not yet verified |
-| MASK-09 | Preserve mask-to-note links after reopening, reload, archive export/import | Roundtrip test drafted; current brush model not yet verified |
-| MASK-10 | Preserve earlier separate-comment text by migration to ordinary linked notes or compatible retention | Latest clarification; migration pending verification |
+| MASK-06 | Selecting a saved mask highlights its linked notes; allow another note link | Implemented locally; independent review pending |
+| MASK-07 | Cancel drawing/note selection without empty notes or damage to existing data | Browser scenario PASS locally; independent review pending |
+| MASK-08 | Delete the selected saved region with Undo; delete mask/link only, retain image and ordinary notes | Browser delete/Undo check PASS locally; independent review pending |
+| MASK-09 | Preserve mask-to-note links after reopening, reload, archive export/import | Browser roundtrip PASS locally; independent review pending |
+| MASK-10 | Preserve earlier separate-comment text by migration to ordinary linked notes or compatible retention | Compatibility migration implemented; focused verification pending |
 | NOTE-01 | Completed annotation records remain available in history | Original direct instruction; in the latest model completion belongs to the retained ordinary note, never destructive deletion |
 | VIEW-01 | Allow canvas zoom to 400% | Direct instruction; earlier rectangle candidate test PASS; current candidate requires regression check |
-| VIEW-02 | Restore the working board after reload; browser local storage is allowed | Direct instruction; IndexedDB content PASS W003; viewport/last-board restoration pending |
+| VIEW-02 | Restore the working board after reload; browser local storage is allowed | Direct instruction; IndexedDB PASS W003; viewport reload PASS locally |
 | DOC-01 | Add a Markdown document node by importing a file or creating an empty document | Direct instruction; test drafted, implementation pending |
 | DOC-02 | Link document nodes to screens | Direct instruction; implementation pending |
 | DOC-03 | Annotate selected document text using a deep link in Markdown, shown as an annotation on the text fragment | Direct instruction; test drafted, final note-link adaptation still pending |
 | DOC-04 | Keep document/fragment associations declarative and portable with the board | BASE-05 applied to documents; implementation pending |
-| UI-01 | Fix wrapping/overlap of the saved-status label in the header | Direct screenshot report; local CSS repair, pending independent review |
+| UI-01 | Fix wrapping/overlap of the saved-status label in the header | Local CSS repair; independent visual check pending |
 
 The initial separate-comment/rectangle model is superseded by the explicitly
 relayed brush-to-ordinary-note model. Existing content must survive this change.
@@ -76,3 +76,7 @@ No functional human acceptance is inferred from a technical PASS.
 
 Delivery order: the PlanItForMe local blockers (UI-02, MASK-01..10) are a bounded
 first slice. Markdown documents remain required but do not block that slice.
+
+Markdown DOC-01..04 is the next bounded task W005. Its early failing draft
+remains under docs/work/drafts/documents.spec.ts, outside the current executable
+suite; it is not reported as passing or implemented.

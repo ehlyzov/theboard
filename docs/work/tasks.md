@@ -14,4 +14,4 @@ archives, offline startup, and GitHub remain product obligations; W003 addresses
 local persistence and archives. D3/D4 do not block editor investigation, but
 must be resolved before dependent synchronization or collaboration promises.
 
-| [W004](W004-region-comments.md) | Screenshot region discussions and retained completion history | active | TheBoard chat | Tests before implementation, review |
+| [W004](W004-region-comments.md) | Brush masks, note links, Markdown, workspace and layout | active | TheBoard chat | Tests before implementation, review |

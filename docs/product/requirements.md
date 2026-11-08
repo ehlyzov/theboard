@@ -187,3 +187,8 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   active, show a size slider beside its icon, with current percentage. Retain
   synchronized [ / ] shortcuts. This supersedes the earlier no-slider choice;
   preserve strokes, existing brush limits and board geometry.
+
+- MASK-14 (`approved_by_human`, direct instruction): keep the selected fragment
+  visible over its source screenshot while creating or choosing its linked note.
+  Pending geometry is a passive preview, not saved board data; successful
+  attachment commits one mask, while cancellation discards only the draft.

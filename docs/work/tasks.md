@@ -32,3 +32,5 @@ The W004 card carries provenance, human acceptance and pending product scope.
 | [W007](W007-preview-caption.md) | Remove redundant standalone preview caption | done | TheBoard chat; independent reviewer | Technical PASS; protected PR integration, historical example retained |
 
 | [W008](W008-marker-size.md) | Discoverable size slider beside the active screen marker | done | TheBoard chat; independent reviewer | Technical PASS; local/CI27 of27; PR #6 protected integration |
+
+| [W009](W009-pending-mask.md) | Keep the target mask visible while writing a note | active | TheBoard chat | Test-first pending preview, then independent review |

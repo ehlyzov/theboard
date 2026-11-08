@@ -132,3 +132,12 @@ suite; it is not reported as passing or implemented.
 - FOCUS-02 (`approved_by_human`, direct screenshot feedback): in focus mode,
   gray out sidebar screens outside the current visible neighborhood. Keep them
   clickable; clicking any screen changes the focus source to that screen.
+
+- AUTO-01 (`approved_by_human`, direct instruction): integrate the demonstrated
+  layout into the full editor, preserving its existing tools and persistence.
+- AUTO-02 (`approved_by_human`, direct instruction): allow automatic layout to
+  be switched off for manual arrangement. Enabling it must warn that manual
+  layout will be reset; cancellation preserves the manual arrangement.
+- ARCH-05 (`approved_by_human`, explicitly relayed owner instruction): support
+  replacing the contents of the current board from a validated ZIP while keeping
+  its URL. Keep a recovery copy. Normal import still creates an independent board.

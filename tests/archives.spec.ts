@@ -26,6 +26,30 @@ const manifest = {
   ],
   edges: [{ id: "e1", source: "s1", target: "s2", label: "Continue" }],
 };
+test('ARCH-05 replace current board preserves URL, validates first and retains a recovery copy', async ({page}) => {
+  await page.goto('/?board=replace-test');
+  await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();
+  await page.getByLabel('Текст заметки').fill('Recover this original');
+  await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();
+  const url=page.url();
+  const input=page.getByLabel('Заменить текущую доску из архива');
+  await input.setInputFiles({name:'bad.zip',mimeType:'application/zip',buffer:Buffer.from('bad')});
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByLabel('Текст заметки')).toHaveValue('Recover this original');
+  await input.setInputFiles({name:'new.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
+    'board.json':strToU8(JSON.stringify(manifest)),
+    'assets/Экран входа.png':fs.readFileSync('tests/fixtures/Вход.png')
+  }))});
+  await expect(page.getByTestId('screen-node')).toHaveCount(2);
+  expect(page.url()).toBe(url);
+  await expect(page.getByRole('link',{name:'Резервная копия доски'})).toBeVisible();
+  const backup=await page.getByRole('link',{name:'Резервная копия доски'}).getAttribute('href');
+  await page.reload();
+  await expect(page.getByTestId('screen-node')).toHaveCount(2);
+  expect(page.url()).toBe(url);
+  await page.goto(new URL(backup!,url).href);
+  await expect(page.getByLabel('Текст заметки')).toHaveValue('Recover this original');
+});
 test("ARCH-01..04 archive, reload, independent board and clean-profile roundtrip", async ({
   page,
   browser,

@@ -134,3 +134,16 @@ are runtime-only: they never replace the canonical `layout` exported here or
 the board stored in IndexedDB. Reload recomputes that view. Leaving focus
 restores canonical placement and the normal-view viewport. Ordinary content
 edits and explicit global layout controls retain their existing persistence.
+
+## Annotation composition and placement
+
+An Enter-completed mask remains a passive visual preview while its note is
+written/chosen. Pending preview geometry and text are not exported. Confirming
+attachment commits the ordinary mask/note link; cancel discards the preview.
+
+Automatic layout reserves space near a source composite for its undocked
+mask-linked notes. Stable semantic note IDs and `noteIds` remain unchanged; the
+resulting coordinates belong to `layout.nodes`, without an implicit `layout.docks`
+entry or a new navigation edge. Shared notes use one deterministic primary
+visible source (lowest ID); explicit docking takes precedence. Engine options
+`theboard.annotationPlacement`/`theboard.annotationGap` describe this adapter.

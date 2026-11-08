@@ -178,3 +178,7 @@ delta has a test-first regression and independently passed its narrow recheck. S
 [W004](../work/W004-region-comments.md) for exact candidate provenance.
 Proper edge crossings remain; zero crossings/global optimality are not promised.
 DOC-01..04, GitHub exchange and offline application startup remain unimplemented.
+
+- UI-05 (`approved_by_human`, direct instruction): remove the standalone
+  example footer's redundant read-only/400% caption. Preserve actual controls
+  and navigation hints; annotation tools remain part of the main editor.

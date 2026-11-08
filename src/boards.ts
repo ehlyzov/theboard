@@ -92,7 +92,7 @@ export async function importBoard(file: File): Promise<BoardData> {
       screens.add(id);
       const path = text(n.data?.image, 300);
       if (
-        !/^assets\/[a-zA-Z0-9_.\-/]+\.(png|jpe?g|webp)$/i.test(path) ||
+        !/^assets\/[^\\\x00-\x1f]+\.(png|jpe?g|webp)$/i.test(path) ||
         path.includes("..") ||
         !entries[path]
       )

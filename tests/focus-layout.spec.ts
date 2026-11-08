@@ -31,7 +31,14 @@ for (const automatic of [false, true]) {
       await expect(page.getByRole('status').filter({ hasText: 'Сохранено' })).toBeVisible();
       const download = page.waitForEvent('download');
       await page.getByRole('button', { name: 'Экспорт архива' }).click();
-      return JSON.parse(strFromU8(unzipSync(fs.readFileSync((await (await download).path())!))['board.json']));
+      const raw = JSON.parse(strFromU8(unzipSync(fs.readFileSync((await (await download).path())!))['board.json']));
+      // DOM-derived dock offsets vary by <0.001px across viewport transforms.
+      // Keep routes/labels/settings exact; normalize only this coordinate cache.
+      for (const p of Object.values(raw.layout.nodes) as {x:number;y:number}[]) {
+        p.x = Math.round(p.x * 1000) / 1000;
+        p.y = Math.round(p.y * 1000) / 1000;
+      }
+      return raw;
     };
     const rootPositions = () => page.locator('.react-flow__node-screen').evaluateAll(elements => Object.fromEntries(elements.map(el => {
       const m = new DOMMatrix(getComputedStyle(el).transform);
@@ -41,6 +48,12 @@ for (const automatic of [false, true]) {
     const rootsBefore = await rootPositions();
     const source = page.locator('.screen-list').getByRole('button', { name: /^01 A$/ });
     await source.click();
+    await page.waitForTimeout(300); // Finish the normal-view recenter before snapshotting it.
+    const storedViewport = () => page.evaluate(() => {
+      const saved = JSON.parse(localStorage.getItem('theboard:workspace:' + new URLSearchParams(location.search).get('board'))!);
+      return { x: saved.x, y: saved.y, zoom: saved.zoom };
+    });
+    const normalViewport = await storedViewport();
     await page.getByRole('switch', { name: 'Режим фокуса' }).click();
     await expect(page.getByTestId('screen-node')).toHaveCount(3);
     await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(2);
@@ -48,8 +61,11 @@ for (const automatic of [false, true]) {
       const positions = Object.values(await rootPositions()) as {x:number;y:number}[];
       return Math.max(...positions.map(p => p.x)) - Math.min(...positions.map(p => p.x));
     }).toBeLessThan(2500);
+    expect(Object.entries(await rootPositions()).some(([id, p]: [string, any]) =>
+      Math.hypot(p.x - rootsBefore[id].x, p.y - rootsBefore[id].y) > 20)).toBe(true);
     await expect(page.locator('.docked-slot [data-testid="note-node"]')).toHaveCount(1);
     expect((await exported()).layout).toEqual(before.layout);
+    expect(await storedViewport()).toEqual(normalViewport);
     // Visiting another source must not accumulate or commit previous focus geometry.
     await page.locator('.screen-list').getByRole('button', { name: /^02 B$/ }).click();
     await expect(page.getByTestId('screen-node')).toHaveCount(2);
@@ -66,9 +82,11 @@ for (const automatic of [false, true]) {
     await expect(page.getByTestId('screen-node')).toHaveCount(3);
     await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(2);
     expect((await exported()).layout).toEqual(before.layout);
+    expect(await storedViewport()).toEqual(normalViewport);
     await page.getByRole('switch', { name: 'Режим фокуса' }).click();
     await expect(page.getByTestId('screen-node')).toHaveCount(4);
     await expect.poll(rootPositions).toEqual(rootsBefore);
+    await expect.poll(storedViewport).toEqual(normalViewport);
     const after = await exported();
     expect(after.layout).toEqual(before.layout);
     if (!automatic) expect(after.nodes.find((n: any) => n.id === 'attached').data.text).toBe('Edited without moving the board');

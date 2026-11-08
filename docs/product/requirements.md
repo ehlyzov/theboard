@@ -110,3 +110,7 @@ suite; it is not reported as passing or implemented.
   extends the composite card; arrows on that side connect to the note's outer
   boundary. A docked note stretches to the full length of that side. Preserve
   its identity/content, and keep docking geometry in the separate layout section.
+
+- NOTE-02 (`approved_by_human`, direct instruction): choose a note background
+  from eight pastel colors. Preserve color on normal and docked notes through
+  reload and portable archives.

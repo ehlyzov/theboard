@@ -18,7 +18,7 @@ must be resolved before dependent synchronization or collaboration promises.
 
 | W005 | Markdown document nodes, screen links, deep-linked text-to-note annotations | queued | Unassigned | Implement after bounded W004; failing draft retained |
 
-| [W006](W006-focus-layout.md) | Temporary compact focus geometry without changing saved layout | review | TheBoard chat | Local25/25 PASS; independent review of transient geometry and persistence |
+| [W006](W006-focus-layout.md) | Temporary compact focus geometry without changing saved layout | done | TheBoard chat; independent reviewer | Technical PASS; PR #4 protected integration; next W005, human acceptance pending |
 
 ## Current verification checkpoint
 

@@ -1,6 +1,6 @@
 # W006 — temporary focus layout
 
-Status: review. Owner: TheBoard chat. Branch: feat/transient-focus-layout.
+Status: done (bounded technical outcome). Owner: TheBoard chat. Branch: feat/transient-focus-layout.
 Base:3200860bcc38cf5d0ebf0962eaa78b6f14dc9966. Human acceptance: pending.
 
 Source: direct owner instruction,2026-11-08: arrange related screens close
@@ -81,3 +81,37 @@ all five affected layout/automatic checks PASS. Full26/26 had passed before
 this driver correction; those five rerun checks verify the corrected driver.
 Independent targeted repair check and exact-head CI pending. No assertions or
 required precision thresholds in AUTO-01 were weakened.
+
+## Final independent results
+
+Independent initial review0de4f94/base3200860 reproduced build and25/25 tests
+PASS. Final framing4b701db build and six affected tests PASS. Additional
+synthetic checks cover four-side docks, loose-note editing, mask connector
+endpoints, manual gesture isolation, source changes, whole-group framing and
+normal viewport/root restoration. A forced600ms ELK chunk delay followed by
+A→B showed only the new B neighborhood; exiting restored original coordinates.
+No remaining product finding in that scope.
+
+The CI remount repaira61c145 passed five independent affected checks, including
+the original hidden-note DOWN offset assertions. Independent build then caught
+TS7006 in the new test driver's untyped arguments. Typed-only follow-up
+c812046eecd6c79dea7bd23c2001e144978d2327 independently passed build, diff check
+and the delayed-load test. The corrected driver independently fails on old4b
+with ratios[1,1]. That finding is resolved. No additional full audit was run.
+Local full26/26 PASS preceded the corrected driver; five affected cases were
+rerun after the correction, then build and the new case after typing. Required
+final-head CI still gates protected PR integration.
+
+The separate local real-board QA copy demonstrated five focused screens and
+exact restoration of all49 original screen positions. That browser session
+also had an intermittent storage error and later an absent test board under
+very low host disk space. Its private archive restored the QA copy; subsequent
+save/reload succeeded. Cause was not established, and synthetic PASS does not
+close that environmental observation. Private source data and paths remain
+outside the public repository; the owner's working browser was not operated.
+
+Technical PASS for this bounded focus change; human functional acceptance
+pending. [PR4](https://github.com/ehlyzov/theboard/pull/4) is the integration
+record. Next: W005 Markdown; GitHub exchange/offline startup remain pending.
+This final follow-up changes reports/status and descriptive format docs only,
+retaining the reviewed product/test source.

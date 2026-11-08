@@ -42,6 +42,7 @@ import {
   Scan,
   StickyNote,
   Trash2,
+  Palette,
   X,
 } from "lucide-react";
 
@@ -56,11 +57,13 @@ import {
 } from "./boards";
 
 import RegionImage from "./RegionImage";
-import LabeledEdge, { LabelPositions } from "./LabeledEdge";
+import { NOTE_COLORS, COLOR_NAMES, type NoteColor } from "./noteColors";
+import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
 import { labelLayouts, freePosition, nodeSize } from "./layout";
 const edgeTypes = { smoothstep: LabeledEdge };
 
 type Actions = {
+  hoveredFlowNodes: string[];
   tool: "select" | "brush";
   brushRadius: number;
   brushScreenId: string | null;
@@ -91,7 +94,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
             ? 400
             : 230,
       }}
-      className={`screen-card ${selected ? "is-selected" : ""} ${actions.connecting === id ? "is-source" : ""}`}
+      className={`screen-card ${actions.hoveredFlowNodes.includes(id) ? "flow-highlighted" : ""} ${selected ? "is-selected" : ""} ${actions.connecting === id ? "is-source" : ""}`}
     >
       <div className="node-grip">
         <span>
@@ -184,9 +187,11 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
 
 function NoteNode({ id, data, selected }: NodeProps<BoardNode>) {
   const actions = useContext(ActionsContext);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   return (
     <article
       data-testid="note-node"
+      style={{ background: NOTE_COLORS[data.color ?? "yellow"] }}
       className={`note-card ${selected ? "is-selected" : ""} ${actions.linkedNoteIds.includes(id) ? "is-linked" : ""}`}
     >
       <div className="node-grip">
@@ -196,12 +201,36 @@ function NoteNode({ id, data, selected }: NodeProps<BoardNode>) {
         <GripHorizontal size={16} />
         <button
           className="icon-button nodrag"
+          aria-label="Цвет заметки"
+          aria-expanded={paletteOpen}
+          onClick={() => setPaletteOpen((v) => !v)}
+        >
+          <Palette size={14} />
+        </button>
+        <button
+          className="icon-button nodrag"
           aria-label="Удалить заметку"
           onClick={() => actions.remove(id)}
         >
           <Trash2 size={14} />
         </button>
       </div>
+      {paletteOpen && (
+        <div className="note-palette nodrag">
+          {Object.entries(NOTE_COLORS).map(([color, value]) => (
+            <button
+              key={color}
+              aria-label={"Пастельный цвет: " + COLOR_NAMES[color as NoteColor]}
+              aria-pressed={data.color === color}
+              style={{ background: value }}
+              onClick={() => {
+                actions.update(id, { color: color as NoteColor });
+                setPaletteOpen(false);
+              }}
+            />
+          ))}
+        </div>
+      )}
       <textarea
         className="nodrag nowheel"
         aria-label="Текст заметки"
@@ -273,6 +302,10 @@ function Editor() {
     screenId: string;
     regionId: string;
   } | null>(null);
+  const [hoveredTransition, setHoveredTransition] = useState<string | null>(
+    null,
+  );
+  const activeTransition = edges.find((e) => e.id === hoveredTransition);
   const [tool, setTool] = useState<"select" | "brush">("select");
   const [brushRadius, setBrushRadius] = useState(0.06);
   const [brushScreenId, setBrushScreenId] = useState<string | null>(null);
@@ -725,6 +758,9 @@ function Editor() {
       value={{
         update,
         regionSelection,
+        hoveredFlowNodes: activeTransition
+          ? [activeTransition.source, activeTransition.target]
+          : [],
         tool,
         brushRadius,
         brushScreenId,
@@ -1004,118 +1040,122 @@ function Editor() {
               disabled={loading}
               onChange={upload}
             />
-            <LabelPositions.Provider value={labelPositions}>
-              <ReactFlow
-                nodes={displayNodes}
-                edges={displayEdges}
-                onNodeClick={(_, node) => {
-                  if (node.type === "screen") setCurrentScreenId(node.id);
-                }}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={connect}
-                connectOnClick={false}
-                onPaneClick={() => setConnecting(null)}
-                onNodesDelete={(deleted) => {
-                  const ids = new Set(deleted.map((n) => n.id));
-                  setNodes((current) =>
-                    current
-                      .filter((n) => !ids.has(n.id))
-                      .map((n) => ({
-                        ...n,
-                        data: {
-                          ...n.data,
-                          regions: n.data.regions?.map((r) => ({
-                            ...r,
-                            noteIds: r.noteIds?.filter((id) => !ids.has(id)),
-                          })),
-                        },
-                      })),
-                  );
-                  if (deleted.some((n) => n.id === connecting))
-                    setConnecting(null);
-                }}
-                defaultViewport={initialViewport}
-                minZoom={0.05}
-                maxZoom={4}
-                deleteKeyCode={
-                  tool === "brush" ? null : ["Backspace", "Delete"]
-                }
-                isValidConnection={(c) => c.source !== c.target}
-                aria-label="Полотно пользовательского потока"
-              >
-                <ViewportPortal>
-                  <svg className="mask-note-connectors" width="1" height="1">
-                    {nodes
-                      .filter((n) => !focusActive || focusIds.has(n.id))
-                      .flatMap((screen) =>
-                        (screen.data.regions ?? []).flatMap((region) => {
-                          const points = region.strokes?.flatMap(
-                            (stroke) => stroke.points,
-                          );
-                          const center = points?.length
-                            ? {
-                                x:
-                                  points.reduce((s, p) => s + p.x, 0) /
-                                  points.length,
-                                y:
-                                  points.reduce((s, p) => s + p.y, 0) /
-                                  points.length,
-                              }
-                            : {
-                                x: region.x + region.width / 2,
-                                y: region.y + region.height / 2,
-                              };
-                          const ratio =
-                            (screen.data.imageSize?.width ?? 210) /
-                            (screen.data.imageSize?.height ?? 290);
-                          const width = ratio >= 1 ? 380 : 210,
-                            height = width / ratio;
-                          const x = screen.position.x + 10 + center.x * width,
-                            y = screen.position.y + 37 + center.y * height;
-                          return (region.noteIds ?? []).map((id) => {
-                            const note = nodes.find((n) => n.id === id);
-                            if (!note) return null;
-                            const targetX =
-                                note.position.x +
-                                (note.position.x < x ? 230 : 0),
-                              targetY = Math.max(
-                                note.position.y + 10,
-                                Math.min(note.position.y + 173, y),
-                              );
-                            return (
-                              <line
-                                key={screen.id + region.id + id}
-                                className="mask-note-connector"
-                                x1={x}
-                                y1={y}
-                                x2={targetX}
-                                y2={targetY}
-                                stroke={
-                                  hoveredRegion?.regionId === region.id ||
-                                  regionSelection?.regionId === region.id
-                                    ? "#9366c7"
-                                    : "#c7b6db"
-                                }
-                                strokeWidth="1"
-                                vectorEffect="non-scaling-stroke"
-                              />
+            <HoveredTransition.Provider
+              value={{ id: hoveredTransition, setId: setHoveredTransition }}
+            >
+              <LabelPositions.Provider value={labelPositions}>
+                <ReactFlow
+                  nodes={displayNodes}
+                  edges={displayEdges}
+                  onNodeClick={(_, node) => {
+                    if (node.type === "screen") setCurrentScreenId(node.id);
+                  }}
+                  nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={connect}
+                  connectOnClick={false}
+                  onPaneClick={() => setConnecting(null)}
+                  onNodesDelete={(deleted) => {
+                    const ids = new Set(deleted.map((n) => n.id));
+                    setNodes((current) =>
+                      current
+                        .filter((n) => !ids.has(n.id))
+                        .map((n) => ({
+                          ...n,
+                          data: {
+                            ...n.data,
+                            regions: n.data.regions?.map((r) => ({
+                              ...r,
+                              noteIds: r.noteIds?.filter((id) => !ids.has(id)),
+                            })),
+                          },
+                        })),
+                    );
+                    if (deleted.some((n) => n.id === connecting))
+                      setConnecting(null);
+                  }}
+                  defaultViewport={initialViewport}
+                  minZoom={0.05}
+                  maxZoom={4}
+                  deleteKeyCode={
+                    tool === "brush" ? null : ["Backspace", "Delete"]
+                  }
+                  isValidConnection={(c) => c.source !== c.target}
+                  aria-label="Полотно пользовательского потока"
+                >
+                  <ViewportPortal>
+                    <svg className="mask-note-connectors" width="1" height="1">
+                      {nodes
+                        .filter((n) => !focusActive || focusIds.has(n.id))
+                        .flatMap((screen) =>
+                          (screen.data.regions ?? []).flatMap((region) => {
+                            const points = region.strokes?.flatMap(
+                              (stroke) => stroke.points,
                             );
-                          });
-                        }),
-                      )}
-                  </svg>
-                </ViewportPortal>
-                <Background
-                  variant={BackgroundVariant.Dots}
-                  gap={24}
-                  size={1}
-                  color="#d7dce6"
-                />
-              </ReactFlow>
-            </LabelPositions.Provider>
+                            const center = points?.length
+                              ? {
+                                  x:
+                                    points.reduce((s, p) => s + p.x, 0) /
+                                    points.length,
+                                  y:
+                                    points.reduce((s, p) => s + p.y, 0) /
+                                    points.length,
+                                }
+                              : {
+                                  x: region.x + region.width / 2,
+                                  y: region.y + region.height / 2,
+                                };
+                            const ratio =
+                              (screen.data.imageSize?.width ?? 210) /
+                              (screen.data.imageSize?.height ?? 290);
+                            const width = ratio >= 1 ? 380 : 210,
+                              height = width / ratio;
+                            const x = screen.position.x + 10 + center.x * width,
+                              y = screen.position.y + 37 + center.y * height;
+                            return (region.noteIds ?? []).map((id) => {
+                              const note = nodes.find((n) => n.id === id);
+                              if (!note) return null;
+                              const targetX =
+                                  note.position.x +
+                                  (note.position.x < x ? 230 : 0),
+                                targetY = Math.max(
+                                  note.position.y + 10,
+                                  Math.min(note.position.y + 173, y),
+                                );
+                              return (
+                                <line
+                                  key={screen.id + region.id + id}
+                                  className="mask-note-connector"
+                                  x1={x}
+                                  y1={y}
+                                  x2={targetX}
+                                  y2={targetY}
+                                  stroke={
+                                    hoveredRegion?.regionId === region.id ||
+                                    regionSelection?.regionId === region.id
+                                      ? "#9366c7"
+                                      : "#c7b6db"
+                                  }
+                                  strokeWidth="1"
+                                  vectorEffect="non-scaling-stroke"
+                                />
+                              );
+                            });
+                          }),
+                        )}
+                    </svg>
+                  </ViewportPortal>
+                  <Background
+                    variant={BackgroundVariant.Dots}
+                    gap={24}
+                    size={1}
+                    color="#d7dce6"
+                  />
+                </ReactFlow>
+              </LabelPositions.Provider>
+            </HoveredTransition.Provider>
             {!nodes.length && (
               <div className="empty-state">
                 <div className="empty-illustration" aria-hidden="true">
@@ -1321,7 +1361,7 @@ function Editor() {
               </section>
             )}
             {deletedRegion && (
-              <div className="connection-hint" role="status">
+              <div className="connection-hint mask-undo" role="status">
                 Область удалена; заметки сохранены
                 <button
                   onClick={() => {
@@ -1332,7 +1372,16 @@ function Editor() {
                       update(screen.id, {
                         regions: [
                           ...(screen.data.regions ?? []),
-                          deletedRegion.region,
+                          {
+                            ...deletedRegion.region,
+                            noteIds: (
+                              deletedRegion.region.noteIds ?? []
+                            ).filter((id) =>
+                              nodes.some(
+                                (n) => n.id === id && n.type === "note",
+                              ),
+                            ),
+                          },
                         ],
                       });
                     setDeletedRegion(null);

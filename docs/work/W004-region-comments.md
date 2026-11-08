@@ -89,3 +89,18 @@ Research files and README link only; no product dependencies or live board data
 changed. The proposed persistence extensions and libavoid browser integration
 are not implemented. Keep DOCK-01 and ROUTE-01 open; use measured composite
 bounds, global placement and actual route geometry in the next bounded slice.
+
+## PlanItForMe layout example
+
+The owner requested an executable example on local PlanItForMe data, followed by
+LAYOUT-03 (dashed label-to-arrow leaders visible only on label hover). Scope:
+generate a separate interactive preview with measured screen+note composites,
+ELK routes and measured labels, preserve all source content/IDs, and export its
+declarative geometry. Source board/files and the owner's active board stay intact.
+The example is not a replacement for the main editor or completion of DOCK-01.
+
+Observable checks: all input nodes/edges/content remain; each configured note
+fills the screen width below it; route geometry is actually rendered; inspect
+overlaps/coincidences and report remaining crossings; hover reveals only the
+matching dashed leader; support pan/zoom through 400%; no external network
+dependency in the generated preview. Private data and previews remain local.

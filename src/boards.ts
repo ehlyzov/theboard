@@ -1,6 +1,7 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 import { MarkerType, type Node, type Edge } from "@xyflow/react";
 import { labelLayouts } from "./layout";
+import { NOTE_COLORS, type NoteColor } from "./noteColors";
 export type RegionComment = {
   id: string;
   text: string;
@@ -115,6 +116,7 @@ export type BoardNode = Node<
     text?: string;
     regions?: Region[];
     imageSize?: { width: number; height: number };
+    color?: NoteColor;
     status?: "open" | "done";
     createdAt?: string;
     resolvedAt?: string;
@@ -208,6 +210,10 @@ export async function importBoard(file: File): Promise<BoardData> {
     const data: BoardNode["data"] = { title: text(n.data?.title, 300) };
     if (n.type === "note") {
       data.text = text(n.data?.text ?? "", 12000);
+      if (n.data?.color !== undefined) {
+        if (!Object.hasOwn(NOTE_COLORS, n.data.color)) fail();
+        data.color = n.data.color;
+      }
       if (n.data?.status !== undefined) {
         if (!["open", "done"].includes(n.data.status)) fail();
         data.status = n.data.status;
@@ -300,6 +306,11 @@ export function exportBoard(board: BoardData): Uint8Array {
     if (n.type === "note") text(n.data.text ?? "", 12000);
   });
   board.edges.forEach((e) => text(e.label ?? "", 500));
+  for (const n of board.nodes)
+    for (const r of n.data.regions ?? [])
+      for (const id of r.noteIds ?? [])
+        if (!board.nodes.some((note) => note.type === "note" && note.id === id))
+          fail();
   const files: Record<string, Uint8Array> = {};
   const nodes = board.nodes.map((n, index) => {
     const data = { ...n.data };

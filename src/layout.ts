@@ -67,7 +67,7 @@ export function labelLayouts(
       ),
       height = Math.max(
         30,
-        Math.ceil(String(edge.label).length / (width / 7 - 5)) * 16 + 12,
+        Math.ceil(String(edge.label).length / (width / 7 - 5)) * 16 + 40,
       );
     const manual = edge.data?.labelPosition as Point | undefined;
     const p = freePosition(

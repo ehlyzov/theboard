@@ -124,3 +124,7 @@ suite; it is not reported as passing or implemented.
   [Research and a synthetic feasibility probe](../research/board-layout.md) are
   recorded. ELK/fixed-node routing is an engineering recommendation, not an
   implemented feature or human functional acceptance.
+
+- LAYOUT-03 (`approved_by_human`, direct clarification): show a dashed leader
+  from a transition label to its arrow only while hovering the label. Retain
+  transition/endpoint highlighting; hide the leader at rest.

@@ -30,3 +30,5 @@ report/status changes follow that reviewed code; no unrelated audit is repeated.
 The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W007](W007-preview-caption.md) | Remove redundant standalone preview caption | done | TheBoard chat; independent reviewer | Technical PASS; protected PR integration, historical example retained |
+
+| [W008](W008-marker-size.md) | Discoverable size slider beside the active screen marker | active | TheBoard chat | Test-first contextual control, then independent review |

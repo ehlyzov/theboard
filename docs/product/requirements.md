@@ -102,7 +102,7 @@ suite; it is not reported as passing or implemented.
   with B or the marker icon in the specific screen header, beside its other
   tools. B targets the hovered or selected screen; an unfinished mask stays
   attached to its screen until completion/cancellation. Use keyboard radius
-  controls without per-screen size buttons/sliders. This supersedes the earlier
+  controls, plus the contextual slider requested in MASK-13. This supersedes the earlier
   common-toolbar placement. Multiple strokes form one draft mask until completion.
   Show a trash icon on a selected saved mask. Preserve Delete/Undo semantics.
 - IMAGE-01 (`approved_by_human`, explicitly relayed instruction): portrait and
@@ -182,3 +182,8 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
 - UI-05 (`approved_by_human`, direct instruction): remove the standalone
   example footer's redundant read-only/400% caption. Preserve actual controls
   and navigation hints; annotation tools remain part of the main editor.
+
+- MASK-13 (`approved_by_human`, direct instruction): when the screen marker is
+  active, show a size slider beside its icon, with current percentage. Retain
+  synchronized [ / ] shortcuts. This supersedes the earlier no-slider choice;
+  preserve strokes, existing brush limits and board geometry.

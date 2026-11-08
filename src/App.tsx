@@ -348,6 +348,7 @@ function Editor() {
   const [layoutEngine,setLayoutEngine]=useState<EngineMetadata>();
   const [direction,setDirection]=useState<'RIGHT'|'DOWN'>('RIGHT');
   const [autoWarning,setAutoWarning]=useState(false);
+  const fitAfterArrange=useRef(false);
   const [arranging,setArranging]=useState(false);
   const [anchors,setAnchors]=useState<Record<string,{core:{x:number;y:number};notes:Record<string,{x:number;y:number;width:number;height:number}>}>>({});
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -576,7 +577,10 @@ function Editor() {
         setNodes(current=>current.map(n=>({...n,position:result.positions.get(n.id)??n.position})));
         setEdges(current=>current.map(e=>({...e,data:{...e.data,...result.edges.get(e.id)}})));
         setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction}});
-        requestAnimationFrame(()=>updateNodeInternals([...result.positions.keys()]));
+        requestAnimationFrame(()=>{
+          updateNodeInternals([...result.positions.keys()]);
+          if(fitAfterArrange.current){fitAfterArrange.current=false;void fitView({padding:.15,maxZoom:1,duration:150});}
+        });
       }).catch(()=>{if(!disposed){setAutomatic(false);setError('Не удалось рассчитать компоновку. Текущее расположение сохранено.');}})
         .finally(()=>{if(!disposed)setArranging(false);}));
     },120);
@@ -925,7 +929,7 @@ function Editor() {
         {autoWarning&&<dialog id="auto-layout-warning" className="auto-warning" onCancel={()=>setAutoWarning(false)} aria-labelledby="auto-warning-title">
           <h2 id="auto-warning-title">Ручная компоновка будет сброшена</h2>
           <p>Экраны, заметки и подписи будут размещены автоматически. Их содержимое и связи сохранятся.</p>
-          <button onClick={()=>{setAutoWarning(false);setAutomatic(true);}}>Включить автокомпоновку</button>
+          <button onClick={()=>{fitAfterArrange.current=true;setAutoWarning(false);setAutomatic(true);}}>Включить автокомпоновку</button>
           <button onClick={()=>setAutoWarning(false)}>Отмена</button>
         </dialog>}
         <header className="app-header">
@@ -994,7 +998,7 @@ function Editor() {
             <div className="auto-layout-controls">
               <label><input type="checkbox" aria-label="Автоматическая компоновка" checked={automatic}
                 onChange={e=>{if(e.target.checked)setAutoWarning(true);else setAutomatic(false);}}/> Автоматическая компоновка</label>
-              <select aria-label="Направление компоновки" value={direction} onChange={e=>setDirection(e.target.value as 'RIGHT'|'DOWN')}>
+              <select aria-label="Направление компоновки" value={direction} onChange={e=>{if(automatic)fitAfterArrange.current=true;setDirection(e.target.value as 'RIGHT'|'DOWN');}}>
                 <option value="RIGHT">Слева направо</option><option value="DOWN">Сверху вниз</option>
               </select>
               {arranging&&<span role="status">Расчёт компоновки…</span>}

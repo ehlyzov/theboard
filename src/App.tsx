@@ -63,7 +63,7 @@ import {
 import RegionImage from "./RegionImage";
 import { NOTE_COLORS, COLOR_NAMES, type NoteColor } from "./noteColors";
 import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
-import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS } from "./layout";
+import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS, focusFrame } from "./layout";
 import { arrangeBoard } from './autoLayout';
 const edgeTypes = { smoothstep: LabeledEdge };
 
@@ -579,7 +579,11 @@ function Editor() {
         setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction}});
         requestAnimationFrame(()=>{
           updateNodeInternals([...result.positions.keys()]);
-          if(fitAfterArrange.current){fitAfterArrange.current=false;void fitView({padding:.15,maxZoom:1,duration:150});}
+          if(fitAfterArrange.current){
+            fitAfterArrange.current=false;
+            const placed=nodes.map(n=>({...n,position:result.positions.get(n.id)??n.position}));
+            void fitView({nodes:focusEnabled&&currentScreenId?focusFrame(placed,focusIds,currentScreenId,{width:board.current?.clientWidth??1000,height:board.current?.clientHeight??800}):undefined,padding:.15,maxZoom:1,duration:150});
+          }
         });
       }).catch(()=>{if(!disposed){setAutomatic(false);setError('Не удалось рассчитать компоновку. Текущее расположение сохранено.');}})
         .finally(()=>{if(!disposed)setArranging(false);}));
@@ -729,7 +733,7 @@ function Editor() {
     const frame = requestAnimationFrame(
       () =>
         void fitView({
-          nodes: Array.from(focusIds).map((id) => ({ id })),
+          nodes: focusFrame(nodes,focusIds,currentScreenId!,{width:board.current?.clientWidth??1000,height:board.current?.clientHeight??800}),
           padding: 0.2,
           maxZoom: 1,
           duration: 150,
@@ -1029,7 +1033,7 @@ function Editor() {
                         title={screen.data.title}
                         onClick={() => {
                           setCurrentScreenId(screen.id);
-                          if (!focusActive) void fitView({
+                          if (!focusActive || screen.id===currentScreenId) void fitView({
                             nodes: [{ id: screen.id }],
                             maxZoom: 1,
                             duration: 250,

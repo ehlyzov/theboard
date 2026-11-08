@@ -7,6 +7,8 @@ test('FOCUS-02 distant neighbors retain readable source framing and current-menu
  await page.goto('/');await page.getByLabel('Импорт архива').setInputFiles({name:'distant.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({'board.json':strToU8(JSON.stringify(board)),'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png')}))});
  const current=page.locator('.screen-list').getByRole('button',{name:/Near/});await current.click();
  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ // Let the fixed150/250ms viewport transitions complete before judging framing.
+ await page.waitForTimeout(300);
  const zoom=async()=>Number((await page.locator('.zoom-controls>span').innerText()).replace(/[^\d.]/g,''));
  await expect.poll(zoom).toBeGreaterThanOrEqual(50);
  await expect(page.getByTestId('screen-node')).toHaveCount(3);

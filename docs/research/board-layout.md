@@ -1,7 +1,9 @@
 # Board placement and routing
 
-Date: 2026-11-08. Status: engineering recommendation with a synthetic feasibility
-probe, not an implemented layout feature or human acceptance. This document
+Date: 2026-11-08. Status: original engineering research and synthetic feasibility
+probe. The layered approach is now integrated in W004; see the current
+[board format](../board-format.md) for implemented behavior. Fixed-node routing
+remains pending, and technical results are separate from human acceptance. This document
 addresses LAYOUT-01, ROUTE-01, DOCK-01 and the owner's request to investigate
 placement methods, including chip placement. Product requirements remain in
 [the requirement ledger](../product/requirements.md).
@@ -235,7 +237,7 @@ latency. Preserve graph data exactly and report infeasible fixed constraints.
 Use synthetic public fixtures and private local boards separately; never publish
 another project's screenshots or graph content as benchmarks.
 
-**NOT_RUN:** libavoid browser integration, real DOM text measurement, docking
+**NOT_RUN at the original research checkpoint:** libavoid browser integration, real DOM text measurement, docking
 implementation, manual-pinning solver behavior, private-board comparative
 benchmark, accessibility/readability study and independent product review of
 this proposed algorithm. No product dependency, active board or running UI was

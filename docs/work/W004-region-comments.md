@@ -145,3 +145,27 @@ internals after layout; the subsequent full suite passed.
 Remaining boundaries: W005 Markdown, GitHub synchronization, offline startup
 and libavoid fixed-node routing are not delivered by this integration. Private
 PlanItForMe data must never enter this public repository.
+
+## Independent integration review and focused viewport repair
+
+Fresh-context independent review of277edbc against379d48e reproduced build and
+20/20 tests PASS in an isolated checkout. It additionally checked actual graph
+content/asset equality, measured composites, both routing directions, delayed
+stale-result cancellation, warning cancellation/Escape, manual node/label moves,
+mask keyboard gestures and deletion of a screen with four attached notes.
+No data-preservation or routing-obstacle blocker was found. Proper crossings
+remain; no global optimality or zero-crossing claim is made.
+
+One P2 was independently reproduced: a widely spaced focus neighborhood fits at
+about11%, and clicking the current sidebar entry does not recenter it. The repair
+changes viewport only: current-entry clicks always center that card; a focus
+overview below50% frames the source instead, retaining all destination elements
+and their sidebar navigation. Test-only3d846c1 failed on the missing recenter;
+the new focused tests pass with the repair. The test waits300ms for known
+150/250ms viewport transitions before judging framing. Independent targeted
+repair recheck is pending; no second full review is required.
+
+The dependency's upstream license text is served locally and linked from
+THIRD_PARTY_NOTICES.md. Private real-data observations and screenshots remain in
+the private handoff; the source operator confirmed49 nested note pairs and
+reload/export/reimport on the original local board URL.

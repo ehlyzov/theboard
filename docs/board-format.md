@@ -114,6 +114,13 @@ Manually dragging nodes invalidates generated paths and uses the existing
 manual routing. General obstacle-aware routing with arbitrary fixed positions
 remains pending; manual mode is not a claim of collision-free routing.
 
+Focus changes visibility and viewport framing only. The current screen and its
+direct destinations remain the focused set. If fitting that set would shrink
+the view below50%, framing centers the current composite instead; destinations
+remain available by panning or clicking their emphasized sidebar entries.
+Clicking the current sidebar entry always recenters it. This does not move
+objects or alter stored graph relationships.
+
 Normal import creates a new board. “Replace board from ZIP” validates first,
 saves the old board under a recovery ID, then replaces the current board while
 keeping its URL. Invalid archives leave it unchanged. A recovery link remains

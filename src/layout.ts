@@ -21,6 +21,16 @@ export function nodeSize(n: BoardNode) {
       (n.type === "screen" ? 82 + (ratio >= 1 ? 380 : 210) / ratio : 183),
   };
 }
+// Keep the source readable when fitting its neighborhood would make text tiny.
+// This changes viewport framing only, never the focused set or board geometry.
+export function focusFrame(nodes: BoardNode[], ids:Set<string>, current:string, size:{width:number;height:number}) {
+  const active=nodes.filter(n=>ids.has(n.id));
+  if(!active.length)return [{id:current}];
+  const width=Math.max(...active.map(n=>n.position.x+nodeSize(n).width))-Math.min(...active.map(n=>n.position.x));
+  const height=Math.max(...active.map(n=>n.position.y+nodeSize(n).height))-Math.min(...active.map(n=>n.position.y));
+  const zoom=Math.min(size.width/(width*1.4),size.height/(height*1.4));
+  return zoom<.5 ? [{id:current}] : [...ids].map(id=>({id}));
+}
 const intersects = (a: Rect, b: Rect) =>
   a.x < b.x + b.width + 10 &&
   a.x + a.width + 10 > b.x &&

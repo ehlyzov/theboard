@@ -1,84 +1,17 @@
-import { test, expect } from "@playwright/test";
-import path from "node:path";
-test("REGION-01..04 anchored discussion, completion history, reload and archive", async ({
-  page,
-  browser,
-}) => {
-  await page.goto("/?board=regions-test");
-  await page
-    .getByLabel("Загрузить скриншоты")
-    .setInputFiles(path.resolve("tests/fixtures/Вход.png"));
-  await page.getByRole("button", { name: "Выделить область" }).click();
-  const image = await page.getByTestId("annotation-image").boundingBox();
-  await page.mouse.move(
-    image!.x + image!.width * 0.2,
-    image!.y + image!.height * 0.25,
-  );
-  await page.mouse.down();
-  await page.mouse.move(
-    image!.x + image!.width * 0.75,
-    image!.y + image!.height * 0.55,
-    { steps: 8 },
-  );
-  await page.mouse.up();
-  await expect(
-    page.getByRole("heading", { name: "Обсуждение области" }),
-  ).toBeVisible();
-  await page.getByLabel("Новый комментарий").fill("Move the action closer");
-  await page
-    .getByRole("button", { name: "Добавить комментарий", exact: true })
-    .click();
-  await expect(page.getByTestId("region-comment")).toContainText(
-    "Move the action closer",
-  );
-  await page.getByRole("button", { name: "Закрыть обсуждение" }).click();
-  await page.getByRole("button", { name: "Область 1", exact: true }).click();
-  await expect(page.getByTestId("region-comment")).toHaveClass(/highlighted/);
-  await page.getByLabel("Новый комментарий").fill("Check contrast too");
-  await page
-    .getByRole("button", { name: "Добавить комментарий", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Отметить выполненным" })
-    .first()
-    .click();
-  await expect(page.getByTestId("region-comment")).toHaveCount(2);
-  await expect(page.getByTestId("region-comment").first()).toContainText(
-    "Выполнен",
-  );
-  await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
-  ).toBeVisible();
-  await page.reload();
-  await page.getByRole("button", { name: "Область 1", exact: true }).click();
-  await expect(page.getByTestId("region-comment")).toHaveCount(2);
-  await expect(page.getByTestId("region-comment").first()).toContainText(
-    "Выполнен",
-  );
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Экспорт архива" }).click();
-  const archive = await (await downloadPromise).path();
-  const clean = await browser.newContext();
-  const next = await clean.newPage();
-  await next.goto("/");
-  await next.getByLabel("Импорт архива").setInputFiles(archive!);
-  await next.getByRole("button", { name: "Область 1", exact: true }).click();
-  await expect(next.getByTestId("region-comment")).toHaveCount(2);
-  await expect(next.getByTestId("region-comment").first()).toContainText(
-    "Выполнен",
-  );
-  await clean.close();
+import {test,expect} from '@playwright/test';
+import path from 'node:path';
+async function paint(page:any){await page.getByRole('button',{name:'Выделить область',exact:true}).click();const r=await page.getByTestId('annotation-image').boundingBox();await page.mouse.move(r.x+r.width*.2,r.y+r.height*.3);await page.mouse.down();await page.mouse.move(r.x+r.width*.7,r.y+r.height*.6,{steps:12});await page.mouse.up();await page.getByRole('button',{name:'Завершить выделение',exact:true}).click();}
+test('MASK-01..05 brush links existing/new notes, cancel, reload and archive',async({page,browser})=>{
+ await page.goto('/?board=mask-test');await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();await page.getByLabel('Текст заметки').fill('Existing audit note');
+ await page.getByLabel('Загрузить скриншоты').setInputFiles(path.resolve('tests/fixtures/Вход.png'));await paint(page);
+ await page.getByLabel('Заметка для области').selectOption({label:'Existing audit note'});await page.getByRole('button',{name:'Связать с заметкой',exact:true}).click();
+ await expect(page.getByTestId('note-node')).toHaveClass(/is-linked/);await expect(page.getByTestId('note-node')).toHaveCount(1);
+ await page.getByRole('button',{name:'Закрыть связанные заметки'}).click();await page.getByRole('button',{name:'Область 1',exact:true}).click();await expect(page.getByTestId('note-node')).toHaveClass(/is-linked/);
+ await page.getByRole('button',{name:'Добавить связь с заметкой',exact:true}).click();await page.getByLabel('Текст новой заметки').fill('Second note');await page.getByRole('button',{name:'Создать и связать',exact:true}).click();
+ await expect(page.getByTestId('note-node')).toHaveCount(2);
+ await page.getByRole('button',{name:'Закрыть связанные заметки'}).click();await paint(page);await page.getByRole('button',{name:'Отменить выбор заметки'}).click();await expect(page.getByTestId('note-node')).toHaveCount(2);await expect(page.getByRole('button',{name:'Область 2',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Область 1',exact:true}).click();
+ await expect(page.locator('.note-card.is-linked')).toHaveCount(2);
+ const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();const archive=await(await promise).path();const ctx=await browser.newContext();const next=await ctx.newPage();await next.goto('/');await next.getByLabel('Импорт архива').setInputFiles(archive!);await next.getByRole('button',{name:'Область 1',exact:true}).click();await expect(next.locator('.note-card.is-linked')).toHaveCount(2);await ctx.close();
 });
-test("VIEW-01 zoom reaches 400 percent", async ({ page }) => {
-  await page.goto("/");
-  for (let i = 0; i < 18; i++)
-    await page.getByRole("button", { name: "Увеличить масштаб" }).click();
-  await expect(page.locator(".zoom-controls")).toContainText("400%");
-});
-test('VIEW-02 viewport survives reload',async({page})=>{
- await page.goto('/?board=viewport-test');
- await page.getByRole('button',{name:'Увеличить масштаб'}).click();
- const before=await page.locator('.zoom-controls').innerText();
- await page.waitForTimeout(100);await page.reload();
- await expect(page.locator('.zoom-controls')).toHaveText(before);
-});
+test('VIEW-01..02 zoom to 400 percent and restore viewport',async({page})=>{await page.goto('/?board=viewport-test');for(let i=0;i<18;i++)await page.getByRole('button',{name:'Увеличить масштаб'}).click();await expect(page.locator('.zoom-controls')).toContainText('400%');await page.waitForTimeout(100);await page.reload();await expect(page.locator('.zoom-controls')).toContainText('400%');});

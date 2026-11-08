@@ -74,5 +74,5 @@ test('UFD-04 — ошибка файла не повреждает доску; �
   await page.getByLabel('Загрузить скриншоты').setInputFiles({ name: 'broken.png', mimeType: 'image/png', buffer: Buffer.from('not an image') });
   await expect(page.getByRole('alert')).toContainText('Не удалось');
   await expect(page.getByTestId('screen-node')).toHaveCount(3);
-  await expect(page.getByText('Доска хранится только в этой вкладке', { exact: false })).toBeVisible();
+  await expect(page.getByText('Доска хранится в браузере', { exact: false })).toBeVisible();
 });

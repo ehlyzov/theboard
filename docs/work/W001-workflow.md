@@ -1,121 +1,110 @@
-# W001 — выбрать и испытать минимальный процесс
+# W001 — select and exercise a minimal workflow
 
-Состояние: done. Исполнитель: чат TheBoard. Дата: 2026-11-08.
-Основание: владелец поручил выбрать подход из предоставленных исследований
-и примера реализации для небольшого проекта. Выбор процесса: `delegated_to_agent`.
+Status: done. Owner: TheBoard chat. Date: 2026-11-08. The project owner
+requested a small-project adaptation of supplied research and an implementation
+example. Process selection: `delegated_to_agent`.
 
-## Выбор
+## Choice
 
-| Вариант | Польза | Цена и ограничения | Решение |
+| Option | Benefit | Cost and limitation | Decision |
 | --- | --- | --- | --- |
-| Только переписка и список задач | Быстрый старт | Требования и факты проверки теряются при смене чата | Не выбран |
-| Markdown в Git + один исполнитель + отдельная проверка + PR | Воспроизводимый контекст и небольшая стоимость поддержки | Координация организационная, нет принудительного исключения конкурентных писателей | Выбран для пилота |
-| Полный OpenSpec-процесс с отдельными навыками и схемами покрытия | Структура для множества возможностей и изменений | Пока нет кода и объёма сценариев, оправдывающих дополнительные форматы | Отложен |
-| Реестр владения, поколения, защищённые jobs и общий стенд | Нужен для контролируемой конкурентной работы | Требует подключения удалённых адаптеров, полномочий и испытаний гонок | Отложен до реальной конкуренции |
+| Chat and a task list only | Fast start | Requirements and evidence disappear between chats | Rejected |
+| Markdown in Git, one writer, separate review, PR | Recoverable context, low maintenance | Organizational coordination; concurrent writers are not technically excluded | Selected for pilot |
+| Full OpenSpec with specialized skills and coverage schemas | Structure for many capabilities and changes | No code/scenario volume yet justifying extra formats | Deferred |
+| Ownership registry, generations, protected jobs, shared environment | Controlled concurrency | Requires remote adapters, permissions, and race testing | Deferred until actual concurrency |
 
-Заимствуем сценарии до кода, проверку тестов, разделение технического verdict
-и функциональной приёмки, адресуемый кандидат и восстановление из Git.
-Предметные системы другого проекта и их конфигурацию не переносим.
+Retain scenarios before code, test-quality review, separate technical verdict
+and functional acceptance, exact candidate references, and recovery from Git.
+Do not transplant another project's domain systems or configuration.
 
-## Источники
+## Sources
 
-Изучены предоставленные владельцем исследовательский чат и чат реализации,
-а также актуальные локальные документы реализации. Их частные ссылки,
-содержимое и детали окружения не публикуются в открытом репозитории.
-В примере реестр и checker подготовлены, а удалённые адаптеры и серверные
-ограничения ещё требуют подключения: перенос текста не переносит гарантий.
+Read the owner-provided research and implementation chats and current local
+implementation documents. Their private links, content, and environment details
+are not published here. The example had a registry/checker prepared but still
+needed remote adapters and server restrictions: copying text does not transfer
+guarantees.
 
-Публичные первичные источники, просмотренные 2026-11-08:
+Public primary sources consulted on 2026-11-08:
 
 - [Anthropic: Building a C compiler](https://www.anthropic.com/research/building-c-compiler):
-  эксперимент подчёркивает роль качества проверок и восстановления контекста.
-  Он не доказывает полезность множества исполнителей для нашего маленького проекта.
+  highlights test quality and context recovery; does not establish the benefit
+  of multiple writers for this small project.
 - [GitHub: protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches):
-  серверные проверки и исключения настраиваются отдельно от инструкций агента.
+  server checks/exceptions are separate settings, not agent instructions.
 
-## Пробный проход
+## Pilot
 
-Scope: применить реальные ответы владельца к D1/D2 и проверить, сможет ли
-другой агент восстановить согласованный scope и следующий шаг только из Git.
-Дополнительно проверить, что процедура явно отличает устаревший результат
-от подтверждения нового кандидата.
+Apply actual owner answers to D1/D2 and test whether a fresh reviewer can
+recover scope and next steps from Git alone. Also distinguish a stale report
+from evidence for a changed candidate. Excludes app implementation, product
+tests, CI/atomic ownership/server merge enforcement, and re-auditing the other project.
 
-Не входит: реализация приложения, запуск продуктовых тестов, настройка CI,
-атомарного владения и серверного запрета merge; повторный аудит чужого проекта.
+Owner decisions, translated from the answers of 2026-11-08:
+D1 — uploaded screenshots with titles. D2 — an editor for placing screens,
+connecting arrows, and writing notes. Those answers did not approve D3/D4.
 
-Исходные решения владельца от 2026-11-08:
-
-- D1: «Загружаемые скриншоты с названиями».
-- D2: «Редактор: размещать экраны, соединять стрелками, писать заметки».
-- D3/D4 не получали одобрения в этих ответах.
-
-| ID | Проверка | Ожидаемый результат |
+| ID | Check | Expected outcome |
 | --- | --- | --- |
-| WF-01 | Сверить ответы с продуктовым документом | D1/D2 approved_by_human; D3/D4 proposed |
-| WF-02 | Новый проверяющий читает только репозиторий и исходные решения | Называет формат экранов, редактор, оставшиеся вопросы и следующую задачу без истории чата |
-| WF-03 | Предъявить отчёт для SHA A при кандидате SHA B с изменённым поведением | Проверяющий признаёт старый отчёт неприменимым к B; это проверка инструкции, не серверного запрета |
-| WF-04 | Сверить заявления о состоянии с файлами | Нет утверждения о готовом приложении, работающем CI или атомарных блокировках |
-| WF-05 | Проверить локальные ссылки и diff | Пути существуют, нет ошибок whitespace |
+| WF-01 | Compare answers and product brief | D1/D2 approved_by_human; D3/D4 proposed |
+| WF-02 | Fresh reviewer reads repository and original decisions only | Recovers screen format, editor, open choices, and next task without chat history |
+| WF-03 | Apply report for SHA A to changed candidate B | Reject applicability to B; instruction check, not server enforcement |
+| WF-04 | Compare status claims and files | No claim of a finished app, working CI, or atomic locks |
+| WF-05 | Check links and diff | Existing targets and no whitespace errors |
 
-## Как оцениваем пилот
+## Evaluation
 
-Для W001 фиксируем число восстановленных фактов, обнаруженные ошибки и
-запросы к владельцу, потребовавшиеся для восстановления. На W002 отдельно
-измеряем время до демонстрации, пропущенные дефекты, число исправлений после
-review, человеческие вмешательства и доступные расходы инструментов.
-Недоступные данные отмечаем неизвестными. Один удачный проход не доказывает
-ускорение или снижение дефектов; сравнение потребует нескольких сопоставимых задач.
+Record recovered facts, findings, and owner questions needed for recovery.
+For W002, separately track time to demonstration, missed defects, review repairs,
+human interventions, and available tool cost. Mark unavailable metrics unknown.
+One successful trial establishes neither acceleration nor defect reduction;
+comparison requires several comparable tasks.
 
-## Результаты
+## Results
 
-Технический verdict: **PASS для документального пилота**, 2026-11-08.
-Проверяющий: отдельный subagent `workflow_review`, GPT-6.1 Sol High,
-чистый контекст, только чтение. Он получил исходные решения и критерии,
-не получил аргументацию автора. Самопроверка автора этим не подменялась.
+Technical verdict: **PASS for the documentation pilot**, 2026-11-08.
+Independent reviewer `workflow_review`, GPT-6.1 Sol High, fresh context, read-only,
+received original decisions/criteria without the author's persuasion. This did
+not replace self-review under an independent label.
 
-- База: `60de3a686eb25d5723986c9f6ff3f56717bf9565`.
-- Проверенный кандидат: `5de52038a46fd66fbf5b67ab2015a8e88c88ac7f`.
-- Источники в кандидате: `docs/product/mvp-brief.md`, `AGENTS.md`,
-  `CONTRIBUTING.md`, `docs/work/tasks.md`, эта карточка, README и шаблон PR.
-- Окружение проверяющего: Darwin 27.0.0 arm64, Git 2.54.0 (Apple Git-157),
-  Python 3.14.2. Продуктовой сборки нет.
-- Последующий коммит меняет только отчёт и состояние W001; проверенный
-  кандидат не выдаётся за SHA этого дополнения.
+- Base: `60de3a686eb25d5723986c9f6ff3f56717bf9565`.
+- Reviewed candidate: `5de52038a46fd66fbf5b67ab2015a8e88c88ac7f`.
+- Sources: product brief, AGENTS, CONTRIBUTING, queue, this card, README, PR template.
+- Reviewer environment: Darwin 27.0.0 arm64, Git 2.54.0 (Apple Git-157), Python 3.14.2.
+  No product build existed.
+- Follow-up changed only the report/task status; it was not presented as the
+  original reviewed SHA.
 
-| Критерий | Исход | Наблюдение |
+| Criterion | Outcome | Observation |
 | --- | --- | --- |
-| WF-01 | PASS | D1/D2 соответствуют ответам, approved_by_human; D3/D4 proposed и не изменены относительно базы |
-| WF-02 | PASS | Восстановлены 12/12 контрольных фактов; потребовалось 0 вопросов владельцу |
-| WF-03 | PASS | Проверяющий отклонил применимость гипотетического отчёта для базы к изменённым D1/D2 кандидата; серверная блокировка не испытывалась |
-| WF-04 | PASS | В дереве документация, шаблон PR и .gitignore; приложение и техническая координация не заявлены готовыми |
-| WF-05 | PASS | 6 локальных Markdown-ссылок существуют; diff без ошибок whitespace |
+| WF-01 | PASS | D1/D2 match answers; D3/D4 proposed and unchanged from base |
+| WF-02 | PASS | 12/12 control facts recovered; 0 owner questions |
+| WF-03 | PASS | Hypothetical base report rejected for changed D1/D2; no server enforcement test |
+| WF-04 | PASS | Only docs, PR template, .gitignore; no false app/coordination readiness claim |
+| WF-05 | PASS | Six local Markdown links resolve; clean whitespace diff |
 
-Контрольные факты WF-02: скриншоты с названиями; редактор экранов/стрелок/заметок;
-нет собственного серверного хранения; папка GitHub; браузерное хранение;
-архив; offline-first; открытый D3; открытый D4; W002 является первым срезом;
-карточка и тест до кода; W001 занимала единственного исполнителя до завершения.
-Это перечень данного прохода, не метрика полноты всех требований.
+WF-02 facts: named screenshots; screen/arrow/note editor; no proprietary server
+storage; GitHub folder; browser storage; archive; offline-first; open D3;
+open D4; W002 is the first slice; card/test before code; W001 retains the sole
+writer until completion. This is the trial's checklist, not total requirement coverage.
 
-Проверяющий выполнил `git show <candidate>:<path>` для семи документов,
-`git diff --check <base> <candidate>`, `git diff <base> <candidate> --
-docs/product/mvp-brief.md README.md`, `git ls-tree -r --name-only <candidate>`
-и прочитал версии окружения. Все команды завершились с кодом 0.
-Python-проверка ссылок прочитала Markdown через `git show`, разрешила локальные
-пути относительно файлов и сверила их с `git ls-tree`: `checked=6 missing=0`.
-Отдельные assertions статусов D1..D4 прошли; D1/D2 отличаются от базы,
-D3/D4 совпадают. Findings P0–P3 не обнаружены; исправлений после review — 0.
+Commands: `git show <candidate>:<path>` for seven documents;
+`git diff --check <base> <candidate>`;
+`git diff <base> <candidate> -- docs/product/mvp-brief.md README.md`;
+`git ls-tree -r --name-only <candidate>`; tool version reads. All exited 0.
+Python resolved candidate Markdown links against `git ls-tree`:
+`checked=6 missing=0`. D1..D4 assertions passed: D1/D2 changed, D3/D4 unchanged.
+No P0–P3 findings; zero review repairs.
 
-Автор дополнительно проверил фактическое состояние GitHub:
-`gh api repos/ehlyzov/theboard/branches/main/protection` вернул
-`Branch not protected` (404), а
+Author's GitHub observations at that time:
+`gh api repos/ehlyzov/theboard/branches/main/protection` returned
+`Branch not protected` (404);
 `gh api repos/ehlyzov/theboard/actions/workflows --jq '{total_count: .total_count}'`
-вернул `total_count: 0`. Это наблюдения настройки, не испытание запрета обхода.
+returned `total_count: 0`. These observed settings did not test bypass prevention.
 
-**NOT_RUN:** продуктовый runtime, test-first на реализации, функциональная
-приёмка продукта, гонки исполнителей, принудительное отклонение stale-операций,
-серверная блокировка merge. Человеческая оценка результата этого пилота ещё
-не получена; она не приписывается техническому PASS. Расходы запуска неизвестны.
-
-Следующий шаг: W002 — карточка конкретного редакторского среза и исполняемая
-проверка до реализации. Данный проход подтверждает восстановление контекста
-и согласованность документов, но не ускорение разработки или снижение дефектов.
+**NOT_RUN:** product runtime/test-first, human product acceptance, writer races,
+forced stale-operation rejection, server merge blocking. No human evaluation
+of this pilot had been received; technical PASS did not imply it. Cost unknown.
+Next step at completion: W002, a concrete editor card and executable checks
+before implementation. This trial established context recovery and document
+consistency, not faster development or fewer defects.

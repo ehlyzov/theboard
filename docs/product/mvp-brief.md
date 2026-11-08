@@ -1,115 +1,112 @@
-# TheBoard — первый MVP для UFD
+# TheBoard — first UFD MVP
 
-Дата: 2026-11-08.
-Исходный режим: `quick-plan`; реализация теперь ведётся отдельными задачами.
-Статус: исходные требования, формат экранов и редактор утверждены; D3 и D4 открыты.
-W002: первый редактор реализован и проверен в Chromium. Остальная часть MVP
-пока описывает ожидаемое, а не реализованное поведение.
+Date: 2026-11-08. Initial mode: `quick-plan`; implementation now proceeds in
+separate tasks. Original requirements, screen format, and editor are approved;
+D3 and D4 remain open. W002 implemented the first editor and tested it in
+Chromium. W003 adds local persistence and archives; see its card for evidence.
 
-## Основание и факты
+## Sources and facts
 
-Источник требований — исходный запрос владельца проекта от 2026-11-08:
-публичный GitHub-репозиторий нового проекта; доска типа Miro без своего
-хранилища; привязка папки GitHub-репозитория либо браузерное хранилище;
-экспорт и импорт архива; offline-first; первая задача — отображение
-последовательности экранов со стрелками и заметками для UFD.
+The owner's initial request on 2026-11-08 specified a new public GitHub
+repository, a Miro-like board without its own storage, a user-selected GitHub
+repository folder or browser storage, archive export/import, offline-first
+behavior, and an initial UFD made of application screens, arrows, and notes.
 
-В ответах от 2026-11-08 владелец выбрал загружаемые скриншоты с названиями
-и редактор, в котором можно размещать экраны, соединять их стрелками и писать
-заметки. Эти ответы утверждают D1 и D2, но не D3 и D4.
+The owner subsequently chose uploaded screenshots with titles and an editor
+for positioning screens, drawing arrows, and writing notes. Those answers
+approve D1/D2, not D3/D4. The project directory was initially empty, with no
+existing scenarios, code, or tests. This brief originally described intended
+behavior; current implementation status is stated separately below.
 
-При первичном осмотре рабочая папка проекта была пустой: существующих
-сценариев, кода и тестов нет. Этот документ — исходное описание будущего
-поведения, а не описание существующих возможностей.
+## Implementation status
 
-## Реализовано в W002
+W002: PNG/JPEG/WebP uploads with editable titles, screen placement, directed
+arrows, notes, object/edge deletion, zoom, and pan. Its board existed only in
+the open tab. [W002 evidence](../work/W002-ufd-editor.md):
+`tests/editor.spec.ts`, UFD-01..UFD-04. Technical verification is not owner
+functional acceptance.
 
-Загрузка скриншотов PNG/JPEG/WebP с изменяемыми названиями, размещение экранов,
-направленные стрелки, заметки, удаление объектов и связей, масштабирование
-и перемещение полотна. Доска хранится в памяти открытой вкладки; интерфейс
-прямо сообщает об этом. Экспорт/импорт, постоянное браузерное хранение,
-GitHub и офлайн-перезапуск остаются нереализованными обязательствами MVP.
+W003: independent local board IDs, IndexedDB persistence, portable ZIP archives,
+and editable edge labels. The owner additionally requires an agent-friendly,
+maximally declarative format: [format v1](../board-format.md). The requirement
+was explicit; agent-facing CLI/schema choices are implementation decisions.
+GitHub synchronization and offline application startup remain pending.
 
-Источники проверки: [карточка W002](../work/W002-ufd-editor.md),
-`tests/editor.spec.ts` (UFD-01..UFD-04). Техническая проверка не является
-функциональной приёмкой владельцем.
+## User outcome
 
-## Пользовательский результат
+The user assembles a path from named screenshots, understands transition
+direction, and reads explanations near the relevant screens. Board data stays
+in the user's selected storage and is portable as an archive.
 
-Пользователь собирает путь из скриншотов с названиями, понимает направление
-переходов и читает пояснения рядом с нужными экранами. Данные доски остаются
-в выбранном им хранилище и могут быть перенесены через архив.
+Working interpretation: UFD means User Flow Diagram. Clarification is needed
+only if the owner means another format.
 
-Рабочее предположение: UFD означает User Flow Diagram. Термин требует
-уточнения только если владелец подразумевает другой формат.
+## Established product boundaries
 
-## Заданные границы продукта
-
-| Решение | Статус | Основание |
+| Decision | Status | Source |
 | --- | --- | --- |
-| Новый публичный репозиторий на GitHub | `approved_by_human` | Прямой запрос владельца |
-| Доска с экранами, стрелками и заметками как первый результат | `approved_by_human` | Задача №1 в исходном запросе |
-| Нет собственного серверного хранилища данных досок | `approved_by_human` | Прямое ограничение владельца |
-| Пользователь может выбрать папку GitHub-репозитория | `approved_by_human` | Прямое требование владельца |
-| Альтернативное хранение в браузере | `approved_by_human` | Прямое требование владельца |
-| Экспорт и импорт доски через файл-архив | `approved_by_human` | Прямое требование владельца |
-| Offline-first | `approved_by_human` | Прямое требование владельца |
+| New public GitHub repository | `approved_by_human` | Direct owner request |
+| Screens, arrows, and notes as the first outcome | `approved_by_human` | Initial task #1 |
+| No TheBoard server-side board storage | `approved_by_human` | Direct constraint |
+| User-selected GitHub repository folder | `approved_by_human` | Direct requirement |
+| Alternative browser storage | `approved_by_human` | Direct requirement |
+| Archive export/import | `approved_by_human` | Direct requirement |
+| Offline-first | `approved_by_human` | Direct requirement |
+| Declarative, agent-friendly board information | `approved_by_human` | Subsequent explicit owner instruction |
 
-Оба способа хранения входят в видение продукта. Их очередность реализации
-пока не определена; этот черновик не исключает GitHub из первого MVP.
+Both storage options remain in the product vision. Their implementation order
+was initially undecided; this brief does not exclude GitHub from the first MVP.
 
-## Предлагаемый первый пользовательский путь
+## Proposed first user journey
 
-Редактор и изображения утверждены. Ниже описан ожидаемый путь; детали обмена
-с GitHub зависят от D3. Этот путь не является отчётом о готовой реализации.
+The editor and images are approved. This is the intended journey, not a claim
+that every step is implemented. GitHub exchange details depend on D3.
 
-1. Пользователь открывает доску и добавляет изображения экранов с названиями.
-2. Располагает экраны на полотне и соединяет их направленными стрелками.
-3. Добавляет заметки к потоку; перемещение экрана сохраняет его связи.
-4. Закрывает и снова открывает доску: содержимое и расположение восстанавливаются.
-5. Продолжает работу без сети после первоначальной загрузки приложения и доски.
-6. Экспортирует архив и импортирует его в другом браузерном профиле.
-7. При выборе GitHub связывает доску с репозиторием и папкой, получает и
-   сохраняет изменения при наличии сети; без сети работает с локальной копией.
+1. Open a board and add named screenshots.
+2. Arrange screens and connect them with directed arrows.
+3. Add notes; moving a screen preserves its connections.
+4. Close and reopen the board with content and layout restored.
+5. Continue without a network after initial application/board loading.
+6. Export an archive and import it in another browser profile.
+7. With GitHub selected, bind a repository/folder and exchange changes online;
+   work from the local copy while offline.
 
-Отсутствие собственного хранилища означает отсутствие серверного хранения
-данных досок у TheBoard. Это не отменяет локального хранения изображений и
-данных, необходимых для офлайн-работы.
+No proprietary storage means no TheBoard server storing board data. Local
+storage of images and board content is still necessary for offline work.
 
-## Решения
+## Decisions
 
-| ID | Развилка и варианты | Рекомендация и обоснование | Влияние | Статус |
+| ID | Options | Decision or recommendation | Impact | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Экраны как изображения; интерактивные страницы; оба формата | Выбраны загружаемые скриншоты с названиями; прямой ответ владельца от 2026-11-08 | Определяет содержимое экрана, поведение без сети и объём MVP | `approved_by_human` |
-| D2 | Редактор доски или только просмотр подготовленных данных | Выбран редактор: размещать экраны, соединять стрелками, писать заметки; прямой ответ владельца от 2026-11-08 | Определяет основной пользовательский путь и объём взаимодействий | `approved_by_human` |
-| D3 | Явные действия получения/сохранения в GitHub или автоматическая синхронизация | Начать с явных действий и понятного состояния локальных изменений; при конфликте сохранять обе версии до выбора пользователя | Определяет ожидания синхронизации и разрешение конфликтов; требует отдельной проработки перед реализацией GitHub | `proposed` |
-| D4 | Одновременное совместное редактирование в MVP или позже | Отложить одновременное редактирование: оно не требуется для заявленного первого результата | Совместный доступ к репозиторию сам по себе не обещает совместный сеанс на доске | `proposed` |
+| D1 | Images, interactive pages, or both | Uploaded screenshots with titles; direct owner answer, 2026-11-08 | Screen content, offline behavior, MVP size | `approved_by_human` |
+| D2 | Editor or prepared-data viewer | Editor for placing screens, connecting arrows, and writing notes; direct owner answer, 2026-11-08 | Main journey and interactions | `approved_by_human` |
+| D3 | Explicit GitHub fetch/save or automatic sync | Recommend explicit actions and clear local-change state; preserve both versions on conflict until the user chooses | Sync expectations and conflict handling; needs design before GitHub implementation | `proposed` |
+| D4 | Real-time collaboration now or later | Recommend postponing it because the initial result does not require it | Shared repository access does not promise a shared live board session | `proposed` |
 
-Пока не выбраны стек, механизм доступа к GitHub, формат файлов доски,
-формат архива и лицензия. Эти пункты не препятствуют созданию публичного
-репозитория с исходным описанием. Технические решения должны сохранять
-утверждённые ограничения хранения и офлайн-работы.
+At discovery time the stack, GitHub authentication, board/archive format, and
+license were undecided. W002 chose the stack and W003 defines the local format;
+GitHub access and license remain open. Technical choices must preserve the
+approved storage and offline constraints.
 
-## Предлагаемые критерии приёмки
+## Proposed acceptance criteria
 
-Это будущие проверки, а не результаты выполненных тестов. Основа редактора
-и изображений утверждена в D1 и D2; детали приёмки ниже остаются предложением.
+These are intended checks, not results. D1/D2 approve the editor/image direction;
+the detailed acceptance examples below were proposals and receive evidence
+through individual task cards.
 
-- Можно собрать и прочитать поток из нескольких экранов, направленных стрелок
-  и текстовых заметок; направление переходов различимо.
-- После повторного открытия сохраняются изображения, текст, координаты и связи.
-- После первоначальной загрузки приложение и доступная локально доска
-  открываются без сети; выбранные операции просмотра/редактирования работают.
-- Экспортированный архив содержит данные и изображения: импорт в чистый
-  профиль браузера восстанавливает доску без обращения к исходному хранилищу.
-- Выбранная папка GitHub позволяет сохранить и затем восстановить доску
-  вместе с её изображениями. Изменения не затрагивают посторонние файлы.
-- Отсутствие сети, ошибка доступа к GitHub или конфликт версий не уничтожают
-  локальную работу и не отображаются как успешная синхронизация.
+- Assemble and read a multi-screen flow with visible directed arrows and notes.
+- Reopening retains images, text, positions, and connections.
+- After initial loading, the application and locally available board open
+  without a network and support the selected viewing/editing operations.
+- An archive contains images and data; a clean-profile import restores the
+  board without accessing its original storage.
+- The selected GitHub folder can save/restore the board and images without
+  touching unrelated files.
+- Offline status, GitHub access failure, and version conflicts do not destroy
+  local work or appear as successful synchronization.
 
-## Следующий шаг
+## Next step
 
-Первый продуктовый пилот — редактор скриншотов, стрелок и заметок по D1 и D2.
-Перед реализацией обмена с GitHub определить D3 и способ доступа; перед
-обещанием совместной работы определить D4. План реализации составляется
-отдельно по утверждённым решениям.
+Complete W003's local persistence/archive slice. Resolve D3 and authentication
+before GitHub exchange, and D4 before promising collaboration. Implementation
+plans are separate artifacts built from approved decisions.

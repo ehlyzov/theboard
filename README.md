@@ -1,72 +1,88 @@
 # TheBoard
 
-Доска для визуального описания пользовательских потоков приложения: экраны,
-стрелки переходов и заметки. Первый целевой результат — MVP для UFD
-(предварительная расшифровка: User Flow Diagram).
+An offline-first canvas for application user flows: screenshots, directed
+transitions, and notes. Bring your own storage instead of relying on a
+TheBoard data server.
 
-## Идея
+## Product direction
 
-Доска типа Miro без собственного серверного хранилища пользовательских данных.
-Пользователь выбирает, где хранить доску:
+Store boards in a folder in your own GitHub repository or in browser storage.
+Move complete boards between browsers using portable archives. Working with
+locally available data should not depend on a network connection; GitHub
+exchange requires connectivity and must not interrupt local work.
 
-- в папке своего GitHub-репозитория;
-- в браузерном хранилище с экспортом и импортом файла-архива.
+## Current capabilities
 
-Offline-first: работа с доступной локально доской не должна зависеть от сети.
-Обмен с GitHub требует подключения и не должен мешать локальной работе.
+Upload PNG/JPEG/WebP screenshots, edit titles, arrange screens, connect them
+with directed arrows, and write notes. Pan and zoom the canvas. Deleting a
+screen also removes its transitions.
 
-## Статус
+The current increment adds independent browser boards in IndexedDB, labeled
+transitions, and ZIP import/export. Import creates a new board; existing boards
+are not replaced. Keep exported archives as backups: browser data can be
+removed by clearing site data. GitHub synchronization and offline application
+startup are still pending. Images are processed locally and are not uploaded.
+See the [MVP brief](docs/product/mvp-brief.md) for requirements and decisions.
 
-Реализован первый редактор: загрузка PNG/JPEG/WebP с названиями, перемещение
-экранов, направленные стрелки и текстовые заметки. Есть масштабирование
-и навигация. Удаление экрана удаляет связанные стрелки.
+## Run and verify
 
-**Доска пока существует только в открытой вкладке.** Постоянное хранение,
-офлайн-перезапуск, архив и GitHub ещё не реализованы. Изображения не
-отправляются на сервер. Требования и следующие возможности описаны в
-[продуктовом черновике](docs/product/mvp-brief.md).
-
-## Первый целевой поток
-
-Загрузить скриншоты с названиями, разместить их на доске, соединить стрелками
-и добавить заметки. Сохранить доску и снова открыть её без потери содержимого.
-
-```mermaid
-flowchart LR
-    A[Экран входа] -->|Войти| B[Главная]
-    B -->|Открыть карточку| C[Детали]
-    N[Заметка: описать ошибку входа] -.-> A
-```
-
-Это иллюстрация назначения продукта, а не снимок работающего приложения.
-
-## Ведение проекта
-
-Работа идёт небольшими последовательными изменениями: сценарии → проверки →
-реализация → отдельная техническая проверка → функциональная приёмка.
-Правила — в [CONTRIBUTING.md](CONTRIBUTING.md), состояние работы — в
-[очереди задач](docs/work/tasks.md). [Выбор подхода и первый пробный проход](docs/work/W001-workflow.md).
-
-## Запуск и проверки
-
-Нужен Node.js 24 или новее.
+Requires Node.js 24 or newer.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Откройте адрес из вывода Vite. Загрузите несколько изображений; подписи под
-экранами редактируются. Перетаскивайте объекты за верхнюю полоску. Для стрелки
-перетащите правую точку экрана к левой точке другого или нажмите их по очереди.
-Выделенную стрелку можно удалить клавишей Delete. Escape отменяет создание связи.
+Open the Vite URL. Rename screens below their images. Drag objects by their
+header. Connect the right handle of one screen to the left handle of another,
+using drag or two clicks. Select an edge and press Delete to remove it. Escape
+cancels a pending connection. Transition labels can be edited in the sidebar.
+
+For a stable local demonstration, use the production preview:
 
 ```sh
 npm run build
+npm run preview -- --port 4173 --strictPort
+```
+
+```sh
 npx playwright install chromium
 npm test
 ```
 
-В Linux CI установка браузера выполняется с `--with-deps`. Тесты используют
-синтетические изображения из `tests/fixtures/`. HTML-отчёт: `playwright-report/`.
-Файлы ограничены PNG/JPEG/WebP, 10 МБ и 40 мегапикселями на изображение.
+Linux CI installs the browser with `--with-deps`. Tests use synthetic images
+under `tests/fixtures/`; HTML results are in `playwright-report/`.
+Images are limited to PNG/JPEG/WebP, 10 MB and 40 megapixels each.
+
+## Declarative boards for agents
+
+A board is a versioned `board.json` with stable IDs, explicit coordinates,
+notes, and labeled directed edges, plus ordinary image files in `assets/`.
+No browser automation is needed to author the data. See
+[the format and archive commands](docs/board-format.md).
+
+```sh
+python3 scripts/board_archive.py pack /path/to/board-folder /path/to/board.zip
+python3 scripts/board_archive.py unpack /path/to/board.zip /path/to/new-folder
+```
+
+## First target flow
+
+Upload named screenshots, arrange them, connect steps, add notes, save the
+board, and reopen it without losing content.
+
+```mermaid
+flowchart LR
+    A[Sign in] -->|Submit| B[Home]
+    B -->|Open item| C[Details]
+    N[Note: describe sign-in errors] -.-> A
+```
+
+This diagram illustrates the product purpose; it is not a runtime screenshot.
+
+## Project workflow
+
+Small sequential changes: scenarios → checks → implementation → independent
+technical review → functional acceptance. Read [CONTRIBUTING.md](CONTRIBUTING.md),
+the [task queue](docs/work/tasks.md), and the [initial workflow pilot](docs/work/W001-workflow.md).
+Repository documentation is English; communication with the owner is Russian.

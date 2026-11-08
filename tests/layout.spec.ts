@@ -92,3 +92,22 @@ test("IMAGE-01 portrait/landscape preserve intrinsic ratio without letterboxing"
     expect(b!.width / b!.height).toBeCloseTo(300 / 180, 1);
   }).toPass();
 });
+
+test('IMAGE-01 cached image dimensions survive focus remount before the load event', async ({page}) => {
+  // Hold React's image load callback: the first rendered frame must already
+  // use known dimensions, including after hidden cards mount again.
+  await page.addInitScript(() => window.addEventListener('load', event => {
+    if (event.target instanceof HTMLImageElement) event.stopImmediatePropagation();
+  }, true));
+  await page.goto('/?board=cached-aspect-test');
+  await page.getByLabel('Загрузить скриншоты').setInputFiles(['tests/fixtures/Вход.png','tests/fixtures/landscape.png']);
+  const ratios = async () => page.getByTestId('annotation-image').evaluateAll(elements => elements.map(el => {
+    const r=el.getBoundingClientRect();return Math.round(r.width/r.height*100)/100;
+  }));
+  await expect.poll(ratios).toEqual([.6,1.67]);
+  await page.locator('.screen-list').getByRole('button',{name:/01 Вход/}).click();
+  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+  await expect(page.getByTestId('screen-node')).toHaveCount(1);
+  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+  await expect.poll(ratios).toEqual([.6,1.67]);
+});

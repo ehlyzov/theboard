@@ -620,7 +620,7 @@ function Editor() {
             Доска хранится только в этой вкладке — после закрытия данные
             исчезнут
           </span>
-          <span className="version-label">W002 · редактор</span>
+          <span className="version-label">THEBOARD PREVIEW</span>
         </footer>
       </div>
     </ActionsContext.Provider>

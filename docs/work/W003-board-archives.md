@@ -31,3 +31,28 @@ Real project materials stay outside this public repository.
 Technical verdict: pending independent review. Human acceptance: pending.
 Next: review the candidate and prepare the local requested board from updated
 screenshots; do not label baseline v0.7 captures as updated UI.
+
+## Independent review and publication
+
+Full read-only review: `archive_review`, GPT-6.1 Sol High, fresh context,
+candidate `b61b091994a93d66efec167acda9048b174f05a0`. Build and five browser
+checks PASS. English documentation and D1/D2 approved, D3/D4 proposed were
+verified against the base.
+
+Two roundtrip findings were repaired: limit editable/exported labels and
+other exported fields to import limits; support safe Unicode/space asset paths.
+The storage-load failure message now correctly says editing is disabled rather
+than suggesting an unavailable export. Targeted recheck PASS at `c9a437c`
+(product source identical to `434569a`): 501 typed label characters become 500;
+export/import succeeds with two decoded images; Unicode asset import creates a
+new ID. Export rejects 501 nodes, 2001 edges, overlong title/node title/note/
+label and 190 MB data, while a valid note archive exports. Failure-message
+source verified; simulated storage-failure runtime check NOT_RUN.
+
+Technical verdict: PASS within these checks. Human acceptance: pending.
+Author CLI pack/unpack roundtrip and all local Markdown links PASS.
+No Cyrillic prose remains in repository Markdown. Russian UI strings, original
+synthetic fixture names, and user-facing cross-project handoff retain Russian.
+[PR #2](https://github.com/ehlyzov/theboard/pull/2) contains only generic code,
+synthetic tests and English docs, not another project's screenshots or audit.
+The local requested board awaits its producer's updated machine-readable UFD.

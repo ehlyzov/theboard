@@ -68,6 +68,7 @@
   }
   function visibility() {
     const ids=new Set([selected,...board.edges.filter(e=>e.source===selected).map(e=>e.target)]);
+    for(const [id,button]of nav)button.classList.toggle('out-of-focus',focused&&!ids.has(id));
     for(const [id,el]of cards)el.hidden=focused&&!ids.has(id);
     for(const e of board.edges){const hidden=focused&&e.source!==selected;paths.get(e.id).style.display=hidden?'none':'';labels.get(e.id).hidden=hidden;}
     highlight(null);

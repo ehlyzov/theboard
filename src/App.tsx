@@ -460,6 +460,11 @@ function Editor() {
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Загрузка…");
   const archiveInput = useRef<HTMLInputElement>(null);
+  const replacementInput = useRef<HTMLInputElement>(null);
+  const [backupId, setBackupId] = useState<string | null>(() => {
+    try { return localStorage.getItem('theboard:backup:' + currentBoard()); }
+    catch { return null; }
+  });
   const saveSequence = useRef(0);
   const snapshot = (): BoardData => ({ version: 1, title, nodes, edges });
   useEffect(() => {
@@ -505,13 +510,26 @@ function Editor() {
         }
       });
   }, [ready, title, nodes, edges, boardId]);
-  async function openArchive(event: ChangeEvent<HTMLInputElement>) {
+  async function openArchive(event: ChangeEvent<HTMLInputElement>, replace = false) {
     const file = event.target.files?.[0];
     if (!file) return;
     setLoading(true);
     setError("");
     try {
       const imported = await importBoard(file);
+      if (replace) {
+        const recoveryId = crypto.randomUUID();
+        // Validate first, then persist a recoverable original before replacing it.
+        await saveBoard(recoveryId, snapshot());
+        await saveBoard(boardId, imported);
+        try { localStorage.setItem('theboard:backup:' + boardId, recoveryId); } catch {}
+        setBackupId(recoveryId);
+        setTitle(imported.title); setNodes(imported.nodes); setEdges(imported.edges);
+        setFocusEnabled(false); setCurrentScreenId(undefined); setRegionSelection(null);
+        setHoveredRegion(null); setPendingRegion(null); setConnecting(null);
+        setTool('select'); setBrushScreenId(null); setLoading(false);
+        return;
+      }
       const id = crypto.randomUUID();
       await saveBoard(id, imported);
       location.assign("?board=" + id);
@@ -523,6 +541,7 @@ function Editor() {
       setLoading(false);
     } finally {
       if (archiveInput.current) archiveInput.current.value = "";
+      if (replacementInput.current) replacementInput.current.value = "";
     }
   }
   function downloadArchive() {
@@ -857,6 +876,11 @@ function Editor() {
               <span>{title}</span>
               <span className="board-dot" />
             </div>
+            <button className="replace-board-button" disabled={!ready || loading}
+              onClick={() => replacementInput.current?.click()}>Заменить доску из ZIP</button>
+            <input className="file-input" ref={replacementInput} type="file" accept=".zip"
+              aria-label="Заменить текущую доску из архива" onChange={e => void openArchive(e, true)} />
+            {backupId && <a className="recovery-link" href={'?board=' + backupId} target="_blank" rel="noreferrer">Резервная копия доски</a>}
             <div className="sidebar-section">
               <div className="section-heading">
                 Экраны <span>{screens.length.toString().padStart(2, "0")}</span>
@@ -872,13 +896,15 @@ function Editor() {
                   {screens.map((screen, index) => (
                     <li key={screen.id}>
                       <button
-                        onClick={() =>
-                          void fitView({
+                        className={focusActive && !focusIds.has(screen.id) ? "out-of-focus" : ""}
+                        onClick={() => {
+                          setCurrentScreenId(screen.id);
+                          if (!focusActive) void fitView({
                             nodes: [{ id: screen.id }],
                             maxZoom: 1,
                             duration: 250,
-                          })
-                        }
+                          });
+                        }}
                       >
                         <span>{String(index + 1).padStart(2, "0")}</span>
                         <span>{screen.data.title || "Без названия"}</span>

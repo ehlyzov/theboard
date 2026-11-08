@@ -1240,3 +1240,5 @@ body,
 .note-card{position:relative}.note-palette{position:absolute;right:8px;top:30px;z-index:20;display:grid;grid-template-columns:repeat(4,25px);gap:5px;padding:7px;background:white;border:1px solid #e2d7bb;border-radius:6px;box-shadow:0 4px 12px #37243222}.note-palette button{width:25px;height:25px;border:1px solid #c5bdae;border-radius:50%;cursor:pointer}.note-palette button[aria-pressed=true]{outline:2px solid #9581b4}
 .transition-route{display:block;font-size:9px;line-height:1.4;color:#7c718a;margin-bottom:4px;overflow-wrap:anywhere}.transition-label.is-active{border-color:#a686c6;box-shadow:0 0 0 2px #ccb0eb55}.screen-card.flow-highlighted{box-shadow:0 0 0 3px #aa87cd;border-color:#aa87cd}
 .mask-undo{top:auto;bottom:75px;left:24px;transform:none}
+.screen-list li button.out-of-focus{color:#a1a2b1}.screen-list li button.out-of-focus:hover{color:#77788d;background:#f6f5f9}
+.replace-board-button{margin:0 16px 8px;width:calc(100% - 32px);padding:7px 8px;border:1px solid #e1dce9;border-radius:6px;background:white;color:#82758e;font-size:10px;cursor:pointer}.recovery-link{display:block;margin:0 16px 14px;font-size:10px;color:#8d6caf}

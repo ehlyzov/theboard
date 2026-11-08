@@ -30,3 +30,8 @@ test('REGION-01..04 anchored discussion, completion history, reload and archive'
  await expect(next.getByTestId('region-comment')).toHaveCount(2);
  await expect(next.getByTestId('region-comment').first()).toContainText('Выполнен');await clean.close();
 });
+test('VIEW-01 zoom reaches 400 percent',async({page})=>{
+ await page.goto('/');
+ for(let i=0;i<18;i++) await page.getByRole('button',{name:'Увеличить масштаб'}).click();
+ await expect(page.locator('.zoom-controls')).toContainText('400%');
+});

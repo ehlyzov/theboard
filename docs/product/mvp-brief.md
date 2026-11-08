@@ -110,3 +110,10 @@ through individual task cards.
 Complete W003's local persistence/archive slice. Resolve D3 and authentication
 before GitHub exchange, and D4 before promising collaboration. Implementation
 plans are separate artifacts built from approved decisions.
+
+## Subsequent owner requirements
+
+See the [current requirements ledger](requirements.md) for brush masks, note
+links, deletion/Undo, Markdown documents, 400% zoom, workspace restoration,
+and layout repair. These requests are approved behavior; their implementation
+and verification status is recorded separately.

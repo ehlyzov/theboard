@@ -1,0 +1,91 @@
+{
+  "engine": "elkjs",
+  "version": "0.12.1",
+  "node": "v25.3.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "options": {
+    "elk.algorithm": "layered",
+    "elk.direction": "RIGHT",
+    "elk.edgeRouting": "ORTHOGONAL",
+    "elk.randomSeed": "1",
+    "elk.spacing.nodeNode": "80",
+    "elk.layered.spacing.nodeNodeBetweenLayers": "200",
+    "elk.spacing.edgeEdge": "20",
+    "elk.layered.spacing.edgeEdgeBetweenLayers": "20",
+    "elk.spacing.edgeNode": "24",
+    "elk.spacing.edgeLabel": "12",
+    "elk.spacing.labelNode": "16",
+    "elk.spacing.labelLabel": "16",
+    "elk.layered.mergeEdges": "false",
+    "elk.layered.mergeHierarchyEdges": "false"
+  },
+  "results": [
+    {
+      "fixture": "chain",
+      "nodes": 6,
+      "edges": 5,
+      "labels": 5,
+      "nodeOverlapPairs": 0,
+      "labelOverlapPairs": 0,
+      "labelNodeHits": 0,
+      "nonincidentSegmentNodeHits": 0,
+      "segmentLabelHits": 0,
+      "coincidentSegmentPairs": 0,
+      "coincidentLength": 0,
+      "properSegmentCrossings": 0,
+      "width": 5494,
+      "height": 560,
+      "ms": [
+        44.2,
+        10.2,
+        7.2
+      ],
+      "repeatGeometryEqual": true
+    },
+    {
+      "fixture": "branch-cycle-parallel",
+      "nodes": 8,
+      "edges": 14,
+      "labels": 14,
+      "nodeOverlapPairs": 0,
+      "labelOverlapPairs": 0,
+      "labelNodeHits": 0,
+      "nonincidentSegmentNodeHits": 0,
+      "segmentLabelHits": 0,
+      "coincidentSegmentPairs": 0,
+      "coincidentLength": 0,
+      "properSegmentCrossings": 0,
+      "width": 5894,
+      "height": 1411.3333333333335,
+      "ms": [
+        16,
+        12.6,
+        10.3
+      ],
+      "repeatGeometryEqual": true
+    },
+    {
+      "fixture": "dense-32",
+      "nodes": 32,
+      "edges": 76,
+      "labels": 76,
+      "nodeOverlapPairs": 0,
+      "labelOverlapPairs": 0,
+      "labelNodeHits": 0,
+      "nonincidentSegmentNodeHits": 0,
+      "segmentLabelHits": 0,
+      "coincidentSegmentPairs": 0,
+      "coincidentLength": 0,
+      "properSegmentCrossings": 160,
+      "width": 20684,
+      "height": 5654.383333333334,
+      "ms": [
+        72.6,
+        54.6,
+        56.6
+      ],
+      "repeatGeometryEqual": true
+    }
+  ]
+}

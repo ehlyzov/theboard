@@ -24,6 +24,18 @@ removed by clearing site data. GitHub synchronization and offline application
 startup are still pending. Images are processed locally and are not uploaded.
 See the [MVP brief](docs/product/mvp-brief.md) for requirements and decisions.
 
+Use the marker icon in a screen header to annotate that screenshot, or hover
+the screen and press B. Brackets change brush size and Enter completes a mask.
+Navigation hints appear below the canvas in the status area.
+
+The current editing increment adds brush masks linked to ordinary notes, eight
+pastel note colors, four-side note docking, focus navigation and saved viewport
+preferences. The sidebar can switch between automatic ELK arrangement and
+manual placement. Enabling automatic layout warns before resetting manual
+positions; cancelling preserves the arrangement. Docked notes remain editable
+and portable, and move with their screen. Hover a transition label to reveal
+its dashed leader and highlight its arrow and endpoints.
+
 ## Run and verify
 
 Requires Node.js 24 or newer.
@@ -81,6 +93,16 @@ flowchart LR
 This diagram illustrates the product purpose; it is not a runtime screenshot.
 
 ## Project workflow
+
+The [layout research and algorithm proposal](docs/research/board-layout.md)
+compares directed graph layout with chip placement and records a reproducible
+synthetic ELK probe. Automatic layered placement is integrated in the editor;
+the proposed obstacle-aware fixed-node router remains pending. After manual
+node dragging, the editor reconnects edges with its manual routing rather than
+silently moving other nodes.
+An [isolated interactive example generator](docs/research/layout-example.md)
+can demonstrate the proposed layout on a local board folder without changing
+the editor or its saved boards.
 
 Small sequential changes: scenarios → checks → implementation → independent
 technical review → functional acceptance. Read [CONTRIBUTING.md](CONTRIBUTING.md),

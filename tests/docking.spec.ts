@@ -1,0 +1,33 @@
+import{test,expect}from'@playwright/test';import path from'node:path';
+import fs from 'node:fs';import{unzipSync,strFromU8}from'fflate';
+for(const side of ['left','top','bottom'])test('DOCK-01 '+side+' full side, color/archive and parent deletion preserve the ordinary note',async({page})=>{
+ await page.goto('/?board=dock-'+side);
+ await page.getByLabel('Загрузить скриншоты').setInputFiles('tests/fixtures/Вход.png');
+ await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();
+ await page.getByLabel('Текст заметки').fill('Preserve attached content and color');
+ await page.getByRole('button',{name:'Приклеить заметку',exact:true}).click();
+ await page.getByLabel('Экран для приклеивания').selectOption({label:'Вход'});
+ await page.getByLabel('Сторона приклеивания').selectOption(side);
+ await page.getByRole('button',{name:'Приклеить',exact:true}).click();
+ const screen=await page.getByTestId('screen-node').boundingBox(),note=await page.getByTestId('note-node').boundingBox();
+ expect(Math.abs(side==='left'?screen!.height-note!.height:screen!.width-note!.width)).toBeLessThan(5);
+ await page.getByRole('button',{name:'Цвет заметки',exact:true}).click();
+ await page.getByRole('button',{name:'Пастельный цвет: мятный',exact:true}).click();
+ const download=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();const file=await(await download).path();
+ const b=JSON.parse(strFromU8(unzipSync(fs.readFileSync(file!))['board.json']));const n=b.nodes.find((n:any)=>n.type==='note');
+ expect(b.layout.docks[n.id].side).toBe(side);expect(n.data.color).toBe('mint');expect(n.data.dock).toBeUndefined();
+ const oldUrl=page.url();await page.getByLabel('Импорт архива').setInputFiles(file!);
+ await expect(page).not.toHaveURL(oldUrl);
+ await expect(page.locator('.note-card.is-docked')).toHaveCount(1);
+ await page.reload();await expect(page.getByLabel('Текст заметки')).toHaveValue('Preserve attached content and color');
+ await page.getByRole('button',{name:'Удалить экран',exact:true}).click();
+ await expect(page.getByTestId('screen-node')).toHaveCount(0);await expect(page.getByTestId('note-node')).toHaveCount(1);
+ await expect(page.getByLabel('Текст заметки')).toHaveValue('Preserve attached content and color');
+});
+test('DOCK-01 note stretches full side, edge moves outward, undock and reload preserve text',async({page})=>{
+ await page.goto('/?board=dock-test');await page.getByLabel('Загрузить скриншоты').setInputFiles(['Вход','Главная'].map(n=>path.resolve('tests/fixtures/'+n+'.png')));await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();await page.getByLabel('Текст заметки').fill('Docked content');
+ const screens=page.getByTestId('screen-node');await screens.nth(0).getByRole('button',{name:'Начать стрелку'}).click();await screens.nth(1).getByRole('button',{name:'Завершить стрелку'}).click();const before=await screens.nth(0).boundingBox();const edge=page.locator('.react-flow__edge-path');const oldPath=await edge.getAttribute('d');
+ await page.getByRole('button',{name:'Приклеить заметку',exact:true}).click();await page.getByLabel('Экран для приклеивания').selectOption({label:'Вход'});await page.getByLabel('Сторона приклеивания').selectOption('right');await page.getByRole('button',{name:'Приклеить',exact:true}).click();
+ const card=await screens.nth(0).boundingBox(),note=await page.getByTestId('note-node').boundingBox();expect(card!.width-before!.width).toBeGreaterThan(100);expect(Math.abs(card!.height-note!.height)).toBeLessThan(5);await expect(edge).not.toHaveAttribute('d',oldPath!);
+ await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();await page.reload();await expect(page.getByLabel('Текст заметки')).toHaveValue('Docked content');await page.getByRole('button',{name:'Отклеить заметку',exact:true}).click();await expect(page.getByLabel('Текст заметки')).toHaveValue('Docked content');await expect(screens.nth(0)).toHaveCSS('width','230px');
+});

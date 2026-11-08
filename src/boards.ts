@@ -1,7 +1,130 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 import { MarkerType, type Node, type Edge } from "@xyflow/react";
+import { labelLayouts } from "./layout";
+import { NOTE_COLORS, type NoteColor } from "./noteColors";
+export type RegionComment = {
+  id: string;
+  text: string;
+  status: "open" | "done";
+  createdAt: string;
+  resolvedAt?: string;
+};
+export type Stroke = { radius: number; points: { x: number; y: number }[] };
+export type Dock = { screenId: string; side: 'left' | 'right' | 'top' | 'bottom' };
+export type LayoutSettings = { automatic: boolean; direction: 'RIGHT' | 'DOWN' };
+export type EngineMetadata = {name:string;version:string;options:Record<string,string|number|boolean>};
+export type Region = {
+  strokes?: Stroke[];
+  noteIds?: string[];
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  comments: RegionComment[];
+};
+function regions(value: unknown): Region[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 200) fail();
+  const ids = new Set<string>();
+  return value.map((r) => {
+    const id = text(r.id, 150);
+    if (!id || ids.has(id)) fail();
+    ids.add(id);
+    if (
+      ![r.x, r.y, r.width, r.height].every((v) => Number.isFinite(v)) ||
+      r.x < 0 ||
+      r.y < 0 ||
+      r.width <= 0 ||
+      r.height <= 0 ||
+      r.x + r.width > 1.000001 ||
+      r.y + r.height > 1.000001 ||
+      !Array.isArray(r.comments) ||
+      r.comments.length > 500
+    )
+      fail();
+    const commentIds = new Set<string>();
+    const comments = r.comments.map((c: any) => {
+      const cid = text(c.id, 150);
+      if (!cid || commentIds.has(cid) || !["open", "done"].includes(c.status))
+        fail();
+      commentIds.add(cid);
+      const createdAt = text(c.createdAt, 50);
+      if (!Number.isFinite(Date.parse(createdAt))) fail();
+      const resolvedAt =
+        c.resolvedAt === undefined ? undefined : text(c.resolvedAt, 50);
+      if (resolvedAt !== undefined && !Number.isFinite(Date.parse(resolvedAt)))
+        fail();
+      return {
+        id: cid,
+        text: text(c.text, 4000),
+        status: c.status,
+        createdAt,
+        ...(resolvedAt ? { resolvedAt } : {}),
+      };
+    });
+    const noteIds = r.noteIds ?? [];
+    if (
+      !Array.isArray(noteIds) ||
+      noteIds.length > 500 ||
+      noteIds.some((n: unknown) => typeof n !== "string")
+    )
+      fail();
+    let strokes: Stroke[] | undefined;
+    if (r.strokes !== undefined) {
+      if (!Array.isArray(r.strokes) || r.strokes.length > 1000) fail();
+      strokes = r.strokes.map((s: any) => {
+        if (
+          !Number.isFinite(s.radius) ||
+          s.radius <= 0 ||
+          s.radius > 0.2 ||
+          !Array.isArray(s.points) ||
+          s.points.length > 20000 ||
+          s.points.length < 1
+        )
+          fail();
+        return {
+          radius: s.radius,
+          points: s.points.map((p: any) => {
+            if (
+              !Number.isFinite(p.x) ||
+              !Number.isFinite(p.y) ||
+              p.x < 0 ||
+              p.x > 1 ||
+              p.y < 0 ||
+              p.y > 1
+            )
+              fail();
+            return { x: p.x, y: p.y };
+          }),
+        };
+      });
+    }
+    return {
+      id,
+      x: r.x,
+      y: r.y,
+      width: r.width,
+      height: r.height,
+      comments,
+      noteIds,
+      strokes,
+    };
+  });
+}
 export type BoardNode = Node<
-  { title: string; image?: string; text?: string },
+  {
+    title: string;
+    image?: string;
+    text?: string;
+    regions?: Region[];
+    imageSize?: { width: number; height: number };
+    color?: NoteColor;
+    status?: "open" | "done";
+    createdAt?: string;
+    resolvedAt?: string;
+    dock?: Dock;
+  },
   "screen" | "note"
 >;
 export type BoardData = {
@@ -9,6 +132,8 @@ export type BoardData = {
   title: string;
   nodes: BoardNode[];
   edges: Edge[];
+  layoutSettings?: LayoutSettings;
+  layoutEngine?: EngineMetadata;
 };
 const MAX = 180 * 1024 * 1024;
 async function database() {
@@ -24,7 +149,8 @@ export async function loadBoard(id: string): Promise<BoardData | undefined> {
   try {
     return await new Promise((resolve, reject) => {
       const request = db.transaction("boards").objectStore("boards").get(id);
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () =>
+        resolve(request.result ? migrateBoard(request.result) : undefined);
       request.onerror = () => reject(request.error);
     });
   } finally {
@@ -45,9 +171,9 @@ export async function saveBoard(id: string, data: BoardData) {
     db.close();
   }
 }
-const fail = () => {
+function fail(): never {
   throw new Error("Некорректный архив доски");
-};
+}
 function text(v: unknown, max: number) {
   if (typeof v !== "string" || v.length > max) fail();
   return v as string;
@@ -76,6 +202,7 @@ export async function importBoard(file: File): Promise<BoardData> {
   const screens = new Set<string>();
   const nodes: BoardNode[] = [];
   for (const n of raw.nodes) {
+    n.position = raw.layout?.nodes?.[n.id] ?? n.position;
     const id = text(n.id, 150);
     if (
       !id ||
@@ -87,9 +214,21 @@ export async function importBoard(file: File): Promise<BoardData> {
       fail();
     ids.add(id);
     const data: BoardNode["data"] = { title: text(n.data?.title, 300) };
-    if (n.type === "note") data.text = text(n.data?.text ?? "", 12000);
-    else {
+    if (n.type === "note") {
+      data.text = text(n.data?.text ?? "", 12000);
+      if (n.data?.color !== undefined) {
+        if (!Object.hasOwn(NOTE_COLORS, n.data.color)) fail();
+        data.color = n.data.color;
+      }
+      if (n.data?.status !== undefined) {
+        if (!["open", "done"].includes(n.data.status)) fail();
+        data.status = n.data.status;
+      }
+      if (n.data?.createdAt) data.createdAt = text(n.data.createdAt, 50);
+      if (n.data?.resolvedAt) data.resolvedAt = text(n.data.resolvedAt, 50);
+    } else {
       screens.add(id);
+      data.regions = regions(n.data?.regions);
       const path = text(n.data?.image, 300);
       if (
         !/^assets\/[^\\\x00-\x1f]+\.(png|jpe?g|webp)$/i.test(path) ||
@@ -106,6 +245,7 @@ export async function importBoard(file: File): Promise<BoardData> {
           : "image/jpeg";
       const blob = new Blob([new Uint8Array(bytes)], { type: mime });
       const bitmap = await createImageBitmap(blob);
+      data.imageSize = { width: bitmap.width, height: bitmap.height };
       const pixels = bitmap.width * bitmap.height;
       bitmap.close();
       if (pixels > 40_000_000) fail();
@@ -125,6 +265,11 @@ export async function importBoard(file: File): Promise<BoardData> {
     });
   }
   const edgeIds = new Set<string>();
+  for (const [noteId, dock] of Object.entries(raw.layout?.docks ?? {}) as [string, any][]) {
+    const note = nodes.find(n => n.id === noteId && n.type === 'note');
+    if (!note || !screens.has(dock?.screenId) || !['left','right','top','bottom'].includes(dock?.side)) fail();
+    note.data.dock = {screenId:dock.screenId,side:dock.side};
+  }
   const edges: Edge[] = raw.edges.map((e: any) => {
     const id = text(e.id, 150);
     if (
@@ -144,9 +289,48 @@ export async function importBoard(file: File): Promise<BoardData> {
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
       style: { stroke: "#7c879d", strokeWidth: 2 },
+      data: (() => {
+        const layout = raw.layout?.edges?.[id];
+        if (!layout) return undefined;
+        const data: Record<string, unknown> = {};
+        if (layout.points !== undefined) {
+          if (!Array.isArray(layout.points) || layout.points.length < 2 || layout.points.length > 2000) fail();
+          data.route = layout.points.map(validPoint);
+        }
+        if (layout.label && (layout.manual || data.route)) {
+          data.labelPosition = validPoint(layout.label);
+          data.labelManual = Boolean(layout.manual);
+        }
+        return data;
+      })(),
     };
   });
-  return { version: 1, title: text(raw.title, 300), nodes, edges };
+  for (const n of nodes)
+    for (const region of n.data.regions ?? [])
+      for (const noteId of region.noteIds ?? [])
+        if (!nodes.some((note) => note.id === noteId && note.type === "note"))
+          fail();
+  if (raw.layout?.automatic !== undefined && typeof raw.layout.automatic !== 'boolean') fail();
+  if (raw.layout?.direction !== undefined && !['RIGHT','DOWN'].includes(raw.layout.direction)) fail();
+  let layoutEngine:EngineMetadata|undefined;
+  if(raw.layout?.engine){
+    const e=raw.layout.engine,options=e.options??{};
+    if(typeof options!=='object'||Array.isArray(options)||Object.keys(options).length>100)fail();
+    for(const [key,value]of Object.entries(options)){
+      text(key,200);
+      if(typeof value==='string')text(value,500);
+      else if(typeof value!=='boolean' && !(typeof value==='number'&&Number.isFinite(value)))fail();
+    }
+    layoutEngine={name:text(e.name,100),version:text(e.version,100),options};
+  }
+  return migrateBoard({
+    version: 1,
+    title: text(raw.title, 300),
+    nodes,
+    edges,
+    layoutSettings: {automatic: raw.layout?.automatic ?? false, direction:raw.layout?.direction ?? 'RIGHT'},
+    layoutEngine,
+  });
 }
 export function exportBoard(board: BoardData): Uint8Array {
   if (board.nodes.length > 500 || board.edges.length > 2000)
@@ -154,12 +338,20 @@ export function exportBoard(board: BoardData): Uint8Array {
   text(board.title, 300);
   board.nodes.forEach((n) => {
     text(n.data.title, 300);
+    regions(n.data.regions);
     if (n.type === "note") text(n.data.text ?? "", 12000);
   });
   board.edges.forEach((e) => text(e.label ?? "", 500));
+  for (const n of board.nodes)
+    for (const r of n.data.regions ?? [])
+      for (const id of r.noteIds ?? [])
+        if (!board.nodes.some((note) => note.type === "note" && note.id === id))
+          fail();
+  const labelPositions=labelLayouts(board.nodes,board.edges);
   const files: Record<string, Uint8Array> = {};
   const nodes = board.nodes.map((n, index) => {
     const data = { ...n.data };
+    delete data.dock;
     if (n.type === "screen") {
       const match = /^data:image\/(png|jpeg|webp);base64,(.*)$/.exec(
         data.image ?? "",
@@ -170,7 +362,7 @@ export function exportBoard(board: BoardData): Uint8Array {
       files[path] = Uint8Array.from(binary, (c) => c.charCodeAt(0));
       data.image = path;
     }
-    return { id: n.id, type: n.type, position: n.position, data };
+    return { id: n.id, type: n.type, data };
   });
   files["board.json"] = strToU8(
     JSON.stringify(
@@ -178,6 +370,19 @@ export function exportBoard(board: BoardData): Uint8Array {
         version: 1,
         title: board.title,
         nodes,
+        layout: {
+          ...board.layoutSettings,
+          engine: board.layoutEngine,
+          docks: Object.fromEntries(board.nodes.filter(n => n.data.dock).map(n => [n.id,n.data.dock])),
+          nodes: Object.fromEntries(board.nodes.map((n) => [n.id, n.position])),
+          edges: Object.fromEntries(
+            board.edges.map(e => [e.id, {
+              label:labelPositions[e.id],
+              manual: Boolean(e.data?.labelManual ?? (e.data?.labelPosition && !e.data?.route)),
+              points:e.data?.route,
+            }]),
+          ),
+        },
         edges: board.edges.map((e) => ({
           id: e.id,
           source: e.source,
@@ -192,4 +397,44 @@ export function exportBoard(board: BoardData): Uint8Array {
   if (Object.values(files).reduce((size, file) => size + file.length, 0) > MAX)
     throw new Error("Archive size limit");
   return zipSync(files, { level: 3 });
+}
+
+export function migrateBoard(board: BoardData): BoardData {
+  const additions: BoardNode[] = [];
+  const nodes = board.nodes.map((n) => ({
+    ...n,
+    data: {
+      ...n.data,
+      regions: n.data.regions?.map((r) => {
+        const noteIds = [...(r.noteIds ?? [])];
+        for (const c of r.comments ?? []) {
+          const id = crypto.randomUUID();
+          additions.push({
+            id,
+            type: "note",
+            position: {
+              x: n.position.x + 280,
+              y: n.position.y + additions.length * 210,
+            },
+            dragHandle: ".node-grip",
+            data: {
+              title: "Migrated annotation",
+              text: c.text,
+              status: c.status,
+              createdAt: c.createdAt,
+              resolvedAt: c.resolvedAt,
+            },
+          });
+          noteIds.push(id);
+        }
+        return { ...r, noteIds, comments: [] };
+      }),
+    },
+  }));
+  return { ...board, nodes: [...nodes, ...additions] };
+}
+
+function validPoint(p: any) {
+  if (!Number.isFinite(p?.x) || !Number.isFinite(p?.y)) fail();
+  return { x: p.x, y: p.y };
 }

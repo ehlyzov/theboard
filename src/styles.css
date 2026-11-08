@@ -1245,3 +1245,7 @@ body,
 .auto-warning::backdrop{background:#28203555}
 
 .screen-tools{display:flex;align-items:center;gap:3px}.screen-tools .icon-button[aria-pressed="true"]{background:#eee9fc;color:#7052d6}.screen-tools .icon-button:disabled{opacity:.35;cursor:default}
+.screen-tools{position:relative}
+.marker-size-control{position:absolute;left:0;transform-origin:top left;display:flex;align-items:center;gap:8px;padding:6px 9px;background:#fff;border:1px solid #dcd5ef;border-radius:8px;box-shadow:0 3px 12px #34204b18;color:#7052d6;cursor:default;z-index:10}
+.marker-size-control input{width:100px;height:20px;margin:0;accent-color:#9876c4;cursor:ew-resize}
+.marker-size-control output{min-width:30px;font-size:12px;line-height:20px;text-align:right;font-variant-numeric:tabular-nums}

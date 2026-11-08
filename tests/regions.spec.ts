@@ -1,5 +1,30 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
+test('MASK-13 active screen marker exposes pointer size control synchronized with brackets', async ({page}) => {
+  await page.goto('/?board=marker-size-test');
+  await page.getByLabel('Загрузить скриншоты').setInputFiles(['tests/fixtures/Вход.png','tests/fixtures/Главная.png']);
+  const screens=page.getByTestId('screen-node');
+  await screens.nth(0).getByRole('button',{name:'Кисть выделения',exact:true}).click();
+  const slider=page.getByRole('slider',{name:'Размер маркера'});
+  await expect(slider).toHaveCount(1);
+  await expect(screens.nth(0).getByRole('slider')).toBeVisible();
+  await expect(screens.nth(1).getByRole('slider')).toHaveCount(0);
+  await expect(slider).toHaveValue('6');
+  await slider.press(']');
+  await expect(slider).toHaveValue('7');
+  await slider.press('[');
+  await expect(slider).toHaveValue('6');
+  const before=await page.locator('.react-flow__node-screen').first().getAttribute('style');
+  const box=await slider.boundingBox();
+  await slider.click({position:{x:box!.width*.75,y:box!.height/2}});
+  const size=Number(await slider.inputValue());
+  expect(size).toBeGreaterThan(6);
+  await expect(screens.nth(0).locator('output')).toHaveText(size+'%');
+  await expect(page.locator('.react-flow__node-screen').first()).toHaveAttribute('style',before!);
+  await expect(page.getByRole('button',{name:'Область 1',exact:true})).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(slider).toHaveCount(0);
+});
 test("MASK-12/UI-03 contextual screen marker and UI-04 footer hint", async ({ page }) => {
   await page.goto("/?board=contextual-marker-test");
   await page.getByLabel("Загрузить скриншоты").setInputFiles([

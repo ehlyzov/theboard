@@ -25,7 +25,8 @@ startup are still pending. Images are processed locally and are not uploaded.
 See the [MVP brief](docs/product/mvp-brief.md) for requirements and decisions.
 
 Use the marker icon in a screen header to annotate that screenshot, or hover
-the screen and press B. Brackets change brush size and Enter completes a mask.
+the screen and press B. The active marker shows a nearby size slider and
+percentage; brackets also change brush size. Enter completes a mask.
 Navigation hints appear below the canvas in the status area.
 
 The current editing increment adds brush masks linked to ordinary notes, eight

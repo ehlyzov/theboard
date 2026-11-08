@@ -82,6 +82,11 @@ This diagram illustrates the product purpose; it is not a runtime screenshot.
 
 ## Project workflow
 
+The [layout research and algorithm proposal](docs/research/board-layout.md)
+compares directed graph layout with chip placement and records a reproducible
+synthetic ELK probe. It describes proposed automatic arrangement and fixed-node
+routing; those capabilities are not yet implemented in the editor.
+
 Small sequential changes: scenarios → checks → implementation → independent
 technical review → functional acceptance. Read [CONTRIBUTING.md](CONTRIBUTING.md),
 the [task queue](docs/work/tasks.md), and the [initial workflow pilot](docs/work/W001-workflow.md).

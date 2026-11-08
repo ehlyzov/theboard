@@ -76,3 +76,16 @@ independent acceptance of the later layout/keyboard/aspect changes.
 
 DOCK-01 is recorded and remains a subsequent implementation requirement along
 with Markdown W005; neither is silently marked complete by this candidate.
+
+## Layout research requested by the owner
+
+LAYOUT-02 produced [a source-backed algorithm proposal](../research/board-layout.md)
+and an isolated elkjs 0.12.1 probe. Three synthetic fixtures (6/5, 8/14 and 32/76
+nodes/edges) have zero measured box overlaps, route-obstacle hits and coincident
+segments. The dense fixture still has 160 proper segment crossings and a large
+bounding box: this is feasibility evidence, not good-layout acceptance.
+
+Research files and README link only; no product dependencies or live board data
+changed. The proposed persistence extensions and libavoid browser integration
+are not implemented. Keep DOCK-01 and ROUTE-01 open; use measured composite
+bounds, global placement and actual route geometry in the next bounded slice.

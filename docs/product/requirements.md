@@ -114,3 +114,13 @@ suite; it is not reported as passing or implemented.
 - NOTE-02 (`approved_by_human`, direct instruction): choose a note background
   from eight pastel colors. Preserve color on normal and docked notes through
   reload and portable archives.
+
+- ROUTE-01 (`approved_by_human`, direct instruction): avoid coincident edge
+  paths using separate lanes and more space. Treat screen+docked notes as a
+  composite obstacle. Preserve graph semantics; geometry remains layout data.
+
+- LAYOUT-02 (`approved_by_human`, direct instruction): research and document
+  suitable placement/routing algorithms, including the chip-placement analogy.
+  [Research and a synthetic feasibility probe](../research/board-layout.md) are
+  recorded. ELK/fixed-node routing is an engineering recommendation, not an
+  implemented feature or human functional acceptance.

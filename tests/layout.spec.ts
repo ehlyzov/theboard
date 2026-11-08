@@ -96,9 +96,12 @@ test("IMAGE-01 portrait/landscape preserve intrinsic ratio without letterboxing"
 test('IMAGE-01 cached image dimensions survive focus remount before the load event', async ({page}) => {
   // Hold React's image load callback: the first rendered frame must already
   // use known dimensions, including after hidden cards mount again.
-  await page.addInitScript(() => window.addEventListener('load', event => {
-    if (event.target instanceof HTMLImageElement) event.stopImmediatePropagation();
-  }, true));
+  await page.addInitScript(() => {
+    const listen = HTMLImageElement.prototype.addEventListener;
+    HTMLImageElement.prototype.addEventListener = function(type, listener, options) {
+      if (type !== 'load') return listen.call(this, type, listener, options);
+    };
+  });
   await page.goto('/?board=cached-aspect-test');
   await page.getByLabel('Загрузить скриншоты').setInputFiles(['tests/fixtures/Вход.png','tests/fixtures/landscape.png']);
   const ratios = async () => page.getByTestId('annotation-image').evaluateAll(elements => elements.map(el => {

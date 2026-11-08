@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import type { Region, Stroke } from "./boards";
 type Props = {
   image: string;
+  imageSize?: { width: number; height: number };
   title: string;
   regions: Region[];
   selected: string | undefined;
@@ -25,6 +26,7 @@ const isEditing = (target: EventTarget | null) =>
   (target instanceof HTMLElement && target.isContentEditable);
 export default function RegionImage({
   image,
+  imageSize,
   title,
   regions,
   selected,
@@ -40,7 +42,10 @@ export default function RegionImage({
   onHover,
   onImageSize,
 }: Props) {
-  const [ratio, setRatio] = useState(1);
+  const [loadedRatio, setRatio] = useState(1);
+  // Hidden focus cards remount before their load event. Use the dimensions
+  // already decoded by upload/import so layout never measures a square stub.
+  const ratio = imageSize ? imageSize.width / imageSize.height : loadedRatio;
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [active, setActive] = useState<Stroke | null>(null);
   const strokeRef = useRef<Stroke | null>(null);

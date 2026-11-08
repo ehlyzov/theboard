@@ -63,3 +63,21 @@ global modes on that viewport assertion. Focus-result fitting now frames the
 whole compact root group (including visible linked notes), while clicking the
 current sidebar item still explicitly recenters that screen. The normal-view
 viewport and canonical geometry remain unchanged.
+
+## CI remount measurement repair
+
+Required CI42518958970 on4b701db failed AUTO-01: a hidden note's vertical
+relative offset differed by30px, while24 other tests passed. A remounted
+RegionImage initialized to ratio1 before its load callback, measuring380px
+height instead of the known portrait350px. The component now derives ratio
+from already decoded imageSize when available, retaining load fallback for
+legacy unknown sizes. No portable schema changes.
+
+Test-only9366d6d initially passed because its window load interception did not
+delay React's image listener. The deterministic driver now withholds image
+load listeners (upload decoding still works). In an isolated4b701db checkout
+the corrected assertion FAIL: ratios[1,1] instead of[0.6,1.67]. With the repair,
+all five affected layout/automatic checks PASS. Full26/26 had passed before
+this driver correction; those five rerun checks verify the corrected driver.
+Independent targeted repair check and exact-head CI pending. No assertions or
+required precision thresholds in AUTO-01 were weakened.

@@ -147,6 +147,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       </div>
       <RegionImage
         image={data.image!}
+        imageSize={data.imageSize}
         title={data.title}
         regions={data.regions ?? []}
         selected={

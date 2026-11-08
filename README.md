@@ -26,7 +26,8 @@ See the [MVP brief](docs/product/mvp-brief.md) for requirements and decisions.
 
 Use the marker icon in a screen header to annotate that screenshot, or hover
 the screen and press B. The active marker shows a nearby size slider and
-percentage; brackets also change brush size. Enter completes a mask.
+percentage; brackets also change brush size. Enter completes a mask; its
+preview stays visible while you write or choose a linked note.
 Navigation hints appear below the canvas in the status area.
 
 The current editing increment adds brush masks linked to ordinary notes, eight
@@ -34,7 +35,9 @@ pastel note colors, four-side note docking, focus navigation and saved viewport
 preferences. The sidebar can switch between automatic ELK arrangement and
 manual placement. Enabling automatic layout warns before resetting manual
 positions; cancelling preserves the arrangement. Docked notes remain editable
-and portable, and move with their screen. Hover a transition label to reveal
+and portable, and move with their screen. Automatic layout also keeps
+undocked mask-linked notes near their primary source without changing docking
+or adding navigation edges. Hover a transition label to reveal
 its dashed leader and highlight its arrow and endpoints. Focus computes a
 temporary compact layout for the selected screen and its destinations; it is
 not saved or exported. Leaving focus restores the original placement and

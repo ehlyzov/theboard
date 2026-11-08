@@ -65,10 +65,12 @@ import RegionImage from "./RegionImage";
 import { NOTE_COLORS, COLOR_NAMES, type NoteColor } from "./noteColors";
 import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
 import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS, focusFrame } from "./layout";
-import { arrangeBoard } from './autoLayout';
+import { arrangeBoard, annotationNoteIds, ANNOTATION_LAYOUT_OPTIONS } from './autoLayout';
 const edgeTypes = { smoothstep: LabeledEdge };
+type PendingRegion = { screenId: string; region: Region; existing?: boolean };
 
 type Actions = {
+  pendingRegion: PendingRegion | null;
   nodes: BoardNode[];
   dockNote: (id: string, dock?: Dock) => void;
   selectNote: (id: string) => void;
@@ -166,6 +168,8 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
         imageSize={data.imageSize}
         title={data.title}
         regions={data.regions ?? []}
+        pendingRegion={actions.pendingRegion?.screenId === id && !actions.pendingRegion.existing
+          ? actions.pendingRegion.region : undefined}
         selected={
           actions.regionSelection?.screenId === id
             ? actions.regionSelection.regionId
@@ -445,11 +449,7 @@ function Editor() {
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
   }, [tool,autoWarning,brushScreenId,nodes]);
-  const [pendingRegion, setPendingRegion] = useState<{
-    screenId: string;
-    region: Region;
-    existing?: boolean;
-  } | null>(null);
+  const [pendingRegion, setPendingRegion] = useState<PendingRegion | null>(null);
   const [noteChoice, setNoteChoice] = useState("");
   const [newNoteText, setNewNoteText] = useState("");
   const [deletedRegion, setDeletedRegion] = useState<{
@@ -547,7 +547,7 @@ function Editor() {
     (n.data.dock ? focusIds.has(n.data.dock.screenId) : focusedNoteIds.has(n.id)));
   const focusEdges = edges.filter(e => e.source === currentScreenId);
   const focusKey = focusActive ? JSON.stringify({ source:currentScreenId,direction,
-    nodes:focusNodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,measured:n.measured})),
+    nodes:focusNodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,measured:n.measured,noteIds:annotationNoteIds(n)})),
     edges:focusEdges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label})),
   }) : null;
   const [focusLayout,setFocusLayout] = useState<{key:string;result?:Awaited<ReturnType<typeof arrangeBoard>>} | null>(null);
@@ -627,7 +627,7 @@ function Editor() {
         }
       });
   }, [ready, title, nodes, edges, boardId,automatic,direction,layoutEngine]);
-  const layoutSignature=JSON.stringify({nodes:nodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize})),
+  const layoutSignature=JSON.stringify({nodes:nodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,noteIds:annotationNoteIds(n)})),
     edges:edges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label}))});
   useEffect(()=>{
     if(!ready||!automatic||!nodes.length)return;
@@ -638,7 +638,7 @@ function Editor() {
         if(disposed)return;
         setNodes(current=>current.map(n=>({...n,position:result.positions.get(n.id)??n.position})));
         setEdges(current=>current.map(e=>({...e,data:{...e.data,...result.edges.get(e.id)}})));
-        setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction}});
+        setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction,...ANNOTATION_LAYOUT_OPTIONS}});
         requestAnimationFrame(()=>{
           updateNodeInternals([...result.positions.keys()]);
           if(fitAfterArrange.current){
@@ -969,6 +969,7 @@ function Editor() {
   return (
     <ActionsContext.Provider
       value={{
+        pendingRegion,
         nodes,
         selectNote:(id)=>setNodes(current=>current.map(n=>({...n,selected:n.id===id}))),
         dockNote:(id,dock)=>{

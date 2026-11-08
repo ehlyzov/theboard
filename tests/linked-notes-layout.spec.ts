@@ -9,7 +9,7 @@ for(const direction of ['RIGHT','DOWN']) test(`MASK-15 ${direction} keeps ordina
     ...ids.map(id=>({id,type:'screen',data:{title:id.toUpperCase(),image:'assets/a.png',imageSize:{width:180,height:300},
       regions:id==='c'?mask(['n-one','n-shared']):id==='f'?mask(['n-shared']):[]}})),
     ...['n-one','n-shared','docked','legend'].map(id=>({id,type:'note',data:{title:id,text:id==='n-one'?'First note':id==='n-shared'?'Shared note':id}})),
-  ],edges:[...ids.slice(1).map((id,i)=>({id:ids[i]+id,source:ids[i],target:id,label:'Continue '+id})),{id:'af',source:'a',target:'f',label:'Jump'}],
+  ],edges:[...ids.slice(1).map((id,i)=>({id:ids[i]+id,source:ids[i],target:id,label:'Continue '+id})),{id:'af',source:'a',target:'f',label:'Jump'},{id:'cf',source:'c',target:'f',label:'Alternative'},{id:'ac',source:'a',target:'c',label:'Direct'}],
     layout:{nodes:Object.fromEntries([...ids,'n-one','n-shared','docked','legend'].map((id,i)=>[id,{x:i*500,y:100}])),docks:{docked:{screenId:'c',side:'bottom'}}}};
   await page.goto('/');
   await page.getByLabel('Импорт архива').setInputFiles({name:'annotations.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
@@ -19,7 +19,7 @@ for(const direction of ['RIGHT','DOWN']) test(`MASK-15 ${direction} keeps ordina
   await page.getByLabel('Направление компоновки').selectOption(direction);
   await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).click();
   await page.getByRole('button',{name:'Включить автокомпоновку',exact:true}).click();
-  await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(6);
+  await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(board.edges.length);
   await expect(page.getByText('Расчёт компоновки…',{exact:true})).toHaveCount(0);
   const boxes=()=>page.locator('.react-flow__node').evaluateAll(elements=>Object.fromEntries(elements.map(el=>{
     const m=new DOMMatrix(getComputedStyle(el).transform),node=el as HTMLElement;
@@ -48,7 +48,7 @@ for(const direction of ['RIGHT','DOWN']) test(`MASK-15 ${direction} keeps ordina
   else expect(Math.abs(start.y-c.y-c.height)).toBeLessThan(1);
   await page.locator('.screen-list').getByRole('button',{name:'03 C',exact:true}).click();
   await page.getByRole('switch',{name:'Режим фокуса'}).click();
-  await expect(page.getByTestId('screen-node')).toHaveCount(2);
+  await expect(page.getByTestId('screen-node')).toHaveCount(3);
   await expect.poll(()=>near('c','n-one')).toBeLessThan(100);
   expect((await exported()).layout).toEqual(before.layout);
   await page.getByRole('switch',{name:'Режим фокуса'}).click();

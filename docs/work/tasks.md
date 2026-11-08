@@ -33,4 +33,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W008](W008-marker-size.md) | Discoverable size slider beside the active screen marker | done | TheBoard chat; independent reviewer | Technical PASS; local/CI27 of27; PR #6 protected integration |
 
-| [W009](W009-pending-mask.md) | Visible mask target and nearby linked-note layout | active | TheBoard chat | Test-first pending preview, then independent review |
+| [W009](W009-pending-mask.md) | Visible mask target and nearby linked-note layout | review | TheBoard chat | Ten affected cases/build PASS; preview and annotation-layout review |

@@ -242,3 +242,30 @@ implementation, manual-pinning solver behavior, private-board comparative
 benchmark, accessibility/readability study and independent product review of
 this proposed algorithm. No product dependency, active board or running UI was
 changed by the research probe.
+
+## Mask-linked ordinary notes (W009,2026-11-09)
+
+Navigation edges alone do not express annotation proximity. Undocked notes
+referenced by a screen mask are now measured satellites in a reserved layout
+box around that screen's existing composite. For RIGHT, notes stack below; for
+DOWN, notes form a row to the right, with32 canvas pixels between boxes. An
+explicit dock takes precedence. Shared notes choose the lowest visible screen
+ID as primary owner, and each note is placed once; all semantic links survive.
+The same adapter handles full automatic and transient focus placement. Manual
+mode never applies the grouping.
+
+ELK sees the reserved obstacle, not an additional navigation edge. Each real
+incident edge has a separate port spread along the actual composite side.
+[ELK port constraints](https://eclipse.dev/elk/reference/options/org-eclipse-elk-portConstraints.html)
+provide FIXED_POS; the adapter bridges empty reserved padding to the actual
+composite endpoint when the engine fixes the port to the box border. This keeps
+routes outside satellite boxes without changing source/target IDs. Ports and
+clusters are temporary solver objects; only ordinary node coordinates and real
+edge geometry enter the portable layout. No note is silently docked/duplicated.
+
+Engine metadata records `theboard.annotationPlacement: satellites-v1` and
+`theboard.annotationGap:32` alongside the real ELK settings. These descriptive
+TheBoard options are not passed to ELK. Limitations: primary ownership cannot
+put a shared note next to several distant screens simultaneously, and many
+annotations enlarge the reserved box. This remains a feasible-layout heuristic,
+not an optimality or universal no-crossing guarantee.

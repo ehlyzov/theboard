@@ -6,6 +6,7 @@ type Props = {
   imageSize?: { width: number; height: number };
   title: string;
   regions: Region[];
+  pendingRegion?: Region;
   selected: string | undefined;
   drawing: boolean;
   radius: number;
@@ -29,6 +30,7 @@ export default function RegionImage({
   imageSize,
   title,
   regions,
+  pendingRegion,
   selected,
   drawing,
   radius,
@@ -228,6 +230,18 @@ export default function RegionImage({
               <span>{i + 1}</span>
             </button>
           ),
+        )}
+        {pendingRegion && (
+          pendingRegion.strokes?.length ? (
+            <svg data-testid="pending-region-preview" role="img" aria-label="Выделение для заметки"
+              className="brush-mask selected" viewBox={`0 0 1000 ${1000 / ratio}`}
+              style={{pointerEvents:'none'}}>
+              {lines(pendingRegion.strokes)}
+            </svg>
+          ) : (
+            <div data-testid="pending-region-preview" role="img" aria-label="Выделение для заметки"
+              className="region-mask selected" style={{...shape(pendingRegion),pointerEvents:'none'}}/>
+          )
         )}
         {drawing && (
           <svg className="brush-draft" viewBox={`0 0 1000 ${1000 / ratio}`}>

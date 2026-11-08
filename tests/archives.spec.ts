@@ -9,13 +9,13 @@ const manifest = {
       id: "s1",
       type: "screen",
       position: { x: 70, y: 100 },
-      data: { title: "Home", image: "assets/a.png" },
+      data: { title: "Home", image: "assets/Экран входа.png" },
     },
     {
       id: "s2",
       type: "screen",
       position: { x: 400, y: 100 },
-      data: { title: "Next", image: "assets/a.png" },
+      data: { title: "Next", image: "assets/Экран входа.png" },
     },
     {
       id: "n1",
@@ -41,7 +41,7 @@ test("ARCH-01..04 archive, reload, independent board and clean-profile roundtrip
   const payload = Buffer.from(
     zipSync({
       "board.json": strToU8(JSON.stringify(manifest)),
-      "assets/a.png": fs.readFileSync("tests/fixtures/Вход.png"),
+      "assets/Экран входа.png": fs.readFileSync("tests/fixtures/Вход.png"),
     }),
   );
   await page

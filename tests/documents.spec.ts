@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+test('DOC-01..04 markdown node, linked fragment discussion and history survive archive',async({page,browser})=>{
+ await page.goto('/?board=documents-test');
+ await page.getByRole('button',{name:'Создать документ'}).click();
+ await page.getByLabel('Текст Markdown').fill('# Product notes\n\nThis paragraph needs discussion.');
+ const editor=page.getByLabel('Текст Markdown');
+ await editor.focus(); await editor.press('End');
+ for(let i=0;i<11;i++)await editor.press('Shift+ArrowLeft');
+ await page.getByRole('button',{name:'Комментировать фрагмент'}).click();
+ await page.getByLabel('Новый комментарий').fill('Clarify the decision');
+ await page.getByRole('button',{name:'Добавить комментарий',exact:true}).click();
+ await page.getByRole('button',{name:'Отметить выполненным'}).click();
+ await page.getByRole('button',{name:'Закрыть обсуждение'}).click();
+ await page.getByRole('link',{name:'discussion.',exact:true}).click();
+ await expect(page.getByTestId('region-comment')).toContainText('Выполнен');
+ await expect(page.getByTestId('region-comment')).toContainText('Clarify the decision');
+ await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();
+ await page.reload();await expect(page.getByTestId('region-comment')).toContainText('Clarify the decision');
+ const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();
+ const archive=await(await downloadPromise).path();const context=await browser.newContext();const next=await context.newPage();await next.goto('/');await next.getByLabel('Импорт архива').setInputFiles(archive!);
+ await next.getByRole('link',{name:'discussion.',exact:true}).click();await expect(next.getByTestId('region-comment')).toContainText('Clarify the decision');await context.close();
+});

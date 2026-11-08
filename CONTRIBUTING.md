@@ -1,104 +1,101 @@
-# Как ведём TheBoard
+# Contributing to TheBoard
 
-Процесс выбран для пилота 2026-11-08 по поручению владельца выбрать подход
-для небольшого проекта. Он организует работу одного исполнителя и отдельного
-проверяющего. Это рабочие правила, а не доказанная система предотвращения ошибок.
+The owner delegated selecting a lightweight process on 2026-11-08. This pilot
+uses one writer and a separate reviewer. These are working agreements, not a
+proven error-prevention system. Write repository documentation in English;
+communicate with the owner in Russian. Original user content may retain its language.
 
-## Где хранится информация
+## Sources of truth
 
-| Информация | Источник правды |
+| Information | Canonical location |
 | --- | --- |
-| Действующие продуктовые требования и решения | `docs/product/mvp-brief.md` |
-| Очередь, текущий исполнитель и следующий шаг | `docs/work/tasks.md` |
-| Цель изменения, критерии, источники, ход и результаты | `docs/work/WNNN-*.md` |
-| Продуктовый кандидат и обсуждение его изменений | Одна ветка и один GitHub PR на задачу |
-| Фактические результаты | Адресуемые логи/артефакты запуска и отчёт с SHA |
+| Current product requirements and decisions | `docs/product/mvp-brief.md` |
+| Queue, current owner, next step | `docs/work/tasks.md` |
+| Change goal, criteria, sources, progress, results | `docs/work/WNNN-*.md` |
+| Product candidate and change discussion | One branch and GitHub PR per task |
+| Observed outcomes | Addressable run logs/artifacts and a report with SHA |
 
-GitHub Issues/Projects подключаем при реальной потребности во внешней очереди.
-Тогда очередь переносится туда с явным указанием нового источника; два статуса
-одной задачи параллельно не поддерживаем. Сейчас Markdown достаточно.
+Introduce GitHub Issues/Projects when an external queue is actually needed.
+Explicitly move the source of truth rather than maintaining conflicting task
+statuses. Markdown currently suffices.
 
-## Порядок изменения
+## Change sequence
 
-1. **Определить результат.** В карточке записать цель, источник требований,
-   изменяемое поведение, то, что не входит в задачу, и наблюдаемые критерии.
-   Для критерия использовать устойчивый ID вида `UFD-01`; название теста
-   содержит этот ID. Не создавать отдельный manifest трассировки.
-2. **Устранить реальные вопросы.** Если ожидаемое поведение уже задано
-   пользователем, сослаться на решение и работать. Только новая существенная
-   развилка требует ответа. Предложение агента не становится принятым требованием.
-3. **Взять одну задачу.** Указать исполнителя, ветку и состояние `active`.
-   Вторую изменяющую задачу не запускать. Перед передачей остановить старого
-   исполнителя и проверить, что его команды завершились; сохранить SHA,
-   незакоммиченный diff и следующий шаг. Автоматического takeover по таймеру нет.
-4. **Проверки до поведения.** Сохранить test-only commit или patch с base SHA
-   до реализации. Выполнить тест и записать фактический исход. Для новой
-   функции нужен содержательный red, если тест может запуститься; для
-   сохранения старого поведения допустим green. Ошибка окружения — BLOCKED,
-   отсутствие запуска — NOT_RUN. Для чистой документации — проверка diff,
-   ссылок и смысла; искусственный red и продуктовые тесты не требуются.
-5. **Реализовать небольшой результат.** Один PR содержит необходимые
-   требования, тесты и код. Обновить изменённое действующее требование в той
-   же задаче; историю причин оставить в карточке. Не вводить новую платформу
-   или общий компонент без ближайшего потребителя.
-6. **Проверить отдельно.** Другой агент получает требования и точный кандидат
-   в чистом контексте, проверяет assertions, фактическое поведение и применимую
-   регрессию. Для критической сохранности данных полезен адресный опыт:
-   намеренно нарушить обязательство в изолированной копии и убедиться, что
-   тест падает. Такой опыт не обязателен для каждого косметического изменения.
-7. **Показать результат.** Для продукта человек получает короткие сценарии,
-   ожидаемые/наблюдаемые исходы, демонстрацию и ограничения на конкретном SHA.
-   Человеческое чтение кода не требуется. Уже данное поручение исполнять или
-   публиковать не требует повторного разрешения; не приписывать человеку
-   фактическую приёмку, если её не было.
-8. **Интегрировать и завершить.** Перед merge проверить актуальные head/base
-   и результаты. Если проверяемый код, тесты, требования или окружение
-   изменились — обновить затронутые проверки. Отчёт после кандидата может
-   добавляться отдельно: явно указать проверенный SHA и убедиться, что
-   последующий diff содержит только отчёт/статус, а не иной код или требования.
+1. **Define the outcome.** Record the goal, requirement source, changed behavior,
+   non-goals, and observable criteria. Use stable IDs such as `UFD-01` in test
+   names; do not create an additional traceability manifest.
+2. **Resolve real ambiguities.** Reference behavior already specified by the
+   owner and proceed. Only a new material choice requires an answer. Agent
+   recommendations do not become accepted requirements automatically.
+3. **Take one task.** Record its owner, branch, and `active` status. Do not start
+   another modifying task. Before handoff, stop the former writer and ensure
+   its commands have finished; preserve SHA, uncommitted diff, and next step.
+   There is no automatic timeout takeover.
+4. **Checks before behavior.** Preserve a test-only commit or patch with base
+   SHA, run it, and record the actual result. Missing new behavior should
+   produce a meaningful red result where runnable; existing regression checks
+   may already be green. Environment failure is BLOCKED; no execution is
+   NOT_RUN. Documentation needs diff, link, and semantic checks rather than
+   artificial red results or unrelated product tests.
+5. **Implement a small result.** One PR contains necessary requirements, tests,
+   and code. Update the affected canonical requirement in that task; keep its
+   reasoning history in the card. Introduce shared infrastructure only with
+   an immediate consumer.
+6. **Review independently.** Another agent receives original requirements and
+   an exact candidate in a fresh context, inspects assertions and behavior,
+   and runs applicable regression checks. For critical data preservation,
+   deliberately breaking a requirement in isolation can verify test sensitivity.
+   Such experiments are not mandatory for cosmetic changes.
+7. **Show the result.** Present understandable scenarios, expected/actual
+   outcomes, a demonstration, and limitations for the specific SHA. Human
+   code reading is not required. Existing implementation/publication authority
+   needs no repeated permission; never invent human functional acceptance.
+8. **Integrate and finish.** Check current head/base and results before merge.
+   If code, tests, requirements, or environment changed, refresh affected
+   checks. A report-only follow-up may retain earlier evidence if it names
+   the reviewed SHA and its diff contains only reports/status, not changed
+   behavior or requirements.
 
-Статусы очереди: `queued` → `active` → `review` → `done`; при препятствии —
-`blocked` с причиной. `done` означает выполненный результат именно этой задачи.
-Для продуктовой задачи отдельно записываются technical verdict и human
-acceptance (`pending`, `accepted`, `rejected` с источником). Выполненная
-документация не делает приложение готовым. Bootstrap этой документации можно
-опубликовать прямо в main; продуктовые изменения идут через PR.
+Queue statuses: `queued` → `active` → `review` → `done`, or `blocked` with a
+reason. `done` refers to the outcome of that specific task. Product tasks record
+technical verdict separately from human acceptance (`pending`, `accepted`, or
+`rejected`, with a source). Completed documentation does not make the app ready.
+Bootstrap documentation may go directly to main; product changes use PRs.
 
-## Минимальная карточка и отчёт
+## Minimal task and review record
 
-Карточка содержит: цель; состояние/исполнителя; источники и принятые решения;
-scope/non-goals; критерии с ID; затрагиваемые требования и зависимости;
-последний SHA/ветку; фактические команды и исходы; ограничения; следующий шаг.
+A card contains goal; status/owner; sources and accepted decisions; scope and
+non-goals; criteria with IDs; affected requirements/dependencies; latest
+SHA/branch; commands and actual outcomes; limitations; and next step.
 
-Отчёт проверки содержит: candidate SHA и base SHA, пути требований и тестов
-в этом кандидате, окружение/версии инструментов, команды, expected/actual,
-PASS/FAIL/BLOCKED/NOT_RUN для критериев, findings и непроверенное. Если есть
-сборка — ссылку/хеш артефакта. Для проверки UI — снимки/запись по необходимости.
-Секреты и личные пользовательские данные не прикладываются.
+A review records candidate/base SHA, requirement/test paths in that candidate,
+environment/tool versions, commands, expected/actual outcomes, criterion
+PASS/FAIL/BLOCKED/NOT_RUN, findings, and unverified areas. Include build artifact
+references/hashes where relevant and UI captures when helpful. Do not attach
+secrets or private user data.
 
-Отдельный `coverage.json`, OpenSpec CLI, три специальных навыка и сервис
-оркестрации сейчас не нужны. Их можно ввести, если простой формат перестанет
-позволять восстановить требования и повторить проверки.
+Extra `coverage.json`, OpenSpec CLI, specialized skills, and an orchestration
+service are unnecessary while this format preserves context and repeatable
+checks. Introduce them only when evidence shows the simple format no longer works.
 
-## Что реально обеспечено
+## Actual guarantees and limits
 
-- Git хранит версии требований и кандидата; отчёт указывает проверенный SHA.
-- Единственный писатель — организационное ограничение. Markdown, assignee и
-  инструкции не дают атомарного захвата и не запрещают обход прямым push.
-- CI `editor-checks` собирает приложение и выполняет браузерные тесты.
-  Main требует PR и успешную актуальную проверку, включая администратора.
-  Настройки прочитаны через GitHub API; свидетельства — в карточке W002.
-  Эта защита не заменяет техническое review и функциональную приёмку.
-- Проверяющий агент независим по контексту, но может повторить ошибку автора.
-  Проверяемые примеры и тесты остаются необходимы.
-- W002 проверяет продуктовый runtime и test-first; результаты находятся в его
-  карточке. Функциональная приёмка человеком записывается отдельно.
-  Документальный пилот W001 не подтверждал эти свойства.
+- Git versions requirements and candidates; reports identify the reviewed SHA.
+- Single-writer ownership is organizational. Markdown, assignees, and
+  instructions do not provide atomic claims or prevent direct-push bypasses.
+- `editor-checks` builds the app and runs browser tests. Main requires PRs and
+  successful up-to-date checks, including administrators. Settings were read
+  through GitHub API; evidence is in W002. This does not replace technical
+  review or functional acceptance.
+- A fresh-context reviewer may still repeat the author's misunderstanding.
+  Observable examples and meaningful tests remain necessary.
+- W002 exercised runtime behavior and test-first; its card holds the evidence.
+  Human acceptance is separate. Documentation pilot W001 did not establish these.
 
-Если понадобятся несколько одновременных писателей или общий изменяемый стенд,
-сначала пересматриваем ограничение, изоляцию и техническое управление доступом.
-До этого не обещаем защиту от устаревшего исполнителя или конкурентных выкладок.
+Before adding concurrent writers or a shared mutable environment, revisit
+isolation and technical access control. Until then, do not promise rejection
+of stale writers or concurrent deployments.
 
-GitHub позволяет сделать проверки обязательными и настроить исключения для
-администраторов; это отдельная настройка сервера, не свойство этого файла:
-[документация защиты веток](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+GitHub branch requirements and administrator exceptions are configured on the
+server, not by this document:
+[protected branch documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).

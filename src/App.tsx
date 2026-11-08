@@ -43,10 +43,15 @@ import {
   X,
 } from "lucide-react";
 
-type BoardNode = Node<
-  { title: string; image?: string; text?: string },
-  "screen" | "note"
->;
+import {
+  loadBoard,
+  saveBoard,
+  importBoard,
+  exportBoard,
+  type BoardNode,
+  type BoardData,
+} from "./boards";
+
 type Actions = {
   update: (id: string, patch: Partial<BoardNode["data"]>) => void;
   remove: (id: string) => void;
@@ -191,6 +196,94 @@ function Editor() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [help, setHelp] = useState(false);
+  const [boardId] = useState(
+    () => new URLSearchParams(location.search).get("board") || "default",
+  );
+  const [title, setTitle] = useState("Новый поток");
+  const [ready, setReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("Загрузка…");
+  const archiveInput = useRef<HTMLInputElement>(null);
+  const saveSequence = useRef(0);
+  const snapshot = (): BoardData => ({ version: 1, title, nodes, edges });
+  useEffect(() => {
+    let disposed = false;
+    loadBoard(boardId)
+      .then((saved) => {
+        if (disposed) return;
+        if (saved) {
+          setTitle(saved.title);
+          setNodes(saved.nodes);
+          setEdges(saved.edges);
+        }
+        setReady(true);
+      })
+      .catch(() => {
+        if (!disposed) {
+          setError(
+            "Не удалось открыть локальное хранилище. Доска не загружена; изменения отключены. Повторите открытие после восстановления доступа.",
+          );
+          setSaveStatus("Ошибка хранения");
+        }
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [boardId]);
+  useEffect(() => {
+    if (!ready) return;
+    const sequence = ++saveSequence.current;
+    setSaveStatus("Сохранение…");
+    // Start transaction on every committed edit; do not debounce away changes before reload.
+    saveBoard(boardId, snapshot())
+      .then(() => {
+        if (sequence === saveSequence.current)
+          setSaveStatus("Сохранено в браузере");
+      })
+      .catch(() => {
+        if (sequence === saveSequence.current) {
+          setSaveStatus("Ошибка сохранения");
+          setError(
+            "Не удалось сохранить доску. Экспортируйте архив перед закрытием.",
+          );
+        }
+      });
+  }, [ready, title, nodes, edges, boardId]);
+  async function openArchive(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    setError("");
+    try {
+      const imported = await importBoard(file);
+      const id = crypto.randomUUID();
+      await saveBoard(id, imported);
+      location.assign("?board=" + id);
+    } catch (e) {
+      setError(
+        "Не удалось импортировать: " +
+          (e instanceof Error ? e.message : "ошибка архива"),
+      );
+      setLoading(false);
+    } finally {
+      if (archiveInput.current) archiveInput.current.value = "";
+    }
+  }
+  function downloadArchive() {
+    try {
+      const bytes = exportBoard(snapshot());
+      const url = URL.createObjectURL(
+        new Blob([new Uint8Array(bytes)], { type: "application/zip" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "theboard-" + boardId + ".zip";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError("Не удалось экспортировать доску");
+    }
+  }
+
   const input = useRef<HTMLInputElement>(null);
   const board = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } =
@@ -200,14 +293,14 @@ function Editor() {
   const notes = nodes.filter((n) => n.type === "note");
 
   useEffect(() => {
-    if (!nodes.length) return;
+    if (!nodes.length || saveStatus === "Сохранено в браузере") return;
     const warn = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [nodes.length]);
+  }, [nodes.length, saveStatus]);
 
   useEffect(() => {
     const cancel = (e: KeyboardEvent) => {
@@ -334,10 +427,33 @@ function Editor() {
           <div className="breadcrumb">
             <span>Мои доски</span>
             <ChevronRight size={14} />
-            <strong>Новый поток</strong>
+            <strong>{title}</strong>
           </div>
+          <button
+            className="archive-button"
+            disabled={!ready || loading}
+            onClick={() => archiveInput.current?.click()}
+          >
+            Импорт ZIP
+          </button>
+          <button
+            className="archive-button"
+            aria-label="Экспорт архива"
+            disabled={!ready || loading}
+            onClick={downloadArchive}
+          >
+            Экспорт ZIP
+          </button>
+          <input
+            className="file-input"
+            ref={archiveInput}
+            aria-label="Импорт архива"
+            type="file"
+            accept=".zip"
+            onChange={openArchive}
+          />
           <span className="session-badge">
-            <span /> Локальная сессия
+            <span /> <span role="status">{saveStatus}</span>
           </span>
           <button
             className="icon-button help-button"
@@ -348,12 +464,12 @@ function Editor() {
             <CircleHelp size={20} />
           </button>
         </header>
-        <div className="workspace">
+        <div className="workspace" inert={!ready || loading}>
           <aside className="sidebar">
             <div className="sidebar-label">РАБОЧЕЕ ПРОСТРАНСТВО</div>
             <div className="board-link">
               <Layers2 size={17} />
-              <span>Новый поток</span>
+              <span>{title}</span>
               <span className="board-dot" />
             </div>
             <div className="sidebar-section">
@@ -388,6 +504,29 @@ function Editor() {
                 </ol>
               )}
             </div>
+            <div className="edge-labels">
+              <h3>Переходы</h3>
+              {edges.map((edge) => (
+                <label key={edge.id}>
+                  {nodes.find((n) => n.id === edge.source)?.data.title} →{" "}
+                  {nodes.find((n) => n.id === edge.target)?.data.title}
+                  <input
+                    aria-label="Подпись перехода"
+                    maxLength={500}
+                    value={String(edge.label ?? "")}
+                    onChange={(e) =>
+                      setEdges((current) =>
+                        current.map((item) =>
+                          item.id === edge.id
+                            ? { ...item, label: e.target.value }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+              ))}
+            </div>
             <div className="sidebar-section overview">
               <div className="section-heading">На доске</div>
               <div>
@@ -414,7 +553,7 @@ function Editor() {
           </aside>
           <main className="canvas" ref={board}>
             <div className="canvas-heading">
-              <h1>Новый поток</h1>
+              <h1>{title}</h1>
               <p>От первого экрана до последнего шага</p>
             </div>
             <div
@@ -617,8 +756,7 @@ function Editor() {
           </span>
           <span>
             <ArrowDownToLine size={13} />
-            Доска хранится только в этой вкладке — после закрытия данные
-            исчезнут
+            Доска хранится в браузере. Экспортируйте архив для резервной копии.
           </span>
           <span className="version-label">THEBOARD PREVIEW</span>
         </footer>

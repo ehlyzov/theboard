@@ -1,19 +1,19 @@
-## Результат
+## Outcome
 
-Что пользователь теперь может сделать; ссылка на карточку WNNN и критерии.
+What the user can now do; task WNNN and acceptance criteria.
 
-## Требования
+## Requirements
 
-Источник ожидаемого поведения, принятые решения, изменённые обязательства.
-Открытые смысловые вопросы, если есть.
+Expected-behavior sources, accepted decisions, and changed obligations.
+Any unresolved material choices.
 
-## Проверка
+## Verification
 
-- Кандидат / база: SHA.
-- Тесты до реализации: commit либо patch + base SHA; ранний фактический исход.
-- Команды, результаты и артефакты; пропуски и ограничения.
-- Отдельный технический review: проверяющий, SHA, verdict и findings.
-- Функциональная приёмка: pending / accepted / rejected и источник решения.
+- Candidate / base SHA.
+- Tests before implementation: commit or patch + base SHA; observed early result.
+- Commands, results, artifacts, skips, and limitations.
+- Independent technical review: reviewer, SHA, verdict, and findings.
+- Human functional acceptance: pending / accepted / rejected, with its source.
 
-Для документации указать применимые проверки вместо неприменимых тестов.
-Технический PASS не означает принятие функциональности человеком.
+For documentation, list applicable checks instead of irrelevant runtime tests.
+Technical PASS does not imply human functional acceptance.

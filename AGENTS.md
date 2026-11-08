@@ -1,31 +1,35 @@
-# Работа агента в TheBoard
+# Working on TheBoard
 
-Перед работой прочитай `CONTRIBUTING.md`, `docs/work/tasks.md` и карточку
-текущей задачи. Продуктовые требования находятся в `docs/product/mvp-brief.md`.
+Read `CONTRIBUTING.md`, `docs/work/tasks.md`, and the current task card before
+starting. Product requirements live in `docs/product/mvp-brief.md`.
 
-- Одна активная изменяющая задача и один исполнитель на весь проект.
-  Другие агенты могут исследовать и проверять только для чтения.
-- Карточка задачи — передача контекста, а не атомарная блокировка.
-  Не запускай второго исполнителя без явного завершения/передачи первого.
-- Сохраняй заданную пользователем роль. Проверяющий не исправляет продукт.
-- Для продуктового изменения сначала фиксируй наблюдаемые критерии и
-  исполняемые проверки, затем реализацию. Не ослабляй исходы ради green.
-- Новую смысловую развилку верни человеку; не спрашивай повторного одобрения
-  уже заданного поведения. Несвязанные разрешённые действия продолжай.
-- Для продуктового кандидата и изменения этого workflow запускай одного
-  отдельного проверяющего subagent с чистым контекстом. Передавай ему карточку,
-  исходные решения, точный SHA и команды, но не убеждающее резюме автора.
-  Его роль — чтение, воспроизводимые проверки и отчёт, без правок.
-- Модели: обычная разработка и проверка — `gpt-6.1-sol`, `high`;
-  простая однозначная задача — `gpt-6-luna`, `max`. Недоступность сообщи,
-  не подменяй модель молча. Astra допускается лишь для конкретно названной
-  трудной подзадачи по глобальным соглашениям владельца.
-- Один полный review и адресная перепроверка исправлений. Повторная полная
-  проверка требует новой существенной причины.
-- PASS, FAIL, BLOCKED, NOT_RUN описывают наблюдения. Технический PASS не
-  означает человеческую приёмку. Self-review не называй независимым.
-- Не создавай инфраструктуру координации, навыки или новые форматы отчётов
-  без конкретной потребности ближайшей продуктовой задачи.
-- По завершении сохрани фактический результат, ограничения и следующий шаг
-  в карточке. Не публикуй личные чаты, внутренние материалы других проектов,
-  секреты и реальные пользовательские доски в этом публичном репозитории.
+- Repository documentation and instructions are written in English. Communicate
+  with the owner in Russian. Preserve original-language user content and test fixtures.
+- Keep board data agent-friendly and declarative: stable IDs, explicit nodes,
+  edges, labels, notes, positions, and asset paths. See `docs/board-format.md`.
+- One active modifying task and one writer for the entire project. Other agents
+  may investigate and review read-only.
+- A task card transfers context; it is not an atomic lock. Do not start a second
+  writer until the first has finished or explicitly handed off the task.
+- Preserve user-assigned roles. A reviewer does not fix product code.
+- For product changes, record observable criteria and executable checks before
+  implementation. Never weaken expected outcomes to obtain green tests.
+- Return new material behavior choices to the owner. Do not ask again about
+  behavior already specified. Continue unrelated authorized work.
+- For a product candidate or workflow change, run one separate reviewer subagent
+  with a fresh context. Supply the task, original decisions, exact SHA, and
+  commands, without the author's persuasive summary. The reviewer reads,
+  reproduces checks, and reports; it does not modify files.
+- Models: ordinary implementation and review use `gpt-6.1-sol`, `high`; simple,
+  unambiguous tasks use `gpt-6-luna`, `max`. Report unavailable models instead of
+  silently substituting. Use Astra only for a specifically bounded difficult
+  assignment under the owner's global agreements.
+- One full review and a targeted recheck of repairs. Another full review needs
+  a new material reason.
+- PASS, FAIL, BLOCKED, and NOT_RUN describe observations. Technical PASS is not
+  human acceptance. Do not describe self-review as independent.
+- Do not create coordination infrastructure, skills, or reporting formats
+  without a concrete need in the next product task.
+- On completion, record results, limitations, and the next step in the card.
+  Never publish private chats, another project's internal materials, secrets,
+  or real user boards in this public repository.

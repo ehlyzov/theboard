@@ -1,16 +1,15 @@
-# Очередь TheBoard
+# TheBoard task queue
 
-Одна изменяющая задача одновременно. Карточки и эта очередь — общий контекст,
-а не техническая блокировка. Правила — [CONTRIBUTING](../../CONTRIBUTING.md).
+One modifying task at a time. This queue and its cards share context; they are
+not a technical lock. Read [CONTRIBUTING](../../CONTRIBUTING.md).
 
-| ID | Результат | Состояние | Исполнитель | Следующий шаг |
+| ID | Outcome | Status | Owner | Next step |
 | --- | --- | --- | --- | --- |
-| [W001](W001-workflow.md) | Выбрать процесс и проверить передачу решений MVP | done | Чат TheBoard; отдельный проверяющий | Документальный пилот PASS; результаты в карточке |
-| [W002](W002-ufd-editor.md) | Собрать UFD из скриншотов, стрелок и заметок | done | Чат TheBoard; отдельный проверяющий | Технический PASS, PR #1; функциональная приёмка pending |
-| W003 | Сохранить доску в браузере и восстановить после открытия | queued | Не назначен | После W002: тест восстановления изображений, координат и связей |
+| [W001](W001-workflow.md) | Select a process and exercise MVP decision handoff | done | TheBoard chat; independent reviewer | Documentation pilot PASS; evidence in card |
+| [W002](W002-ufd-editor.md) | Build UFDs from screenshots, arrows, and notes | done | TheBoard chat; independent reviewer | Technical PASS, PR #1; human acceptance pending |
+| [W003](W003-board-archives.md) | Independent local boards, archives, declarative agent format | active | TheBoard chat | Import/reload/roundtrip checks, independent review |
 
-W002 — первый продуктовый опыт, не весь MVP. Браузерное сохранение,
-офлайн-перезапуск, архив и GitHub остаются обязательствами продукта;
-их декомпозиция последует за первым срезом. D3/D4 не блокируют исследование
-и редактор, но должны быть решены перед зависимыми обещаниями синхронизации
-и совместной работы. Первый редактор реализован в W002.
+W002 was the first product slice, not the entire MVP. Browser persistence,
+archives, offline startup, and GitHub remain product obligations; W003 addresses
+local persistence and archives. D3/D4 do not block editor investigation, but
+must be resolved before dependent synchronization or collaboration promises.

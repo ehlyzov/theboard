@@ -75,6 +75,7 @@ type Actions = {
   hoveredFlowNodes: string[];
   tool: "select" | "brush";
   brushRadius: number;
+  changeBrushRadius: (radius: number) => void;
   brushScreenId: string | null;
   activateBrush: (id: string) => void;
   hoverScreen: (id: string | null) => void;
@@ -96,6 +97,7 @@ const ActionsContext = createContext<Actions>(null!);
 
 function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
   const actions = useContext(ActionsContext);
+  const {zoom}=useViewport();
   const docked=actions.nodes.filter(n=>n.data.dock?.screenId===id);
   const side=(s:Dock['side'])=>docked.filter(n=>n.data.dock?.side===s);
   const coreWidth=data.imageSize && data.imageSize.width>=data.imageSize.height?400:230;
@@ -136,6 +138,20 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
         >
           <Highlighter size={15} />
         </button>
+        {actions.tool === "brush" && actions.brushScreenId === id && (
+          <div className="marker-size-control nodrag nopan"
+            style={{top:`calc(100% + ${6/zoom}px)`,transform:`scale(${1/zoom})`}}
+            onPointerDown={event=>event.stopPropagation()}
+            onClick={event=>event.stopPropagation()}
+            title="Размер маркера · [ уменьшить · ] увеличить">
+            <input type="range" min="1" max="20" step="1"
+              aria-label="Размер маркера"
+              aria-valuetext={Math.round(actions.brushRadius*100)+'%'}
+              value={Math.round(actions.brushRadius*100)}
+              onChange={event=>actions.changeBrushRadius(Number(event.target.value)/100)}/>
+            <output>{Math.round(actions.brushRadius*100)}%</output>
+          </div>
+        )}
         <button
           className="icon-button nodrag"
           aria-label="Удалить экран"
@@ -539,6 +555,7 @@ function Editor() {
   // Canonical nodes/edges remain the only input to save/export. Focus geometry
   // exists solely in these controlled React Flow props, never in board state.
   const displayNodes = nodes.map(n=>({...n,
+    zIndex:tool==='brush'&&brushScreenId===n.id ? 1000 : n.zIndex,
     position:focusGeometry?.positions.get(n.id) ?? n.position,
     hidden:Boolean(n.data.dock)||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
   }));
@@ -965,6 +982,7 @@ function Editor() {
           : [],
         tool,
         brushRadius,
+        changeBrushRadius:radius=>setBrushRadius(Math.max(.01,Math.min(.2,radius))),
         brushScreenId,
         activateBrush: (id) => {
           if (brushScreenId && brushScreenId !== id) return;
@@ -1649,7 +1667,8 @@ function Editor() {
                   </li>
                   <li>Нажмите маркер в шапке нужного экрана или наведите на экран
                     и нажмите B. Нарисуйте маску на этом экране;
-                    [ и ] меняют размер кисти, Enter завершает выделение. Затем
+                    Бегунок у маркера или [ и ] меняют размер кисти;
+                    Enter завершает выделение. Затем
                     выберите заметку или создайте новую.</li>
                   <li>Автокомпоновка включается слева. Выключите её, чтобы
                     размещать карточки и подписи вручную.</li>

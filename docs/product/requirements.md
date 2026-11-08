@@ -86,3 +86,8 @@ suite; it is not reported as passing or implemented.
   unrelated canvas content without deleting or moving it. Selecting a visible
   destination changes the focus source; leaving focus restores the full board.
   Persist focus workspace preferences with the viewport. Verification pending.
+
+- LAYOUT-01 (`approved_by_human`, direct screenshot feedback): transition labels
+  must clearly identify their edge and avoid overlap with other labels and
+  diagram nodes. Provide manual layout adjustment, storing geometry in a
+  separate `layout` section of the portable file, not mixed with graph meaning.

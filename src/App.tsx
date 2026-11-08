@@ -302,6 +302,39 @@ function Editor() {
     setRegionSelection({ screenId, regionId: region.id });
     setPendingRegion(null);
   }
+  const [focusEnabled, setFocusEnabled] = useState(() =>
+    Boolean(workspace(currentBoard()).focusEnabled),
+  );
+  const [currentScreenId, setCurrentScreenId] = useState<string | undefined>(
+    () => workspace(currentBoard()).currentScreenId,
+  );
+  const focusIds = new Set(
+    currentScreenId
+      ? [
+          currentScreenId,
+          ...edges
+            .filter((e) => e.source === currentScreenId)
+            .map((e) => e.target),
+        ]
+      : [],
+  );
+  const focusedNoteIds = new Set(
+    nodes
+      .filter((n) => focusIds.has(n.id))
+      .flatMap((n) => (n.data.regions ?? []).flatMap((r) => r.noteIds ?? [])),
+  );
+  const focusActive =
+    focusEnabled &&
+    Boolean(nodes.find((n) => n.id === currentScreenId && n.type === "screen"));
+  const displayNodes = focusActive
+    ? nodes.map((n) => ({
+        ...n,
+        hidden: !focusIds.has(n.id) && !focusedNoteIds.has(n.id),
+      }))
+    : nodes;
+  const displayEdges = focusActive
+    ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId }))
+    : edges;
   const [help, setHelp] = useState(false);
   const [boardId] = useState(() => currentBoard());
   const [title, setTitle] = useState("Новый поток");
@@ -441,10 +474,30 @@ function Editor() {
       localStorage.setItem("theboard:last-board", boardId);
       localStorage.setItem(
         "theboard:workspace:" + boardId,
-        JSON.stringify(viewport),
+        JSON.stringify({ ...viewport, focusEnabled, currentScreenId }),
       );
     } catch {}
-  }, [viewport.x, viewport.y, viewport.zoom, boardId]);
+  }, [
+    viewport.x,
+    viewport.y,
+    viewport.zoom,
+    boardId,
+    focusEnabled,
+    currentScreenId,
+  ]);
+  useEffect(() => {
+    if (!focusActive) return;
+    const frame = requestAnimationFrame(
+      () =>
+        void fitView({
+          nodes: Array.from(focusIds).map((id) => ({ id })),
+          padding: 0.2,
+          maxZoom: 1,
+          duration: 150,
+        }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [focusEnabled, currentScreenId]);
   const screens = nodes.filter((n) => n.type === "screen");
   const notes = nodes.filter((n) => n.type === "note");
 
@@ -799,6 +852,17 @@ function Editor() {
                 <StickyNote size={19} />
                 <span>Заметка</span>
               </button>
+              <button
+                className={"tool labeled " + (focusActive ? "active" : "")}
+                aria-label="Режим фокуса"
+                aria-pressed={Boolean(focusActive)}
+                disabled={!currentScreenId}
+                onClick={() => setFocusEnabled((v) => !v)}
+                title="Выберите экран: только его исходящие переходы"
+              >
+                <Scan size={18} />
+                <span>Фокус</span>
+              </button>
             </div>
             <input
               ref={input}
@@ -811,8 +875,11 @@ function Editor() {
               onChange={upload}
             />
             <ReactFlow
-              nodes={nodes}
-              edges={edges}
+              nodes={displayNodes}
+              edges={displayEdges}
+              onNodeClick={(_, node) => {
+                if (node.type === "screen") setCurrentScreenId(node.id);
+              }}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               onNodesChange={onNodesChange}
@@ -821,6 +888,21 @@ function Editor() {
               connectOnClick={false}
               onPaneClick={() => setConnecting(null)}
               onNodesDelete={(deleted) => {
+                const ids = new Set(deleted.map((n) => n.id));
+                setNodes((current) =>
+                  current
+                    .filter((n) => !ids.has(n.id))
+                    .map((n) => ({
+                      ...n,
+                      data: {
+                        ...n.data,
+                        regions: n.data.regions?.map((r) => ({
+                          ...r,
+                          noteIds: r.noteIds?.filter((id) => !ids.has(id)),
+                        })),
+                      },
+                    })),
+                );
                 if (deleted.some((n) => n.id === connecting))
                   setConnecting(null);
               }}

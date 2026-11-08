@@ -130,12 +130,13 @@ export default function RegionImage({
                   "brush-mask " + (selected === r.id ? "selected" : "")
                 }
                 viewBox={`0 0 1000 ${1000 / ratio}`}
-                style={{ pointerEvents: drawing ? "none" : "auto" }}
+                style={{ pointerEvents: "none" }}
               >
                 <g
                   role="button"
                   tabIndex={0}
                   aria-label={"Область " + (i + 1)}
+                  style={{pointerEvents:drawing?"none":"stroke"}}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelect(r.id);

@@ -4,6 +4,10 @@ An offline-first canvas for application user flows: screenshots, directed
 transitions, and notes. Bring your own storage instead of relying on a
 TheBoard data server.
 
+[Open TheBoard](https://ehlyzov.github.io/theboard/).
+Boards stay in browser storage. To move an existing localhost board to this
+hosted origin, export its ZIP locally and import it in the hosted app.
+
 ## Product direction
 
 Store boards in a folder in your own GitHub repository or in browser storage.
@@ -72,6 +76,24 @@ npm test
 Linux CI installs the browser with `--with-deps`. Tests use synthetic images
 under `tests/fixtures/`; HTML results are in `playwright-report/`.
 Images are limited to PNG/JPEG/WebP, 10 MB and 40 megapixels each.
+
+## GitHub Pages
+
+`npm run build:pages` creates `dist-pages/` with the `/theboard/` base path;
+`npm run test:pages` checks that production artifact on a separate local port.
+The ordinary development/root build keeps `/` as its base.
+
+The Actions workflow runs the existing editor suite and the Pages production
+checks on pull requests. On `main`, deployment waits for both jobs to pass and
+publishes only the tested static artifact. It includes app/legal assets, never
+browser board data. See [publication verification](docs/work/W010-license-pages.md).
+
+## License
+
+Project code is licensed under the [Apache License 2.0](LICENSE), with attribution
+in [NOTICE](NOTICE). Third-party components retain their own licenses; see
+[third-party notices](THIRD_PARTY_NOTICES.md). Production builds include
+`LICENSE.txt`, `NOTICE.txt` and a complete `THIRD_PARTY_NOTICES.txt` bundle.
 
 ## Declarative boards for agents
 

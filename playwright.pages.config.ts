@@ -1,6 +1,8 @@
 import {defineConfig} from '@playwright/test';
 
-const site=process.env.PAGES_URL??'http://127.0.0.1:4360/theboard/';
+const siteUrl=new URL(process.env.PAGES_URL??'http://127.0.0.1:4360/theboard/');
+if(!siteUrl.pathname.endsWith('/'))siteUrl.pathname+='/';
+const site=siteUrl.href;
 export default defineConfig({
   testDir:'./tests-pages',
   fullyParallel:true,

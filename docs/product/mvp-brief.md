@@ -85,7 +85,9 @@ storage of images and board content is still necessary for offline work.
 
 At discovery time the stack, GitHub authentication, board/archive format, and
 license were undecided. W002 chose the stack and W003 defines the local format;
-GitHub access and license remain open. Technical choices must preserve the
+GitHub access remains open. The owner selected Apache License2.0 and GitHub
+Pages publication on2026-11-09; browser-local storage and GitHub exchange are
+still separate product concerns. Technical choices must preserve the
 approved storage and offline constraints.
 
 ## Proposed acceptance criteria

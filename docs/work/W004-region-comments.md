@@ -104,3 +104,20 @@ fills the screen width below it; route geometry is actually rendered; inspect
 overlaps/coincidences and report remaining crossings; hover reveals only the
 matching dashed leader; support pan/zoom through 400%; no external network
 dependency in the generated preview. Private data and previews remain local.
+
+## Approved main-editor integration
+
+The owner prefers the demonstrated layout and explicitly requested integration
+without losing editor functionality. AUTO-01/02 require an on/off automatic
+mode, manual placement while off, and a reset warning before enabling. Cancel
+must preserve manual geometry. Existing masks, note editing/colors, focus,
+archives, viewport and image ratios remain regression obligations. Test-only
+candidate adds tests/auto-layout.spec.ts; existing DOCK-01 test remains a required
+red-to-green check, not an exclusion from the final integration suite.
+
+ARCH-05 is a minimal independently verifiable step: replacement from ZIP at the
+same URL with a recovery board. Two focused archive checks PASS on0077d42;
+source operator instructions are recorded in the private handoff. The initial
+red run waited on the missing input; its trace artifacts were disrupted by an
+overlapping later run, so only the console observation is usable. Subsequent
+runs must not share a mutable result directory concurrently.

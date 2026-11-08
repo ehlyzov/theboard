@@ -149,6 +149,14 @@ export async function importBoard(file: File): Promise<BoardData> {
   return { version: 1, title: text(raw.title, 300), nodes, edges };
 }
 export function exportBoard(board: BoardData): Uint8Array {
+  if (board.nodes.length > 500 || board.edges.length > 2000)
+    throw new Error("Board size limit");
+  text(board.title, 300);
+  board.nodes.forEach((n) => {
+    text(n.data.title, 300);
+    if (n.type === "note") text(n.data.text ?? "", 12000);
+  });
+  board.edges.forEach((e) => text(e.label ?? "", 500));
   const files: Record<string, Uint8Array> = {};
   const nodes = board.nodes.map((n, index) => {
     const data = { ...n.data };
@@ -181,5 +189,7 @@ export function exportBoard(board: BoardData): Uint8Array {
       2,
     ),
   );
+  if (Object.values(files).reduce((size, file) => size + file.length, 0) > MAX)
+    throw new Error("Archive size limit");
   return zipSync(files, { level: 3 });
 }

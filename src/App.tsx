@@ -220,7 +220,7 @@ function Editor() {
       .catch(() => {
         if (!disposed) {
           setError(
-            "Не удалось открыть локальное хранилище. Экспортируйте изменения перед закрытием.",
+            "Не удалось открыть локальное хранилище. Доска не загружена; изменения отключены. Повторите открытие после восстановления доступа.",
           );
           setSaveStatus("Ошибка хранения");
         }
@@ -512,6 +512,7 @@ function Editor() {
                   {nodes.find((n) => n.id === edge.target)?.data.title}
                   <input
                     aria-label="Подпись перехода"
+                    maxLength={500}
                     value={String(edge.label ?? "")}
                     onChange={(e) =>
                       setEdges((current) =>

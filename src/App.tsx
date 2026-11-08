@@ -147,6 +147,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       </div>
       <RegionImage
         image={data.image!}
+        imageSize={data.imageSize}
         title={data.title}
         regions={data.regions ?? []}
         selected={
@@ -526,13 +527,29 @@ function Editor() {
   const focusActive =
     focusEnabled &&
     !arranging && Boolean(nodes.find((n) => n.id === currentScreenId && n.type === "screen"));
-  const displayNodes = nodes.map(n=>({...n,hidden:Boolean(n.data.dock)||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id))}));
+  const focusNodes = nodes.filter(n => focusIds.has(n.id) ||
+    (n.data.dock ? focusIds.has(n.data.dock.screenId) : focusedNoteIds.has(n.id)));
+  const focusEdges = edges.filter(e => e.source === currentScreenId);
+  const focusKey = focusActive ? JSON.stringify({ source:currentScreenId,direction,
+    nodes:focusNodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,measured:n.measured})),
+    edges:focusEdges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label})),
+  }) : null;
+  const [focusLayout,setFocusLayout] = useState<{key:string;result?:Awaited<ReturnType<typeof arrangeBoard>>} | null>(null);
+  const focusGeometry = focusKey && focusLayout?.key === focusKey ? focusLayout.result : undefined;
+  // Canonical nodes/edges remain the only input to save/export. Focus geometry
+  // exists solely in these controlled React Flow props, never in board state.
+  const displayNodes = nodes.map(n=>({...n,
+    position:focusGeometry?.positions.get(n.id) ?? n.position,
+    hidden:Boolean(n.data.dock)||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
+  }));
   const displayEdges = focusActive
-    ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId }))
+    ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId,
+      data:{...e.data,route:undefined,labelPosition:undefined,labelManual:false,...focusGeometry?.edges.get(e.id)},
+    }))
     : edges;
   const labelPositions = useMemo(
     () => labelLayouts(displayNodes, displayEdges),
-    [nodes, edges, focusEnabled, currentScreenId],
+    [displayNodes, displayEdges],
   );
   const [help, setHelp] = useState(false);
   const [boardId] = useState(() => currentBoard());
@@ -740,12 +757,23 @@ function Editor() {
     });return()=>cancelAnimationFrame(frame);
   },[nodes,zoom]);
   const [initialViewport] = useState(() => workspace(boardId));
+  const normalViewport = useRef(initialViewport);
+  const wasFocused = useRef(focusEnabled);
+  const restoringViewport = useRef(false);
+  useEffect(()=>{
+    if(focusEnabled && !wasFocused.current) normalViewport.current=getViewport();
+    if(!focusEnabled && wasFocused.current){
+      restoringViewport.current=true;
+      void setViewport(normalViewport.current,{duration:150}).finally(()=>{restoringViewport.current=false;});
+    }
+    wasFocused.current=focusEnabled;
+  },[focusEnabled]);
   useEffect(() => {
     try {
       localStorage.setItem("theboard:last-board", boardId);
       localStorage.setItem(
         "theboard:workspace:" + boardId,
-        JSON.stringify({ ...viewport, focusEnabled, currentScreenId }),
+        JSON.stringify({ ...(focusEnabled || restoringViewport.current ? normalViewport.current : viewport), focusEnabled, currentScreenId }),
       );
     } catch {}
   }, [
@@ -756,19 +784,31 @@ function Editor() {
     focusEnabled,
     currentScreenId,
   ]);
-  useEffect(() => {
-    if (!focusActive) return;
-    const frame = requestAnimationFrame(
-      () =>
-        void fitView({
-          nodes: focusFrame(nodes,focusIds,currentScreenId!,{width:board.current?.clientWidth??1000,height:board.current?.clientHeight??800}),
-          padding: 0.2,
-          maxZoom: 1,
-          duration: 150,
-        }),
-    );
-    return () => cancelAnimationFrame(frame);
-  }, [focusEnabled, currentScreenId]);
+  useEffect(()=>{
+    if(!ready || !focusKey){setFocusLayout(null);return;}
+    let disposed=false;
+    // Measure the currently visible composites after React Flow has rendered.
+    const timer=setTimeout(()=>{
+      void arrangeBoard(focusNodes,focusEdges,direction).then(result=>{
+        if(!disposed)setFocusLayout({key:focusKey,result});
+      }).catch(()=>{
+        if(!disposed){
+          setFocusLayout({key:focusKey});
+          setError('Не удалось рассчитать временную компоновку фокуса. Исходное расположение сохранено.');
+        }
+      });
+    },80);
+    return()=>{disposed=true;clearTimeout(timer);};
+  },[ready,focusKey]);
+  useEffect(()=>{
+    if(!focusGeometry)return;
+    const frame=requestAnimationFrame(()=>{
+      updateNodeInternals([...focusGeometry.positions.keys()]);
+      void fitView({nodes:focusNodes.filter(n=>!n.data.dock).map(n=>({id:n.id})),
+        padding:.2,maxZoom:1,duration:150});
+    });
+    return()=>cancelAnimationFrame(frame);
+  },[focusGeometry]);
   const screens = nodes.filter((n) => n.type === "screen");
   const notes = nodes.filter((n) => n.type === "note");
 
@@ -1051,6 +1091,7 @@ function Editor() {
                   onClick={()=>{if(!currentScreenId)setCurrentScreenId(screens[0]?.id);setFocusEnabled(v=>!v);}}><i/></button>
                 <span>Только выделенное</span>
               </div>
+              {focusActive && focusLayout?.key !== focusKey && <p role="status">Компоновка фокуса…</p>}
               <div className="section-heading">
                 Экраны <span>{screens.length.toString().padStart(2, "0")}</span>
               </div>
@@ -1229,7 +1270,7 @@ function Editor() {
               onChange={upload}
             />
               <HoveredTransition.Provider
-              value={{ id: hoveredTransition, setId: setHoveredTransition, automatic }}
+              value={{ id: hoveredTransition, setId: setHoveredTransition, automatic:automatic||focusActive }}
             >
               <LabelPositions.Provider value={labelPositions}>
                 <ReactFlow
@@ -1240,8 +1281,8 @@ function Editor() {
                   }}
                   nodeTypes={nodeTypes}
                   edgeTypes={edgeTypes}
-                  onNodesChange={onNodesChange}
-                  nodesDraggable={!automatic}
+                  onNodesChange={changes=>onNodesChange(focusActive ? changes.filter(c=>c.type!=='position') : changes)}
+                  nodesDraggable={!automatic&&!focusActive}
                   onNodeDragStart={()=>{if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));}}
                   onEdgesChange={onEdgesChange}
                   onConnect={connect}
@@ -1278,7 +1319,7 @@ function Editor() {
                 >
                   <ViewportPortal>
                     <svg className="mask-note-connectors" width="1" height="1">
-                      {nodes
+                      {displayNodes
                         .filter((n) => !focusActive || focusIds.has(n.id))
                         .flatMap((screen) =>
                           (screen.data.regions ?? []).flatMap((region) => {
@@ -1307,9 +1348,15 @@ function Editor() {
                             const x = screen.position.x + offset.x + 10 + center.x * width,
                               y = screen.position.y + offset.y + 37 + center.y * height;
                             return (region.noteIds ?? []).map((id) => {
-                              const note = nodes.find((n) => n.id === id);
+                              const note = displayNodes.find((n) => n.id === id);
                               if (!note) return null;
-                              const box=anchors[note.data.dock?.screenId??'']?.notes[id]??{...note.position,...nodeSize(note)};
+                              const dockId=note.data.dock?.screenId;
+                              const anchor=dockId ? anchors[dockId]?.notes[id] : undefined;
+                              const parent=displayNodes.find(n=>n.id===dockId),canonicalParent=nodes.find(n=>n.id===dockId);
+                              const box=anchor&&parent&&canonicalParent ? {...anchor,
+                                x:anchor.x+parent.position.x-canonicalParent.position.x,
+                                y:anchor.y+parent.position.y-canonicalParent.position.y,
+                              } : {...note.position,...nodeSize(note)};
                               const targetX =
                                   box.x +
                                   (box.x < x ? box.width : 0),

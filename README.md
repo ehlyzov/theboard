@@ -34,7 +34,10 @@ preferences. The sidebar can switch between automatic ELK arrangement and
 manual placement. Enabling automatic layout warns before resetting manual
 positions; cancelling preserves the arrangement. Docked notes remain editable
 and portable, and move with their screen. Hover a transition label to reveal
-its dashed leader and highlight its arrow and endpoints.
+its dashed leader and highlight its arrow and endpoints. Focus computes a
+temporary compact layout for the selected screen and its destinations; it is
+not saved or exported. Leaving focus restores the original placement and
+normal-view viewport. Content edits still save normally.
 
 ## Run and verify
 

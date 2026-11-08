@@ -125,3 +125,12 @@ Normal import creates a new board. “Replace board from ZIP” validates first,
 saves the old board under a recovery ID, then replaces the current board while
 keeping its URL. Invalid archives leave it unchanged. A recovery link remains
 available in that browser; transient old-mask Undo state is cleared on replace.
+
+## Temporary focus view
+
+Focus computes a separate compact view of the current screen, its outgoing
+destinations and visible notes. Its node positions, routes and label placements
+are runtime-only: they never replace the canonical `layout` exported here or
+the board stored in IndexedDB. Reload recomputes that view. Leaving focus
+restores canonical placement and the normal-view viewport. Ordinary content
+edits and explicit global layout controls retain their existing persistence.

@@ -1,6 +1,6 @@
 # W010 — Apache license and GitHub Pages
 
-Status: review. Owner: TheBoard chat. Base:714931dcd2e8a66b05cfa7f96f5d22496cd7a805.
+Status: done. Owner: TheBoard chat. Base:714931dcd2e8a66b05cfa7f96f5d22496cd7a805.
 Branch: feat/apache-license-and-pages. Human acceptance pending.
 Source: direct owner request,2026-11-09: add Apache licensing and publish TheBoard
 on GitHub Pages. Existing instruction: checks must be green before publication.
@@ -21,7 +21,8 @@ changes use exact-source/diff checks. Keep all30 existing tests unchanged; add
 separate Pages config/tests and isolated dist-pages output. Independent review
 covers license packaging, workflow gates and prefix behavior. Public smoke after
 actual deployment; no user browser or private board mutations.
-Technical verdict: local PASS; independent review and publication pending.
+Technical verdict: PASS (local, independent, hosted CI and live publication).
+Human acceptance remains pending; publication was explicitly authorized.
 
 ## Implementation checkpoint
 
@@ -50,3 +51,37 @@ artifact scan PASS: eight static files, no private project content, archives,
 source maps or user assets. LICENSE SHA256:
 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`
 (matches the official Apache source byte-for-byte). `git diff --check` PASS.
+
+## Publication result
+
+Released implementation: `8f9cd0c03827c4757ff216f8359bc73269a0e211`, merged
+through [PR8](https://github.com/ehlyzov/theboard/pull/8) from reviewed candidate
+`36c6fd1f1442d5c8799c0d18f48ef816540398f3`.
+
+The separate fresh-context reviewer reproduced both Pages checks and all30
+original editor checks in isolated builds/profiles, and the meaningful red
+home-prefix assertion at67f08ac. License text matched the official source;
+all29 production package license files were retained verbatim; the eight-file
+artifact contained no boards or private assets. Workflow review found no
+blocking issue. Report retained locally at
+`/tmp/theboard-pages-review-36c6fd1/REVIEW.md` (not needed to use the app).
+
+- [PR CI42529583900](https://github.com/ehlyzov/theboard/actions/runs/42529583900):
+  editor-checks and pages-checks PASS; deployment correctly skipped on PR.
+- [Main CI/deployment42529806183](https://github.com/ehlyzov/theboard/actions/runs/42529806183):
+  editor-checks, pages-checks and deploy all PASS for8f9cd0c.
+- Live origin: [TheBoard](https://ehlyzov.github.io/theboard/).
+  `PAGES_URL=https://ehlyzov.github.io/theboard/ npm run test:pages` PASS2/2:
+  synthetic editing, lazy layout, persisted reload, ZIP exchange, prefix-safe
+  home navigation and exact legal assets. No private/user browser was used.
+- GitHub recognizes Apache-2.0. Pages uses Actions and HTTPS; the deployment
+  environment allows protected branches only. Main retains up-to-date required
+  editor checks, mandatory PR integration and administrator enforcement.
+
+LICENSE-01 and PAGES-01..03: PASS. This is technical verification, not claimed
+human functional acceptance. Browser storage is origin-specific: move localhost
+boards using ZIP export/import. The publication does not implement GitHub board
+synchronization or the separately queued offline-startup/Markdown features.
+Next: use the public app and continue the existing product queue. This
+report-only follow-up preserves the reviewed implementation; its own final CI
+and deployment links are recorded in its PR.

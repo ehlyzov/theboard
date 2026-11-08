@@ -1,6 +1,27 @@
-# W004 — screenshot region discussions
+# W004 — masks, ordinary notes and composite layout
 
-Status: active. Owner: TheBoard chat. Source: direct owner request for a mask-like
+Current result: the full editor integrates measured ELK layout, automatic/manual
+modes with reset confirmation, four-side ordinary-note docking, focus navigation,
+mask-to-note links, eight colors, workspace persistence and ZIP replacement with
+recovery. Latest UI refinements put the marker in each screen header and all
+navigation hints in the bottom status area. Earlier checkpoints below are
+historical and do not override this summary or the canonical requirements.
+
+Verification: full independent review277edbc reproduced20/20 tests and private
+data/asset equality. Its focus finding was repaired and independently rechecked
+at1870b78. Hidden dock-coordinate fidelity was independently checked at68a08d;
+manual SVG handles and navigation test synchronization passed targeted review
+at4102e4a, whose required CI passed. Latest source builds and23/23 browser tests
+PASS locally; contextual marker/footer recheck and final-head CI remain pending.
+The new scenario was red in test-only45bb609 before implementation.
+
+Human acceptance: positive layout feedback and source-operator private-board
+confirmation; full functional acceptance remains pending. Next scope is W005
+Markdown nodes/fragment annotations. GitHub synchronization, offline startup,
+and fixed-node obstacle routing remain separate; proper crossings remain.
+
+
+Status: review. Owner: TheBoard chat. Source: direct owner request for a mask-like
 region selector, linked highlighted comments, additional replies, and completion
 without removing comments from history. No new approval required.
 
@@ -169,3 +190,17 @@ The dependency's upstream license text is served locally and linked from
 THIRD_PARTY_NOTICES.md. Private real-data observations and screenshots remain in
 the private handoff; the source operator confirmed49 nested note pairs and
 reload/export/reimport on the original local board URL.
+
+## Contextual marker and unobstructed hints
+
+The owner's latest correction supersedes common-toolbar brush placement:
+each screen header owns its marker pictogram beside deletion. B targets the
+hovered/selected screen (or the sole screen); bracket radius and mask semantics
+remain. Other markers are disabled while that screen owns the unfinished draft,
+so switching cannot silently discard strokes. Navigation instructions move into
+the bottom status area, outside both editor and standalone-example canvases.
+
+Test-only45bb609 on4102e4a failed meaningfully because the brush remained in the
+common toolbar. The added scenario checks contextual activation, another screen
+being locked, cancellation, B on a hovered screen, and footer/canvas separation.
+Earlier common-toolbar descriptions in this card are historical.

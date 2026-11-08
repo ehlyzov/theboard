@@ -13,10 +13,9 @@
 <label>Направление <select id="direction"><option value="RIGHT">Слева направо</option><option value="DOWN">Сверху вниз</option></select></label>
 <button id="focus" aria-pressed="false">Фокус: выкл.</button></div>
 <div class="zoom"><button id="minus" aria-label="Уменьшить">−</button><output id="zoom">100%</output><button id="plus" aria-label="Увеличить">+</button></div>
-<p class="hint">Перетаскивание / Пробел / Alt — перемещение · колесо — масштаб · наведите на подпись, чтобы увидеть её стрелку</p>
 <div id="loading" role="status">Измеряем экраны и заметки…</div>
 </main>
-<footer><span id="status">Компоновка…</span><button id="diagnostics-button">Диагностика</button><span>Просмотр · масштаб до 400%</span></footer>
+<footer><span id="status">Компоновка…</span><button id="diagnostics-button">Диагностика</button><span>Просмотр · масштаб до 400%</span><p class="hint">Перетаскивание / Пробел / Alt — перемещение · колесо — масштаб · наведите на подпись, чтобы увидеть её стрелку</p></footer>
 <dialog id="diagnostics"><h2>Проверка размещения</h2><pre id="metrics"></pre><p>Пересечение линий и совпадение их отрезков — разные метрики. Геометрические проверки не заменяют проверку читаемости.</p><button id="close-dialog">Закрыть</button></dialog>
 <script id="input-data" type="application/json"><!--BOARD_DATA--></script>
 <script src="elk.bundled.js"></script><script src="runtime.js"></script>

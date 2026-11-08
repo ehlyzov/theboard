@@ -24,6 +24,10 @@ removed by clearing site data. GitHub synchronization and offline application
 startup are still pending. Images are processed locally and are not uploaded.
 See the [MVP brief](docs/product/mvp-brief.md) for requirements and decisions.
 
+Use the marker icon in a screen header to annotate that screenshot, or hover
+the screen and press B. Brackets change brush size and Enter completes a mask.
+Navigation hints appear below the canvas in the status area.
+
 The current editing increment adds brush masks linked to ordinary notes, eight
 pastel note colors, four-side note docking, focus navigation and saved viewport
 preferences. The sidebar can switch between automatic ELK arrangement and

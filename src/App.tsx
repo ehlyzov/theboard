@@ -34,6 +34,7 @@ import {
   ChevronRight,
   CircleHelp,
   GripHorizontal,
+  Highlighter,
   ImagePlus,
   Layers2,
   Maximize,
@@ -75,6 +76,8 @@ type Actions = {
   tool: "select" | "brush";
   brushRadius: number;
   brushScreenId: string | null;
+  activateBrush: (id: string) => void;
+  hoverScreen: (id: string | null) => void;
   startBrush: (id: string) => void;
   cancelBrush: () => void;
   deleteRegion: (screenId: string, regionId: string) => void;
@@ -102,6 +105,8 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
     <article
       data-testid="screen-node"
       data-board-node-id={id}
+      onPointerEnter={() => actions.hoverScreen(id)}
+      onPointerLeave={() => actions.hoverScreen(null)}
       style={{
         width:coreWidth+(side('left').length+side('right').length)*230,
         position:'relative',display:'grid',
@@ -118,6 +123,19 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
           <Scan size={13} /> ЭКРАН
         </span>
         <GripHorizontal size={16} />
+        <div className="screen-tools nodrag">
+        <button
+          className="icon-button"
+          aria-label="Кисть выделения"
+          aria-pressed={actions.tool === "brush" && actions.brushScreenId === id}
+          disabled={Boolean(actions.brushScreenId && actions.brushScreenId !== id)}
+          title={actions.brushScreenId && actions.brushScreenId !== id
+            ? "Завершите выделение на другом экране: Enter; отмена: Esc"
+            : "Выделить область маркером · B · [ ] размер кисти"}
+          onClick={(event) => { event.stopPropagation(); actions.activateBrush(id); }}
+        >
+          <Highlighter size={15} />
+        </button>
         <button
           className="icon-button nodrag"
           aria-label="Удалить экран"
@@ -125,6 +143,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
         >
           <Trash2 size={14} />
         </button>
+        </div>
       </div>
       <RegionImage
         image={data.image!}
@@ -135,7 +154,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
             ? actions.regionSelection.regionId
             : undefined
         }
-        drawing={actions.tool === "brush"}
+        drawing={actions.tool === "brush" && actions.brushScreenId === id}
         radius={actions.brushRadius}
         activeScreen={actions.brushScreenId === id}
         blocked={Boolean(actions.brushScreenId && actions.brushScreenId !== id)}
@@ -365,6 +384,8 @@ function Editor() {
   const [tool, setTool] = useState<"select" | "brush">("select");
   const [brushRadius, setBrushRadius] = useState(0.06);
   const [brushScreenId, setBrushScreenId] = useState<string | null>(null);
+  const hoveredScreenRef = useRef<string | null>(null);
+  const brushContextRef = useRef<string | undefined>(undefined);
   const [hoveredRegion, setHoveredRegion] = useState<{
     screenId: string;
     regionId: string;
@@ -380,7 +401,11 @@ function Editor() {
       )
         return;
       if (e.code === "KeyB" && !e.ctrlKey && !e.metaKey) {
-        setTool("brush");
+        const id = brushScreenId ?? hoveredScreenRef.current ?? brushContextRef.current;
+        if (id && nodes.some(n => n.id === id && n.type === "screen")) {
+          setBrushScreenId(id);
+          setTool("brush");
+        } else setError("Выберите экран или нажмите маркер в его шапке");
         e.preventDefault();
       }
       if (e.key === "Escape") {
@@ -402,7 +427,7 @@ function Editor() {
     };
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
-  }, [tool,autoWarning]);
+  }, [tool,autoWarning,brushScreenId,nodes]);
   const [pendingRegion, setPendingRegion] = useState<{
     screenId: string;
     region: Region;
@@ -480,6 +505,9 @@ function Editor() {
   const [currentScreenId, setCurrentScreenId] = useState<string | undefined>(
     () => workspace(currentBoard()).currentScreenId,
   );
+  const brushScreens = nodes.filter(n => n.type === "screen");
+  brushContextRef.current = brushScreens.find(n => n.selected)?.id
+    ?? currentScreenId ?? (brushScreens.length === 1 ? brushScreens[0].id : undefined);
   const focusIds = new Set(
     currentScreenId
       ? [
@@ -898,6 +926,12 @@ function Editor() {
         tool,
         brushRadius,
         brushScreenId,
+        activateBrush: (id) => {
+          if (brushScreenId && brushScreenId !== id) return;
+          setBrushScreenId(id);
+          setTool("brush");
+        },
+        hoverScreen: (id) => { hoveredScreenRef.current = id; },
         startBrush: setBrushScreenId,
         cancelBrush: () => {
           setTool("select");
@@ -1155,16 +1189,6 @@ function Editor() {
               >
                 <MousePointer2 size={19} />
               </button>
-              <button
-                className={"tool labeled " + (tool === "brush" ? "active" : "")}
-                aria-label="Кисть выделения"
-                aria-pressed={tool === "brush"}
-                title="Кисть: B; [ ] размер; Enter завершить; Esc отмена"
-                onClick={() => setTool("brush")}
-              >
-                <Scan size={19} />
-                <span>Область</span>
-              </button>
               <span className="toolbar-divider" />
               <button
                 className="tool labeled"
@@ -1419,12 +1443,6 @@ function Editor() {
                 <Maximize size={17} />
               </button>
             </div>
-            <div className="canvas-tip">
-              {tool === "brush"
-                ? `Кисть ${Math.round(brushRadius * 100)}% · [ ] размер · Enter завершить · Esc отмена · Ctrl/Cmd+Z мазок`
-                : "Пробел / Alt + перетаскивание — навигация"}{" "}
-              <span>·</span> Колесо — масштаб
-            </div>
             {pendingRegion && (
               <section className="region-discussion">
                 <h2>Связать с заметкой</h2>
@@ -1582,7 +1600,8 @@ function Editor() {
                   <li>
                     Выделите стрелку и нажмите Delete, чтобы убрать переход.
                   </li>
-                  <li>Выберите «Область» или нажмите B. Нарисуйте маску на экране;
+                  <li>Нажмите маркер в шапке нужного экрана или наведите на экран
+                    и нажмите B. Нарисуйте маску на этом экране;
                     [ и ] меняют размер кисти, Enter завершает выделение. Затем
                     выберите заметку или создайте новую.</li>
                   <li>Автокомпоновка включается слева. Выключите её, чтобы
@@ -1604,6 +1623,12 @@ function Editor() {
             Доска хранится в браузере. Экспортируйте архив для резервной копии.
           </span>
           <span className="version-label">THEBOARD PREVIEW</span>
+          <div className="canvas-tip">
+            {tool === "brush"
+              ? `Кисть ${Math.round(brushRadius * 100)}% · [ ] размер · Enter завершить · Esc отмена · Ctrl/Cmd+Z мазок`
+              : "Пробел / Alt + перетаскивание — навигация"}
+            {" · Колесо — масштаб · Наведите на подпись, чтобы увидеть её стрелку"}
+          </div>
         </footer>
       </div>
     </ActionsContext.Provider>

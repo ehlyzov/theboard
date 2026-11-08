@@ -19,28 +19,29 @@ repository documentation is English. Last reconciled: 2026-11-08.
 ## Current editing increment
 
 All requirements below are `approved_by_human`; runtime claims require the
-current candidate's checks and independent review. W004 is active, not accepted.
+current candidate's checks and independent review. W004 is in technical review;
+human visual feedback is positive, while full functional acceptance is pending.
 
 | ID | Required behavior | Status / verification |
 | --- | --- | --- |
-| MASK-01 | Paint a freehand selection over a screenshot using a brush; do not modify source image pixels | Implemented locally; independent review pending |
-| MASK-02 | Adjustable brush radius with a visible circle showing brush size; radius changes affect subsequent strokes | Implemented locally; independent review pending |
-| MASK-03 | Preserve mask geometry in image coordinates through zoom and movement | Implemented in normalized image coordinates; focused review pending |
-| MASK-04 | Undo last draft stroke, clear draft mask, finish or cancel drawing; preserve saved annotations | Implemented; focused review pending |
-| MASK-05 | Link a finished mask to an existing ordinary note OR create and link a new ordinary note | Latest clarification; tests/regions.spec.ts updated before implementation |
-| MASK-06 | Selecting a saved mask highlights its linked notes; allow another note link | Implemented locally; independent review pending |
-| MASK-07 | Cancel drawing/note selection without empty notes or damage to existing data | Browser scenario PASS locally; independent review pending |
-| MASK-08 | Delete the selected saved region with Undo; delete mask/link only, retain image and ordinary notes | Browser delete/Undo check PASS locally; independent review pending |
-| MASK-09 | Preserve mask-to-note links after reopening, reload, archive export/import | Browser roundtrip PASS locally; independent review pending |
-| MASK-10 | Preserve earlier separate-comment text by migration to ordinary linked notes or compatible retention | Compatibility migration implemented; focused verification pending |
-| NOTE-01 | Completed annotation records remain available in history | Original direct instruction; in the latest model completion belongs to the retained ordinary note, never destructive deletion |
-| VIEW-01 | Allow canvas zoom to 400% | Direct instruction; earlier rectangle candidate test PASS; current candidate requires regression check |
-| VIEW-02 | Restore the working board after reload; browser local storage is allowed | Direct instruction; IndexedDB PASS W003; viewport reload PASS locally |
+| MASK-01 | Paint a freehand selection over a screenshot using a brush; do not modify source image pixels | Implemented; browser and independent W004 review PASS |
+| MASK-02 | Adjustable brush radius with a visible circle showing brush size; radius changes affect subsequent strokes | Implemented; browser and independent W004 review PASS |
+| MASK-03 | Preserve mask geometry in image coordinates through zoom and movement | Normalized coordinates; independent zoom/movement check PASS |
+| MASK-04 | Undo last draft stroke, clear draft mask, finish or cancel drawing; preserve saved annotations | Browser and independent keyboard/draft checks PASS |
+| MASK-05 | Link a finished mask to an existing ordinary note OR create and link a new ordinary note | Existing/new ordinary-note links; browser roundtrip PASS |
+| MASK-06 | Selecting a saved mask highlights its linked notes; allow another note link | Implemented; browser and independent W004 review PASS |
+| MASK-07 | Cancel drawing/note selection without empty notes or damage to existing data | Browser and independent cancellation checks PASS |
+| MASK-08 | Delete the selected saved region with Undo; delete mask/link only, retain image and ordinary notes | Delete/Undo and stale-reference regression PASS |
+| MASK-09 | Preserve mask-to-note links after reopening, reload, archive export/import | Reload and portable roundtrip PASS |
+| MASK-10 | Preserve earlier separate-comment text by migration to ordinary linked notes or compatible retention | Compatibility migration implemented; independently exercised in the earlier UI review |
+| NOTE-01 | Completed annotation records remain available in history | Retained ordinary-note status/timestamps; independent history check PASS |
+| VIEW-01 | Allow canvas zoom to 400% | Current brush model: 400% and viewport reload regression PASS |
+| VIEW-02 | Restore the working board after reload; browser local storage is allowed | IndexedDB W003 PASS; current viewport/focus reload PASS |
 | DOC-01 | Add a Markdown document node by importing a file or creating an empty document | Direct instruction; test drafted, implementation pending |
 | DOC-02 | Link document nodes to screens | Direct instruction; implementation pending |
 | DOC-03 | Annotate selected document text using a deep link in Markdown, shown as an annotation on the text fragment | Direct instruction; test drafted, final note-link adaptation still pending |
 | DOC-04 | Keep document/fragment associations declarative and portable with the board | BASE-05 applied to documents; implementation pending |
-| UI-01 | Fix wrapping/overlap of the saved-status label in the header | Local CSS repair; independent visual check pending |
+| UI-01 | Fix wrapping/overlap of the saved-status label in the header | CSS repair; independent visual review PASS |
 
 The initial separate-comment/rectangle model is superseded by the explicitly
 relayed brush-to-ordinary-note model. Existing content must survive this change.
@@ -51,10 +52,10 @@ there is no separate new comment entity or Add comment workflow.
 
 | ID | Requirement | Evidence |
 | --- | --- | --- |
-| UFD-LOCAL-01 | Import updated v0.8 screenshots and supplied graph; never present baseline v0.7 as updated | 32 updated screen nodes imported |
-| UFD-LOCAL-02 | Preserve supplied transition/note semantics; layout-only changes allowed | 76 labels and 33 note texts match source after reload; only note y positions adjusted |
+| UFD-LOCAL-01 | Import updated v0.8 screenshots and supplied graph; never present baseline v0.7 as updated | Latest private board: 49 screens imported |
+| UFD-LOCAL-02 | Preserve supplied transition/note semantics; layout-only changes allowed | Latest private board: 120 transitions, 50 ordinary notes, assets/IDs/content preserved; independent equality checks PASS |
 | UFD-LOCAL-03 | Separate local board, saved portable ZIP, URL, overview image; no public project-material upload | Delivered in the private cross-project handoff; no materials tracked here |
-| UFD-LOCAL-04 | Apply mask/note amendments to the same local board without clearing its existing notes | Board URL retained; new editing behavior still in implementation |
+| UFD-LOCAL-04 | Apply mask/note amendments to the same local board without clearing its existing notes | Same URL replacement/recovery and 49 docked ordinary-note pairs verified by the source operator |
 
 Full local paths, board IDs, and private audit materials belong in the requested
 cross-project handoff, not this public repository. Source UFD semantics are not
@@ -85,7 +86,8 @@ suite; it is not reported as passing or implemented.
   selected screen and the direct destinations of its outgoing edges. Hide
   unrelated canvas content without deleting or moving it. Selecting a visible
   destination changes the focus source; leaving focus restores the full board.
-  Persist focus workspace preferences with the viewport. Verification pending.
+  Persist focus workspace preferences with the viewport. Browser and independent
+  focus/reload checks PASS; distant neighborhoods frame the source readably.
 
 - LAYOUT-01 (`approved_by_human`, direct screenshot feedback): transition labels
   must clearly identify their edge and avoid overlap with other labels and
@@ -97,8 +99,11 @@ suite; it is not reported as passing or implemented.
   those notes. These connectors express note links, not navigation edges.
 
 - MASK-12 (`approved_by_human`, direct screenshot feedback): select the brush
-  with B or the common toolbar; use keyboard radius controls, not per-screen
-  buttons/sliders. Multiple strokes form one draft mask until completion.
+  with B or the marker icon in the specific screen header, beside its other
+  tools. B targets the hovered or selected screen; an unfinished mask stays
+  attached to its screen until completion/cancellation. Use keyboard radius
+  controls without per-screen size buttons/sliders. This supersedes the earlier
+  common-toolbar placement. Multiple strokes form one draft mask until completion.
   Show a trash icon on a selected saved mask. Preserve Delete/Undo semantics.
 - IMAGE-01 (`approved_by_human`, explicitly relayed instruction): portrait and
   landscape cards follow intrinsic image aspect ratio, show all pixels without
@@ -122,8 +127,8 @@ suite; it is not reported as passing or implemented.
 - LAYOUT-02 (`approved_by_human`, direct instruction): research and document
   suitable placement/routing algorithms, including the chip-placement analogy.
   [Research and a synthetic feasibility probe](../research/board-layout.md) are
-  recorded. ELK/fixed-node routing is an engineering recommendation, not an
-  implemented feature or human functional acceptance.
+  recorded. Measured ELK layered/orthogonal layout is integrated; fixed-node
+  obstacle routing remains pending. Geometry checks do not prove optimality.
 
 - LAYOUT-03 (`approved_by_human`, direct clarification): show a dashed leader
   from a transition label to its arrow only while hovering the label. Retain
@@ -148,5 +153,20 @@ suite; it is not reported as passing or implemented.
   with the existing focus control. Inactive items remain clickable.
 
 - UI-03 (direct discoverability feedback): keep the mask tool easy to find in
-  the full editor. The common toolbar now labels it “Область”; B and bracket
-  shortcuts remain supported. The standalone layout example is read-only.
+  the full editor through a marker pictogram in each screen header, beside
+  deletion. It is a screen operation, not a common board-level creation tool.
+  B and bracket shortcuts remain supported. The standalone example is read-only.
+
+- UI-04 (`approved_by_human`, direct screenshot feedback): navigation, zoom
+  and edge-label hints belong in the bottom status area with the other text,
+  outside the diagram. Apply this to the editor and the standalone example.
+
+## Verification scope
+
+W004's full independent integration review and targeted repair reviews cover
+MASK/VIEW/NOTE/IMAGE/DOCK/FOCUS, archive replacement, measured automatic layout,
+manual cancellation and hover-only leaders. The latest contextual-marker/footer
+delta has a test-first regression and is undergoing a narrow recheck. See
+[W004](../work/W004-region-comments.md) for exact candidate provenance.
+Proper edge crossings remain; zero crossings/global optimality are not promised.
+DOC-01..04, GitHub exchange and offline application startup remain unimplemented.

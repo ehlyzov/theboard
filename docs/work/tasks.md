@@ -14,6 +14,13 @@ archives, offline startup, and GitHub remain product obligations; W003 addresses
 local persistence and archives. D3/D4 do not block editor investigation, but
 must be resolved before dependent synchronization or collaboration promises.
 
-| [W004](W004-region-comments.md) | Brush masks, note links, workspace and composite layout | review | TheBoard chat; independent reviewer | Main integration candidate277edbc; independent review and real-data acceptance |
+| [W004](W004-region-comments.md) | Brush masks, note links, workspace and composite layout | review | TheBoard chat; independent reviewer | Integration independently reviewed; final contextual marker/footer recheck and CI |
 
 | W005 | Markdown document nodes, screen links, deep-linked text-to-note annotations | queued | Unassigned | Implement after bounded W004; failing draft retained |
+
+## Current verification checkpoint
+
+The historical preparation notes above predate the completed independent main
+review and its targeted focus/dock/handle repairs. Current local suite:23/23 PASS;
+4102e4a required CI PASS. Latest contextual marker/footer delta is in narrow
+review before final-head CI and merge. The W004 card carries current provenance.

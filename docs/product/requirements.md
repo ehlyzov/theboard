@@ -80,3 +80,9 @@ first slice. Markdown documents remain required but do not block that slice.
 Markdown DOC-01..04 is the next bounded task W005. Its early failing draft
 remains under docs/work/drafts/documents.spec.ts, outside the current executable
 suite; it is not reported as passing or implemented.
+
+- FOCUS-01 (`approved_by_human`, direct instruction): focus mode shows the
+  selected screen and the direct destinations of its outgoing edges. Hide
+  unrelated canvas content without deleting or moving it. Selecting a visible
+  destination changes the focus source; leaving focus restores the full board.
+  Persist focus workspace preferences with the viewport. Verification pending.

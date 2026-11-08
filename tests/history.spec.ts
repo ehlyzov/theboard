@@ -1,6 +1,17 @@
 import { test, expect } from "@playwright/test";
 import { zipSync, strToU8, unzipSync, strFromU8 } from "fflate";
 import fs from "node:fs";
+test('ARCH-05 replacement clears old region Undo even when screen IDs are reused',async({page})=>{
+ const screen={id:'s',type:'screen',position:{x:70,y:100},data:{title:'Screen',image:'assets/a.png',regions:[{id:'old-mask',x:0,y:0,width:1,height:1,comments:[],noteIds:[],strokes:[{radius:.1,points:[{x:.2,y:.2}]}]}]}};
+ const pack=(node:unknown)=>({name:'board.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({'board.json':strToU8(JSON.stringify({version:1,title:'Board',nodes:[node],edges:[]})),'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png')}))});
+ await page.goto('/');await page.getByLabel('Импорт архива').setInputFiles(pack(screen));
+ await page.getByRole('button',{name:'Область 1',exact:true}).press('Enter');
+ await page.getByRole('button',{name:'Удалить выбранную область'}).click();
+ await expect(page.getByRole('button',{name:'Отменить удаление области'})).toBeVisible();
+ await page.getByLabel('Заменить текущую доску из архива').setInputFiles(pack({...screen,data:{...screen.data,regions:[]}}));
+ await expect(page.getByRole('button',{name:'Отменить удаление области'})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Область 1',exact:true})).toHaveCount(0);
+});
 test("MASK-10 stale note deletion followed by mask Undo keeps portable references valid", async ({
   page,
 }) => {

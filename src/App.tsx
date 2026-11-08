@@ -527,6 +527,7 @@ function Editor() {
         setTitle(imported.title); setNodes(imported.nodes); setEdges(imported.edges);
         setFocusEnabled(false); setCurrentScreenId(undefined); setRegionSelection(null);
         setHoveredRegion(null); setPendingRegion(null); setConnecting(null);
+        setDeletedRegion(null); setHoveredTransition(null); setNoteChoice(''); setNewNoteText('');
         setTool('select'); setBrushScreenId(null); setLoading(false);
         return;
       }

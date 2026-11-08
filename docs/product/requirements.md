@@ -64,7 +64,7 @@ invented from screenshot numbering.
 ## Still open
 
 D3 (GitHub exchange/conflict policy) and D4 (real-time collaboration) remain
-`proposed`, not implicitly approved. GitHub access and license remain undecided.
+`proposed`, not implicitly approved. GitHub access remains undecided. The owner selected Apache License2.0 on2026-11-09.
 No functional human acceptance is inferred from a technical PASS.
 
 ## Additional interaction requirements
@@ -198,3 +198,8 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   than treating them as unrelated components. Preserve identities/content, all
   mask links and explicit docking; do not add semantic navigation transitions.
   Apply this to temporary focus geometry as well. Manual placement stays manual.
+
+- LICENSE-01 / PAGES-01..03 (`approved_by_human`, direct instruction): license
+  project code under Apache2.0 and publish the static app on GitHub Pages, with
+  green checks before deployment. Preserve third-party notices and local-only
+  board data; support the /theboard/ base path and ZIP transfer between origins.

@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/package-licenses.mjs dist",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "playwright test"
+    "test": "playwright test",
+    "build:pages": "tsc --noEmit && vite build --mode pages && node scripts/package-licenses.mjs dist-pages",
+    "test:pages": "playwright test --config playwright.pages.config.ts"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.1",
@@ -24,5 +26,6 @@
     "@types/react-dom": "^19.3.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6"
-  }
+  },
+  "license": "Apache-2.0"
 }

@@ -1033,7 +1033,7 @@ function Editor() {
           <button onClick={()=>setAutoWarning(false)}>Отмена</button>
         </dialog>}
         <header className="app-header">
-          <a className="brand" href="/" aria-label="TheBoard — главная">
+          <a className="brand" href={import.meta.env.BASE_URL} aria-label="TheBoard — главная">
             <span className="brand-mark">
               <i />
               <i />

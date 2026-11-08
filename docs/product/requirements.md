@@ -128,3 +128,7 @@ suite; it is not reported as passing or implemented.
 - LAYOUT-03 (`approved_by_human`, direct clarification): show a dashed leader
   from a transition label to its arrow only while hovering the label. Retain
   transition/endpoint highlighting; hide the leader at rest.
+
+- FOCUS-02 (`approved_by_human`, direct screenshot feedback): in focus mode,
+  gray out sidebar screens outside the current visible neighborhood. Keep them
+  clickable; clicking any screen changes the focus source to that screen.

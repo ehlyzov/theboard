@@ -26,6 +26,14 @@ test("FOCUS-01 one-hop outgoing destinations only; full board survives", async (
   await page.getByRole("button", { name: "Режим фокуса" }).click();
   await expect(screens).toHaveCount(2);
   await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+  const outside = page.locator('.screen-list').getByRole('button', {name: /Детали/});
+  await expect(outside).toHaveClass(/out-of-focus/);
+  await expect(outside).toBeEnabled();
+  await outside.click();
+  await expect(screens).toHaveCount(1);
+  await expect(page.getByRole('textbox', {name:'Название экрана'})).toHaveValue('Детали');
+  await page.locator('.screen-list').getByRole('button', {name:/Вход/}).click();
+  await expect(screens).toHaveCount(2);
   await screens.nth(1).locator(".node-grip").click();
   await expect(screens).toHaveCount(2);
   await expect(
@@ -34,4 +42,5 @@ test("FOCUS-01 one-hop outgoing destinations only; full board survives", async (
   await page.getByRole("button", { name: "Режим фокуса" }).click();
   await expect(screens).toHaveCount(3);
   await expect(page.locator(".react-flow__edge")).toHaveCount(2);
+  await expect(page.locator('.screen-list .out-of-focus')).toHaveCount(0);
 });

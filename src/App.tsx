@@ -20,6 +20,7 @@ import {
   useNodesState,
   useReactFlow,
   useViewport,
+  useUpdateNodeInternals,
   type Connection,
   type Edge,
   type Node,
@@ -43,6 +44,7 @@ import {
   StickyNote,
   Trash2,
   Palette,
+  Pin,
   X,
 } from "lucide-react";
 
@@ -54,15 +56,21 @@ import {
   type BoardNode,
   type BoardData,
   type Region,
+  type Dock,
+  type EngineMetadata,
 } from "./boards";
 
 import RegionImage from "./RegionImage";
 import { NOTE_COLORS, COLOR_NAMES, type NoteColor } from "./noteColors";
 import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
-import { labelLayouts, freePosition, nodeSize } from "./layout";
+import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS } from "./layout";
+import { arrangeBoard } from './autoLayout';
 const edgeTypes = { smoothstep: LabeledEdge };
 
 type Actions = {
+  nodes: BoardNode[];
+  dockNote: (id: string, dock?: Dock) => void;
+  selectNote: (id: string) => void;
   hoveredFlowNodes: string[];
   tool: "select" | "brush";
   brushRadius: number;
@@ -85,17 +93,26 @@ const ActionsContext = createContext<Actions>(null!);
 
 function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
   const actions = useContext(ActionsContext);
+  const docked=actions.nodes.filter(n=>n.data.dock?.screenId===id);
+  const side=(s:Dock['side'])=>docked.filter(n=>n.data.dock?.side===s);
+  const coreWidth=data.imageSize && data.imageSize.width>=data.imageSize.height?400:230;
+  const slot=(s:Dock['side'],column:string,row:number)=><div className={'docked-slot docked-'+s} style={{gridColumn:column,gridRow:row}}>
+    {side(s).map(n=><NoteNode key={n.id} id={n.id} data={n.data} selected={Boolean(n.selected)}/>)}</div>;
   return (
     <article
       data-testid="screen-node"
+      data-board-node-id={id}
       style={{
-        width:
-          data.imageSize && data.imageSize.width >= data.imageSize.height
-            ? 400
-            : 230,
+        width:coreWidth+(side('left').length+side('right').length)*230,
+        position:'relative',display:'grid',
+        gridTemplateColumns:`${side('left').length*230}px ${coreWidth-2}px ${side('right').length*230}px`,
+        gridTemplateRows:'auto auto auto',
       }}
       className={`screen-card ${actions.hoveredFlowNodes.includes(id) ? "flow-highlighted" : ""} ${selected ? "is-selected" : ""} ${actions.connecting === id ? "is-source" : ""}`}
     >
+      {slot('top','1 / 4',1)}
+      {slot('left','1',2)}
+      <div className="screen-core" style={{gridColumn:2,gridRow:2,width:coreWidth-2}}>
       <div className="node-grip">
         <span>
           <Scan size={13} /> ЭКРАН
@@ -145,6 +162,9 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
           maxLength={120}
         />
       </div>
+      </div>
+      {slot('right','3',2)}
+      {slot('bottom','1 / 4',3)}
       <Handle
         type="target"
         position={Position.Left}
@@ -185,20 +205,36 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
   );
 }
 
-function NoteNode({ id, data, selected }: NodeProps<BoardNode>) {
+function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|'selected'>) {
   const actions = useContext(ActionsContext);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [dockOpen,setDockOpen]=useState(false);
+  const [dockScreen,setDockScreen]=useState(data.dock?.screenId??'');
+  const [dockSide,setDockSide]=useState<Dock['side']>(data.dock?.side??'bottom');
+  const area=useRef<HTMLTextAreaElement>(null);
+  useEffect(()=>{
+    if (!data.dock || !['top','bottom'].includes(data.dock.side) || !area.current) return;
+    const el=area.current;
+    const resize=()=>{el.style.height='0px';el.style.height=Math.max(96,el.scrollHeight)+'px';};
+    resize();let width=el.clientWidth;
+    const observer=new ResizeObserver(()=>{if(el.clientWidth!==width){width=el.clientWidth;resize();}});
+    observer.observe(el);return()=>observer.disconnect();
+  },[data.text,data.dock?.side]);
   return (
     <article
       data-testid="note-node"
+      data-board-node-id={id}
+      onClick={e=>{if(data.dock){e.stopPropagation();actions.selectNote(id);}}}
       style={{ background: NOTE_COLORS[data.color ?? "yellow"] }}
-      className={`note-card ${selected ? "is-selected" : ""} ${actions.linkedNoteIds.includes(id) ? "is-linked" : ""}`}
+      className={`note-card ${data.dock?'is-docked':''} ${selected ? "is-selected" : ""} ${actions.linkedNoteIds.includes(id) ? "is-linked" : ""}`}
     >
       <div className="node-grip">
         <span>
           <StickyNote size={13} /> ЗАМЕТКА
         </span>
         <GripHorizontal size={16} />
+        <button className="icon-button nodrag" aria-label={data.dock?'Отклеить заметку':'Приклеить заметку'}
+          onClick={()=>{if(data.dock)actions.dockNote(id);else{setDockScreen(actions.nodes.find(n=>n.type==='screen')?.id??'');setDockOpen(v=>!v);}}}><Pin size={13}/></button>
         <button
           className="icon-button nodrag"
           aria-label="Цвет заметки"
@@ -231,13 +267,25 @@ function NoteNode({ id, data, selected }: NodeProps<BoardNode>) {
           ))}
         </div>
       )}
+      {dockOpen && <div className="dock-picker nodrag">
+        <label>Экран<select aria-label="Экран для приклеивания" value={dockScreen} onChange={e=>setDockScreen(e.target.value)}>
+          {actions.nodes.filter(n=>n.type==='screen').map(n=><option key={n.id} value={n.id}>{n.data.title}</option>)}
+        </select></label>
+        <label>Сторона<select aria-label="Сторона приклеивания" value={dockSide} onChange={e=>setDockSide(e.target.value as Dock['side'])}>
+          <option value="left">Слева</option><option value="right">Справа</option><option value="top">Сверху</option><option value="bottom">Снизу</option>
+        </select></label>
+        <button disabled={!dockScreen} onClick={()=>{actions.dockNote(id,{screenId:dockScreen,side:dockSide});setDockOpen(false);}}>Приклеить</button>
+        <button onClick={()=>setDockOpen(false)}>Отмена</button>
+      </div>}
+      {data.title&&data.title!=='Заметка'&&<div className="note-heading">{data.title}</div>}
       <textarea
+        ref={area}
         className="nodrag nowheel"
         aria-label="Текст заметки"
         placeholder="Что важно в этом шаге?"
         value={data.text || ""}
         onChange={(e) => actions.update(id, { text: e.target.value })}
-        maxLength={4000}
+        maxLength={12000}
       />
     </article>
   );
@@ -295,6 +343,13 @@ function currentBoard() {
 function Editor() {
   const [nodes, setNodes, onNodesChange] = useNodesState<BoardNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const updateNodeInternals=useUpdateNodeInternals();
+  const [automatic,setAutomatic]=useState(false);
+  const [layoutEngine,setLayoutEngine]=useState<EngineMetadata>();
+  const [direction,setDirection]=useState<'RIGHT'|'DOWN'>('RIGHT');
+  const [autoWarning,setAutoWarning]=useState(false);
+  const [arranging,setArranging]=useState(false);
+  const [anchors,setAnchors]=useState<Record<string,{core:{x:number;y:number};notes:Record<string,{x:number;y:number;width:number;height:number}>}>>({});
   const [connecting, setConnecting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -315,6 +370,7 @@ function Editor() {
   } | null>(null);
   useEffect(() => {
     const keys = (e: KeyboardEvent) => {
+      if(autoWarning)return;
       if (
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLInputElement &&
@@ -345,7 +401,7 @@ function Editor() {
     };
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
-  }, [tool]);
+  }, [tool,autoWarning]);
   const [pendingRegion, setPendingRegion] = useState<{
     screenId: string;
     region: Region;
@@ -440,13 +496,8 @@ function Editor() {
   );
   const focusActive =
     focusEnabled &&
-    Boolean(nodes.find((n) => n.id === currentScreenId && n.type === "screen"));
-  const displayNodes = focusActive
-    ? nodes.map((n) => ({
-        ...n,
-        hidden: !focusIds.has(n.id) && !focusedNoteIds.has(n.id),
-      }))
-    : nodes;
+    !arranging && Boolean(nodes.find((n) => n.id === currentScreenId && n.type === "screen"));
+  const displayNodes = nodes.map(n=>({...n,hidden:Boolean(n.data.dock)||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id))}));
   const displayEdges = focusActive
     ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId }))
     : edges;
@@ -466,7 +517,7 @@ function Editor() {
     catch { return null; }
   });
   const saveSequence = useRef(0);
-  const snapshot = (): BoardData => ({ version: 1, title, nodes, edges });
+  const snapshot = (): BoardData => ({ version: 1, title, nodes, edges,layoutSettings:{automatic,direction},layoutEngine });
   useEffect(() => {
     let disposed = false;
     loadBoard(boardId)
@@ -476,6 +527,9 @@ function Editor() {
           setTitle(saved.title);
           setNodes(saved.nodes);
           setEdges(saved.edges);
+          setAutomatic(saved.layoutSettings?.automatic??false);
+          setDirection(saved.layoutSettings?.direction??'RIGHT');
+          setLayoutEngine(saved.layoutEngine);
         }
         setReady(true);
       })
@@ -509,7 +563,27 @@ function Editor() {
           );
         }
       });
-  }, [ready, title, nodes, edges, boardId]);
+  }, [ready, title, nodes, edges, boardId,automatic,direction,layoutEngine]);
+  const layoutSignature=JSON.stringify({nodes:nodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize})),
+    edges:edges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label}))});
+  useEffect(()=>{
+    if(!ready||!automatic||!nodes.length)return;
+    let disposed=false;
+    setArranging(true);
+    const timer=setTimeout(()=>{
+      requestAnimationFrame(()=>void arrangeBoard(nodes,edges,direction).then(result=>{
+        if(disposed)return;
+        setNodes(current=>current.map(n=>({...n,position:result.positions.get(n.id)??n.position})));
+        setEdges(current=>current.map(e=>({...e,data:{...e.data,...result.edges.get(e.id)}})));
+        setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction}});
+        requestAnimationFrame(()=>updateNodeInternals([...result.positions.keys()]));
+      }).catch(()=>{if(!disposed){setAutomatic(false);setError('Не удалось рассчитать компоновку. Текущее расположение сохранено.');}})
+        .finally(()=>{if(!disposed)setArranging(false);}));
+    },120);
+    return()=>{disposed=true;clearTimeout(timer);};
+  },[ready,automatic,direction,layoutSignature]);
+  useEffect(()=>{if(!automatic)setArranging(false);},[automatic]);
+  useEffect(()=>{if(autoWarning)(document.getElementById('auto-layout-warning') as HTMLDialogElement|null)?.showModal();},[autoWarning]);
   async function openArchive(event: ChangeEvent<HTMLInputElement>, replace = false) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -525,6 +599,8 @@ function Editor() {
         try { localStorage.setItem('theboard:backup:' + boardId, recoveryId); } catch {}
         setBackupId(recoveryId);
         setTitle(imported.title); setNodes(imported.nodes); setEdges(imported.edges);
+        setAutomatic(imported.layoutSettings?.automatic??false);setDirection(imported.layoutSettings?.direction??'RIGHT');setAutoWarning(false);
+        setLayoutEngine(imported.layoutEngine);
         setFocusEnabled(false); setCurrentScreenId(undefined); setRegionSelection(null);
         setHoveredRegion(null); setPendingRegion(null); setConnecting(null);
         setDeletedRegion(null); setHoveredTransition(null); setNoteChoice(''); setNewNoteText('');
@@ -607,6 +683,26 @@ function Editor() {
   } = useReactFlow<BoardNode>();
   const viewport = useViewport();
   const { zoom } = viewport;
+  useEffect(()=>{
+    const frame=requestAnimationFrame(()=>{
+      const next:typeof anchors={};const notePositions=new Map<string,{x:number;y:number}>();
+      for(const screen of nodes.filter(n=>n.type==='screen')){
+        const el=[...document.querySelectorAll<HTMLElement>('[data-testid="screen-node"]')].find(el=>el.dataset.boardNodeId===screen.id);
+        const core=el?.querySelector<HTMLElement>('.screen-core');if(!el||!core)continue;
+        const rect=el.getBoundingClientRect(),c=core.getBoundingClientRect();
+        const notes:Record<string,{x:number;y:number;width:number;height:number}>={};
+        for(const child of el.querySelectorAll<HTMLElement>('[data-testid="note-node"]')){
+          const r=child.getBoundingClientRect(),id=child.dataset.boardNodeId!;
+          const box={x:screen.position.x+(r.x-rect.x)/zoom,y:screen.position.y+(r.y-rect.y)/zoom,width:r.width/zoom,height:r.height/zoom};
+          notes[id]=box;notePositions.set(id,{x:box.x,y:box.y});
+        }
+        next[screen.id]={core:{x:(c.x-rect.x)/zoom,y:(c.y-rect.y)/zoom},notes};
+      }
+      setAnchors(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);
+      setNodes(current=>current.some(n=>{const p=notePositions.get(n.id);return p&&(Math.abs(p.x-n.position.x)>.2||Math.abs(p.y-n.position.y)>.2);})?
+        current.map(n=>{const p=notePositions.get(n.id);return p?{...n,position:p}:n;}):current);
+    });return()=>cancelAnimationFrame(frame);
+  },[nodes,zoom]);
   const [initialViewport] = useState(() => workspace(boardId));
   useEffect(() => {
     try {
@@ -676,6 +772,7 @@ function Editor() {
           ...n,
           data: {
             ...n.data,
+            dock:n.data.dock?.screenId===id?undefined:n.data.dock,
             regions: n.data.regions?.map((r) => ({
               ...r,
               noteIds: r.noteIds?.filter((noteId) => noteId !== id),
@@ -776,6 +873,12 @@ function Editor() {
   return (
     <ActionsContext.Provider
       value={{
+        nodes,
+        selectNote:(id)=>setNodes(current=>current.map(n=>({...n,selected:n.id===id}))),
+        dockNote:(id,dock)=>{
+          setNodes(current=>current.map(n=>n.id===id?{...n,data:{...n.data,dock}}:n));
+          if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));
+        },
         update,
         regionSelection,
         hoveredFlowNodes: activeTransition
@@ -819,6 +922,12 @@ function Editor() {
       }}
     >
       <div className="app-shell">
+        {autoWarning&&<dialog id="auto-layout-warning" className="auto-warning" onCancel={()=>setAutoWarning(false)} aria-labelledby="auto-warning-title">
+          <h2 id="auto-warning-title">Ручная компоновка будет сброшена</h2>
+          <p>Экраны, заметки и подписи будут размещены автоматически. Их содержимое и связи сохранятся.</p>
+          <button onClick={()=>{setAutoWarning(false);setAutomatic(true);}}>Включить автокомпоновку</button>
+          <button onClick={()=>setAutoWarning(false)}>Отмена</button>
+        </dialog>}
         <header className="app-header">
           <a className="brand" href="/" aria-label="TheBoard — главная">
             <span className="brand-mark">
@@ -882,7 +991,21 @@ function Editor() {
             <input className="file-input" ref={replacementInput} type="file" accept=".zip"
               aria-label="Заменить текущую доску из архива" onChange={e => void openArchive(e, true)} />
             {backupId && <a className="recovery-link" href={'?board=' + backupId} target="_blank" rel="noreferrer">Резервная копия доски</a>}
+            <div className="auto-layout-controls">
+              <label><input type="checkbox" aria-label="Автоматическая компоновка" checked={automatic}
+                onChange={e=>{if(e.target.checked)setAutoWarning(true);else setAutomatic(false);}}/> Автоматическая компоновка</label>
+              <select aria-label="Направление компоновки" value={direction} onChange={e=>setDirection(e.target.value as 'RIGHT'|'DOWN')}>
+                <option value="RIGHT">Слева направо</option><option value="DOWN">Сверху вниз</option>
+              </select>
+              {arranging&&<span role="status">Расчёт компоновки…</span>}
+            </div>
             <div className="sidebar-section">
+              <div className="focus-mode-switch">
+                <span>Показывать все</span>
+                <button type="button" role="switch" aria-label="Режим фокуса" aria-checked={focusEnabled} disabled={!screens.length}
+                  onClick={()=>{if(!currentScreenId)setCurrentScreenId(screens[0]?.id);setFocusEnabled(v=>!v);}}><i/></button>
+                <span>Только выделенное</span>
+              </div>
               <div className="section-heading">
                 Экраны <span>{screens.length.toString().padStart(2, "0")}</span>
               </div>
@@ -897,7 +1020,9 @@ function Editor() {
                   {screens.map((screen, index) => (
                     <li key={screen.id}>
                       <button
-                        className={focusActive && !focusIds.has(screen.id) ? "out-of-focus" : ""}
+                        className={[screen.id===currentScreenId?'is-current':'',focusActive&&focusIds.has(screen.id)?'in-focus':'',focusActive&&!focusIds.has(screen.id)?'out-of-focus':''].join(' ')}
+                        aria-current={screen.id===currentScreenId?'true':undefined}
+                        title={screen.data.title}
                         onClick={() => {
                           setCurrentScreenId(screen.id);
                           if (!focusActive) void fitView({
@@ -1067,8 +1192,8 @@ function Editor() {
               disabled={loading}
               onChange={upload}
             />
-            <HoveredTransition.Provider
-              value={{ id: hoveredTransition, setId: setHoveredTransition }}
+              <HoveredTransition.Provider
+              value={{ id: hoveredTransition, setId: setHoveredTransition, automatic }}
             >
               <LabelPositions.Provider value={labelPositions}>
                 <ReactFlow
@@ -1080,6 +1205,8 @@ function Editor() {
                   nodeTypes={nodeTypes}
                   edgeTypes={edgeTypes}
                   onNodesChange={onNodesChange}
+                  nodesDraggable={!automatic}
+                  onNodeDragStart={()=>{if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));}}
                   onEdgesChange={onEdgesChange}
                   onConnect={connect}
                   connectOnClick={false}
@@ -1093,6 +1220,7 @@ function Editor() {
                           ...n,
                           data: {
                             ...n.data,
+                            dock:n.data.dock&&ids.has(n.data.dock.screenId)?undefined:n.data.dock,
                             regions: n.data.regions?.map((r) => ({
                               ...r,
                               noteIds: r.noteIds?.filter((id) => !ids.has(id)),
@@ -1107,7 +1235,7 @@ function Editor() {
                   minZoom={0.05}
                   maxZoom={4}
                   deleteKeyCode={
-                    tool === "brush" ? null : ["Backspace", "Delete"]
+                    tool === "brush" || autoWarning ? null : ["Backspace", "Delete"]
                   }
                   isValidConnection={(c) => c.source !== c.target}
                   aria-label="Полотно пользовательского потока"
@@ -1139,17 +1267,19 @@ function Editor() {
                               (screen.data.imageSize?.height ?? 290);
                             const width = ratio >= 1 ? 380 : 210,
                               height = width / ratio;
-                            const x = screen.position.x + 10 + center.x * width,
-                              y = screen.position.y + 37 + center.y * height;
+                            const offset=anchors[screen.id]?.core??{x:0,y:0};
+                            const x = screen.position.x + offset.x + 10 + center.x * width,
+                              y = screen.position.y + offset.y + 37 + center.y * height;
                             return (region.noteIds ?? []).map((id) => {
                               const note = nodes.find((n) => n.id === id);
                               if (!note) return null;
+                              const box=anchors[note.data.dock?.screenId??'']?.notes[id]??{...note.position,...nodeSize(note)};
                               const targetX =
-                                  note.position.x +
-                                  (note.position.x < x ? 230 : 0),
+                                  box.x +
+                                  (box.x < x ? box.width : 0),
                                 targetY = Math.max(
-                                  note.position.y + 10,
-                                  Math.min(note.position.y + 173, y),
+                                  box.y + 10,
+                                  Math.min(box.y + box.height - 10, y),
                                 );
                               return (
                                 <line

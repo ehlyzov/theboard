@@ -10,6 +10,9 @@ export type RegionComment = {
   resolvedAt?: string;
 };
 export type Stroke = { radius: number; points: { x: number; y: number }[] };
+export type Dock = { screenId: string; side: 'left' | 'right' | 'top' | 'bottom' };
+export type LayoutSettings = { automatic: boolean; direction: 'RIGHT' | 'DOWN' };
+export type EngineMetadata = {name:string;version:string;options:Record<string,string|number|boolean>};
 export type Region = {
   strokes?: Stroke[];
   noteIds?: string[];
@@ -120,6 +123,7 @@ export type BoardNode = Node<
     status?: "open" | "done";
     createdAt?: string;
     resolvedAt?: string;
+    dock?: Dock;
   },
   "screen" | "note"
 >;
@@ -128,6 +132,8 @@ export type BoardData = {
   title: string;
   nodes: BoardNode[];
   edges: Edge[];
+  layoutSettings?: LayoutSettings;
+  layoutEngine?: EngineMetadata;
 };
 const MAX = 180 * 1024 * 1024;
 async function database() {
@@ -259,6 +265,11 @@ export async function importBoard(file: File): Promise<BoardData> {
     });
   }
   const edgeIds = new Set<string>();
+  for (const [noteId, dock] of Object.entries(raw.layout?.docks ?? {}) as [string, any][]) {
+    const note = nodes.find(n => n.id === noteId && n.type === 'note');
+    if (!note || !screens.has(dock?.screenId) || !['left','right','top','bottom'].includes(dock?.side)) fail();
+    note.data.dock = {screenId:dock.screenId,side:dock.side};
+  }
   const edges: Edge[] = raw.edges.map((e: any) => {
     const id = text(e.id, 150);
     if (
@@ -278,10 +289,20 @@ export async function importBoard(file: File): Promise<BoardData> {
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
       style: { stroke: "#7c879d", strokeWidth: 2 },
-      data:
-        raw.layout?.edges?.[id]?.label && raw.layout.edges[id].manual
-          ? { labelPosition: validPoint(raw.layout.edges[id].label) }
-          : undefined,
+      data: (() => {
+        const layout = raw.layout?.edges?.[id];
+        if (!layout) return undefined;
+        const data: Record<string, unknown> = {};
+        if (layout.points !== undefined) {
+          if (!Array.isArray(layout.points) || layout.points.length < 2 || layout.points.length > 2000) fail();
+          data.route = layout.points.map(validPoint);
+        }
+        if (layout.label && (layout.manual || data.route)) {
+          data.labelPosition = validPoint(layout.label);
+          data.labelManual = Boolean(layout.manual);
+        }
+        return data;
+      })(),
     };
   });
   for (const n of nodes)
@@ -289,11 +310,26 @@ export async function importBoard(file: File): Promise<BoardData> {
       for (const noteId of region.noteIds ?? [])
         if (!nodes.some((note) => note.id === noteId && note.type === "note"))
           fail();
+  if (raw.layout?.automatic !== undefined && typeof raw.layout.automatic !== 'boolean') fail();
+  if (raw.layout?.direction !== undefined && !['RIGHT','DOWN'].includes(raw.layout.direction)) fail();
+  let layoutEngine:EngineMetadata|undefined;
+  if(raw.layout?.engine){
+    const e=raw.layout.engine,options=e.options??{};
+    if(typeof options!=='object'||Array.isArray(options)||Object.keys(options).length>100)fail();
+    for(const [key,value]of Object.entries(options)){
+      text(key,200);
+      if(typeof value==='string')text(value,500);
+      else if(typeof value!=='boolean' && !(typeof value==='number'&&Number.isFinite(value)))fail();
+    }
+    layoutEngine={name:text(e.name,100),version:text(e.version,100),options};
+  }
   return migrateBoard({
     version: 1,
     title: text(raw.title, 300),
     nodes,
     edges,
+    layoutSettings: {automatic: raw.layout?.automatic ?? false, direction:raw.layout?.direction ?? 'RIGHT'},
+    layoutEngine,
   });
 }
 export function exportBoard(board: BoardData): Uint8Array {
@@ -311,9 +347,11 @@ export function exportBoard(board: BoardData): Uint8Array {
       for (const id of r.noteIds ?? [])
         if (!board.nodes.some((note) => note.type === "note" && note.id === id))
           fail();
+  const labelPositions=labelLayouts(board.nodes,board.edges);
   const files: Record<string, Uint8Array> = {};
   const nodes = board.nodes.map((n, index) => {
     const data = { ...n.data };
+    delete data.dock;
     if (n.type === "screen") {
       const match = /^data:image\/(png|jpeg|webp);base64,(.*)$/.exec(
         data.image ?? "",
@@ -333,19 +371,16 @@ export function exportBoard(board: BoardData): Uint8Array {
         title: board.title,
         nodes,
         layout: {
+          ...board.layoutSettings,
+          engine: board.layoutEngine,
+          docks: Object.fromEntries(board.nodes.filter(n => n.data.dock).map(n => [n.id,n.data.dock])),
           nodes: Object.fromEntries(board.nodes.map((n) => [n.id, n.position])),
           edges: Object.fromEntries(
-            Object.entries(labelLayouts(board.nodes, board.edges)).map(
-              ([id, label]) => [
-                id,
-                {
-                  label,
-                  manual: Boolean(
-                    board.edges.find((e) => e.id === id)?.data?.labelPosition,
-                  ),
-                },
-              ],
-            ),
+            board.edges.map(e => [e.id, {
+              label:labelPositions[e.id],
+              manual: Boolean(e.data?.labelManual ?? (e.data?.labelPosition && !e.data?.route)),
+              points:e.data?.route,
+            }]),
           ),
         },
         edges: board.edges.map((e) => ({

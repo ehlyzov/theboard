@@ -81,6 +81,40 @@ New exports store node coordinates in `layout.nodes[nodeId] = {x,y}` and edge
 label coordinates in `layout.edges[edgeId] = {label:{x,y},manual:boolean}`.
 Semantic `nodes`/`edges` do not carry exported node positions. Older archives
 with inline node.position remain importable; layout.nodes takes precedence.
-Drag nodes by their header and drag edge labels to adjust layout. Automatic
-label placement avoids node and other label bounds; leader lines identify the
-corresponding transition. Graph IDs, source/target, and labels retain meaning.
+In manual mode, drag nodes by their header and drag edge labels. A dashed
+leader identifies the label's transition only on hover, together with endpoint
+and path highlighting. Graph IDs, source/target, and labels retain meaning.
+
+`layout.automatic` is a boolean (default false); `layout.direction` is `RIGHT`
+or `DOWN`. The current editor uses measured composite card/label bounds and
+ELK Layered 0.12.1. `layout.engine` retains the generating engine name, version
+and options as passive provenance. It does not execute code or select a remote
+engine. Generated `layout.edges[edgeId].points` is an array of `{x,y}` route
+vertices; the editor renders these actual routes. `label` stores its top-left
+position and `manual` records manual label placement. Older archives remain
+valid without these optional extensions.
+
+Docking remains visual layout, separate from note content:
+
+```json
+{"layout":{"docks":{"note-home":{"screenId":"home","side":"bottom"}}}}
+```
+
+The note is still an ordinary `nodes` entry with the same ID, text, title,
+color, completion status and mask links. Sides are `left`, `right`, `top` and
+`bottom`. A docked note spans the attachment side; the composite moves as one
+obstacle and routing attaches to its outer boundary. Deleting a screen undocks
+its notes rather than deleting them. Archives preserve this mapping; legacy
+archives without it contain independent notes.
+
+Automatic mode reruns on relevant graph/content/docking changes, with stale
+calculations discarded. Manual mode retains the current positions. Enabling
+automatic mode opens a reset warning; cancel leaves geometry unchanged.
+Manually dragging nodes invalidates generated paths and uses the existing
+manual routing. General obstacle-aware routing with arbitrary fixed positions
+remains pending; manual mode is not a claim of collision-free routing.
+
+Normal import creates a new board. “Replace board from ZIP” validates first,
+saves the old board under a recovery ID, then replaces the current board while
+keeping its URL. Invalid archives leave it unchanged. A recovery link remains
+available in that browser; transient old-mask Undo state is cleared on replace.

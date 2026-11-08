@@ -141,3 +141,8 @@ suite; it is not reported as passing or implemented.
 - ARCH-05 (`approved_by_human`, explicitly relayed owner instruction): support
   replacing the contents of the current board from a validated ZIP while keeping
   its URL. Keep a recovery copy. Normal import still creates an independent board.
+
+- FOCUS-03 (`approved_by_human`, direct screenshot feedback): clearly emphasize
+  the current screen and its visible destinations in the sidebar. Add a left
+  sidebar switch for showing all versus the focused neighborhood, synchronized
+  with the existing focus control. Inactive items remain clickable.

@@ -32,6 +32,10 @@ test("MASK-01..05 brush links existing/new notes, cancel, reload and archive", a
   await page
     .getByLabel("Загрузить скриншоты")
     .setInputFiles(path.resolve("tests/fixtures/Вход.png"));
+  await page.getByRole('button',{name:'Приклеить заметку',exact:true}).click();
+  await page.getByLabel('Экран для приклеивания').selectOption({label:'Вход'});
+  await page.getByLabel('Сторона приклеивания').selectOption('bottom');
+  await page.getByRole('button',{name:'Приклеить',exact:true}).click();
   await paint(page);
   await page
     .getByLabel("Заметка для области")

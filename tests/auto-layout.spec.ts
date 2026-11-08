@@ -9,12 +9,12 @@ test('AUTO-01..02 full editor layout is optional, confirmed, portable and keeps 
  await screens.nth(1).getByRole('button',{name:'Завершить стрелку'}).click();
  await page.getByLabel('Подпись перехода').fill('Continue safely');
  const first=page.locator('.react-flow__node').first(), before=await first.getAttribute('style');
- await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).check();
+ await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).click();
  await expect(page.getByRole('dialog')).toContainText('Ручная компоновка будет сброшена');
  await page.getByRole('button',{name:'Отмена',exact:true}).click();
  await expect(first).toHaveAttribute('style',before!);
  await expect(page.getByRole('checkbox',{name:'Автоматическая компоновка'})).not.toBeChecked();
- await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).check();
+ await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).click();
  await page.getByRole('button',{name:'Включить автокомпоновку',exact:true}).click();
  await expect(page.getByRole('checkbox',{name:'Автоматическая компоновка'})).toBeChecked();
  await expect(page.locator('.react-flow__edge-path')).toHaveAttribute('data-routed','true');

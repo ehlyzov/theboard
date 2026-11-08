@@ -121,3 +121,27 @@ source operator instructions are recorded in the private handoff. The initial
 red run waited on the missing input; its trace artifacts were disrupted by an
 overlapping later run, so only the console observation is usable. Subsequent
 runs must not share a mutable result directory concurrently.
+
+## Integrated candidate preparation
+
+Four-side ordinary-note docking now renders inside screen composites while
+retaining the same note nodes/IDs. Automatic mode uses measured ELK geometry,
+actual route vertices and labels; manual mode keeps position/label editing.
+AUTO-02 uses a native modal reset warning. Focus has a synchronized sidebar
+switch and clear current/destination emphasis. Source operator independently
+confirmed ARCH-05 replacement of the accepted local UFD on its original URL;
+private counts and paths stay in its handoff.
+
+Local full suite:20/20 PASS before final provenance/modal refinement. The five
+affected automatic/docking checks PASS after that refinement. Independent main
+integration review still pending. The initial auto test's `check()` driver was
+corrected to `click()`: activation intentionally waits for modal confirmation;
+the expected checked/unchecked/cancel outcomes were preserved. The new palette
+scenario corrected a case-sensitive Russian color label to the actual lowercase
+label. Neither correction weakens the required behavior. A transient missing
+edge under parallel checks led to explicitly refreshing React Flow node/handle
+internals after layout; the subsequent full suite passed.
+
+Remaining boundaries: W005 Markdown, GitHub synchronization, offline startup
+and libavoid fixed-node routing are not delivered by this integration. Private
+PlanItForMe data must never enter this public repository.

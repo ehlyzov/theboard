@@ -1,6 +1,13 @@
 import { getSmoothStepPath, Position, type Edge } from "@xyflow/react";
 import type { BoardNode } from "./boards";
 export type Point = { x: number; y: number };
+export const AUTO_LAYOUT_OPTIONS = {
+  'elk.algorithm':'layered','elk.edgeRouting':'ORTHOGONAL','elk.randomSeed':'1',
+  'elk.spacing.nodeNode':'100','elk.layered.spacing.nodeNodeBetweenLayers':'180',
+  'elk.spacing.edgeNode':'24','elk.spacing.edgeEdge':'20','elk.layered.spacing.edgeEdgeBetweenLayers':'20',
+  'elk.spacing.edgeLabel':'12','elk.spacing.labelNode':'16','elk.spacing.labelLabel':'16',
+  'elk.layered.mergeEdges':'false','elk.layered.mergeHierarchyEdges':'false',
+};
 type Rect = Point & { width: number; height: number };
 export function nodeSize(n: BoardNode) {
   const ratio =
@@ -61,17 +68,14 @@ export function labelLayouts(
       targetY: target.position.y + t.height / 2,
       targetPosition: Position.Left,
     });
-    const width = Math.min(
-        240,
-        Math.max(100, String(edge.label).length * 7 + 36),
-      ),
+    const width = 240,
       height = Math.max(
         30,
         Math.ceil(String(edge.label).length / (width / 7 - 5)) * 16 + 40,
       );
     const manual = edge.data?.labelPosition as Point | undefined;
-    const p = freePosition(
-      manual ?? { x: x - width / 2, y: y - height / 2 },
+    const p = manual ?? freePosition(
+      { x: x - width / 2, y: y - height / 2 },
       width,
       height,
       obstacles,

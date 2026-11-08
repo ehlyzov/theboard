@@ -13,9 +13,14 @@ export const LabelPositions = createContext<Record<string, Point>>({});
 export const HoveredTransition = createContext<{
   id: string | null;
   setId: (id: string | null) => void;
+  automatic?: boolean;
 }>({ id: null, setId: () => {} });
 export default function LabeledEdge(props: EdgeProps) {
-  const [path, x, y] = getSmoothStepPath(props);
+  const [fallback, fallbackX, fallbackY] = getSmoothStepPath(props);
+  const points = props.data?.route as Point[] | undefined;
+  const path = points?.length ? points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ') : fallback;
+  const midpoint = points?.[Math.floor(points.length/2)];
+  const x=midpoint?.x ?? fallbackX, y=midpoint?.y ?? fallbackY;
   const edges = useEdges(),
     nodes = useNodes();
   const position = useContext(LabelPositions)[props.id] ?? { x, y };
@@ -30,6 +35,7 @@ export default function LabeledEdge(props: EdgeProps) {
   return (
     <>
       <BaseEdge
+        data-routed={points?.length ? 'true' : 'false'}
         path={path}
         markerEnd={props.markerEnd}
         style={{
@@ -80,6 +86,7 @@ export default function LabeledEdge(props: EdgeProps) {
               if (!drag.current) hover.setId(null);
             }}
             onPointerDown={(e) => {
+              if (hover.automatic) return;
               if (e.button !== 0) return;
               e.preventDefault();
               e.stopPropagation();
@@ -99,7 +106,7 @@ export default function LabeledEdge(props: EdgeProps) {
               setEdges((current) =>
                 current.map((edge) =>
                   edge.id === props.id
-                    ? { ...edge, data: { ...edge.data, labelPosition } }
+                    ? { ...edge, data: { ...edge.data, labelPosition, labelManual:true } }
                     : edge,
                 ),
               );

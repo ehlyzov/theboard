@@ -161,6 +161,14 @@ suite; it is not reported as passing or implemented.
   and edge-label hints belong in the bottom status area with the other text,
   outside the diagram. Apply this to the editor and the standalone example.
 
+- FOCUS-04..06 (`approved_by_human`, direct instruction): automatically arrange
+  the current screen and its outgoing destinations close together in focus.
+  This is temporary view geometry, never canonical board/archive geometry.
+  Leaving focus restores all original block positions, routes and labels.
+  Recompute on source changes/reload and discard stale results. Preserve note
+  docking and editing; ordinary content edits and explicit global layout actions
+  retain their established persistence semantics. See [W006](../work/W006-focus-layout.md).
+
 ## Verification scope
 
 W004's full independent integration review and targeted repair reviews cover

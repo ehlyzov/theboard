@@ -55,6 +55,8 @@ test("FOCUS-01 one-hop outgoing destinations only; full board survives", async (
   await expect(page.getByRole('textbox', {name:'Название экрана'})).toHaveValue('Детали');
   await page.locator('.screen-list').getByRole('button', {name:/Вход/}).click();
   await expect(screens).toHaveCount(2);
+  // The sidebar starts a250ms fit; don't click a moving node mid-transition.
+  await page.waitForTimeout(300);
   await screens.nth(1).locator(".node-grip").click();
   await expect(screens).toHaveCount(2);
   await expect(

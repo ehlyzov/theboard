@@ -16,7 +16,9 @@ for(const side of ['left','top','bottom'])test('DOCK-01 '+side+' full side, colo
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();const file=await(await download).path();
  const b=JSON.parse(strFromU8(unzipSync(fs.readFileSync(file!))['board.json']));const n=b.nodes.find((n:any)=>n.type==='note');
  expect(b.layout.docks[n.id].side).toBe(side);expect(n.data.color).toBe('mint');expect(n.data.dock).toBeUndefined();
- await page.getByLabel('Импорт архива').setInputFiles(file!);await expect(page.locator('.note-card.is-docked')).toHaveCount(1);
+ const oldUrl=page.url();await page.getByLabel('Импорт архива').setInputFiles(file!);
+ await expect(page).not.toHaveURL(oldUrl);
+ await expect(page.locator('.note-card.is-docked')).toHaveCount(1);
  await page.reload();await expect(page.getByLabel('Текст заметки')).toHaveValue('Preserve attached content and color');
  await page.getByRole('button',{name:'Удалить экран',exact:true}).click();
  await expect(page.getByTestId('screen-node')).toHaveCount(0);await expect(page.getByTestId('note-node')).toHaveCount(1);

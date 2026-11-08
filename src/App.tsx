@@ -795,6 +795,9 @@ function Editor() {
   };
   const connect = (connection: Connection) => {
     if (connection.source === connection.target) return;
+    // Dynamic composites can outlive an initial handle measurement. Refresh
+    // after the connection render, as we do after automatic placement.
+    requestAnimationFrame(()=>updateNodeInternals([connection.source,connection.target]));
     setEdges((current) =>
       addEdge<Edge>(
         {

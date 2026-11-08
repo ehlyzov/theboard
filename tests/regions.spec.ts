@@ -1,19 +1,132 @@
-import {test,expect} from '@playwright/test';
-import path from 'node:path';
-async function paint(page:any){await page.getByRole('button',{name:'Выделить область',exact:true}).click();const r=await page.getByTestId('annotation-image').boundingBox();await page.mouse.move(r.x+r.width*.2,r.y+r.height*.3);await page.mouse.down();await page.mouse.move(r.x+r.width*.7,r.y+r.height*.6,{steps:12});await page.mouse.up();await page.getByRole('button',{name:'Завершить выделение',exact:true}).click();}
-test('MASK-01..05 brush links existing/new notes, cancel, reload and archive',async({page,browser})=>{
- await page.goto('/?board=mask-test');await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();await page.getByLabel('Текст заметки').fill('Existing audit note');
- await page.getByLabel('Загрузить скриншоты').setInputFiles(path.resolve('tests/fixtures/Вход.png'));await paint(page);
- await page.getByLabel('Заметка для области').selectOption({label:'Existing audit note'});await page.getByRole('button',{name:'Связать с заметкой',exact:true}).click();
- await expect(page.getByTestId('note-node')).toHaveClass(/is-linked/);await expect(page.getByTestId('note-node')).toHaveCount(1);
- await page.getByRole('button',{name:'Закрыть связанные заметки'}).click();await page.getByRole('button',{name:'Область 1',exact:true}).click();await expect(page.getByTestId('note-node')).toHaveClass(/is-linked/);
- await page.getByRole('button',{name:'Добавить связь с заметкой',exact:true}).click();await page.getByLabel('Текст новой заметки').fill('Second note');await page.getByRole('button',{name:'Создать и связать',exact:true}).click();
- await expect(page.getByTestId('note-node')).toHaveCount(2);
- await page.getByRole('button',{name:'Удалить выбранную область'}).click();await expect(page.getByRole('button',{name:'Область 1',exact:true})).toHaveCount(0);await expect(page.getByTestId('note-node')).toHaveCount(2);await page.getByRole('button',{name:'Отменить удаление области'}).click();await page.getByRole('button',{name:'Область 1',exact:true}).click();
- await page.getByRole('button',{name:'Закрыть связанные заметки'}).click();await paint(page);await page.getByRole('button',{name:'Отменить выбор заметки'}).click();await expect(page.getByTestId('note-node')).toHaveCount(2);await expect(page.getByRole('button',{name:'Область 2',exact:true})).toHaveCount(0);
- await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Область 1',exact:true}).click();
- await expect(page.locator('.note-card.is-linked')).toHaveCount(2);
- const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();const archive=await(await promise).path();const ctx=await browser.newContext();const next=await ctx.newPage();await next.goto('/');await next.getByLabel('Импорт архива').setInputFiles(archive!);await next.getByRole('button',{name:'Область 1',exact:true}).click();await expect(next.locator('.note-card.is-linked')).toHaveCount(2);await ctx.close();
+import { test, expect } from "@playwright/test";
+import path from "node:path";
+async function paint(page: any) {
+  await page
+    .getByRole("button", { name: "Кисть выделения", exact: true })
+    .click();
+  const r = await page.getByTestId("annotation-image").boundingBox();
+  await page.mouse.move(r.x + r.width * 0.2, r.y + r.height * 0.3);
+  await page.mouse.down();
+  await page.mouse.move(r.x + r.width * 0.7, r.y + r.height * 0.6, {
+    steps: 12,
+  });
+  await page.mouse.up();
+  await page.keyboard.press("]");
+  await page.mouse.move(r.x + r.width * 0.3, r.y + r.height * 0.7);
+  await page.mouse.down();
+  await page.mouse.move(r.x + r.width * 0.6, r.y + r.height * 0.75, {
+    steps: 5,
+  });
+  await page.mouse.up();
+  await page.keyboard.press("Enter");
+}
+test("MASK-01..05 brush links existing/new notes, cancel, reload and archive", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/?board=mask-test");
+  await page
+    .getByRole("button", { name: "Добавить заметку", exact: true })
+    .click();
+  await page.getByLabel("Текст заметки").fill("Existing audit note");
+  await page
+    .getByLabel("Загрузить скриншоты")
+    .setInputFiles(path.resolve("tests/fixtures/Вход.png"));
+  await paint(page);
+  await page
+    .getByLabel("Заметка для области")
+    .selectOption({ label: "Existing audit note" });
+  await page
+    .getByRole("button", { name: "Связать с заметкой", exact: true })
+    .click();
+  await expect(page.getByTestId("note-node")).toHaveClass(/is-linked/);
+  await expect(page.getByTestId("note-node")).toHaveCount(1);
+  await page.getByRole("button", { name: "Закрыть связанные заметки" }).click();
+  const imageBounds = await page.getByTestId("annotation-image").boundingBox();
+  await page.mouse.move(
+    imageBounds!.x + imageBounds!.width * 0.3,
+    imageBounds!.y + imageBounds!.height * 0.36,
+  );
+  await expect(page.locator(".mask-note-connector")).toHaveCount(1);
+  await expect(page.getByTestId("note-node")).toHaveClass(/is-linked/);
+  await page
+    .getByRole("button", { name: "Область 1", exact: true })
+    .press("Enter");
+  await expect(page.getByTestId("note-node")).toHaveClass(/is-linked/);
+  await page
+    .getByRole("button", { name: "Добавить связь с заметкой", exact: true })
+    .click();
+  await page.getByLabel("Текст новой заметки").fill("Second note");
+  await page
+    .getByRole("button", { name: "Создать и связать", exact: true })
+    .click();
+  await expect(page.getByTestId("note-node")).toHaveCount(2);
+  await page.getByRole("button", { name: "Удалить выбранную область" }).click();
+  await expect(
+    page.getByRole("button", { name: "Область 1", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByTestId("note-node")).toHaveCount(2);
+  await page.getByRole("button", { name: "Отменить удаление области" }).click();
+  await page
+    .getByRole("button", { name: "Область 1", exact: true })
+    .press("Enter");
+  await page.getByRole("button", { name: "Закрыть связанные заметки" }).click();
+  await paint(page);
+  await page.getByRole("button", { name: "Отменить выбор заметки" }).click();
+  await expect(page.getByTestId("note-node")).toHaveCount(2);
+  await expect(
+    page.getByRole("button", { name: "Область 2", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Сохранено" }),
+  ).toBeVisible();
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Область 1", exact: true })
+    .press("Enter");
+  await expect(page.locator(".note-card.is-linked")).toHaveCount(2);
+  const promise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Экспорт архива" }).click();
+  const archive = await (await promise).path();
+  const ctx = await browser.newContext();
+  const next = await ctx.newPage();
+  await next.goto("/");
+  await next.getByLabel("Импорт архива").setInputFiles(archive!);
+  await next
+    .getByRole("button", { name: "Область 1", exact: true })
+    .press("Enter");
+  await expect(next.locator(".note-card.is-linked")).toHaveCount(2);
+  await ctx.close();
 });
-test('VIEW-01..02 zoom to 400 percent and restore viewport',async({page})=>{await page.goto('/?board=viewport-test');for(let i=0;i<18;i++)await page.getByRole('button',{name:'Увеличить масштаб'}).click();await expect(page.locator('.zoom-controls')).toContainText('400%');await page.waitForTimeout(100);await page.reload();await expect(page.locator('.zoom-controls')).toContainText('400%');});
-test('VIEW-03 Alt-drag pans over an editable note without editing it',async({page})=>{await page.goto('/?board=pan-test');await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();await page.getByLabel('Текст заметки').fill('Keep text');const note=page.getByTestId('note-node');const before=await note.boundingBox();const box=await page.getByLabel('Текст заметки').boundingBox();await page.keyboard.down('Alt');await page.mouse.move(box!.x+30,box!.y+30);await page.mouse.down();await page.mouse.move(box!.x+140,box!.y+100,{steps:10});await page.mouse.up();await page.keyboard.up('Alt');const after=await note.boundingBox();expect(after!.x-before!.x).toBeGreaterThan(80);await expect(page.getByLabel('Текст заметки')).toHaveValue('Keep text');});
+test("VIEW-01..02 zoom to 400 percent and restore viewport", async ({
+  page,
+}) => {
+  await page.goto("/?board=viewport-test");
+  for (let i = 0; i < 18; i++)
+    await page.getByRole("button", { name: "Увеличить масштаб" }).click();
+  await expect(page.locator(".zoom-controls")).toContainText("400%");
+  await page.waitForTimeout(100);
+  await page.reload();
+  await expect(page.locator(".zoom-controls")).toContainText("400%");
+});
+test("VIEW-03 Alt-drag pans over an editable note without editing it", async ({
+  page,
+}) => {
+  await page.goto("/?board=pan-test");
+  await page
+    .getByRole("button", { name: "Добавить заметку", exact: true })
+    .click();
+  await page.getByLabel("Текст заметки").fill("Keep text");
+  const note = page.getByTestId("note-node");
+  const before = await note.boundingBox();
+  const box = await page.getByLabel("Текст заметки").boundingBox();
+  await page.keyboard.down("Alt");
+  await page.mouse.move(box!.x + 30, box!.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + 140, box!.y + 100, { steps: 10 });
+  await page.mouse.up();
+  await page.keyboard.up("Alt");
+  const after = await note.boundingBox();
+  expect(after!.x - before!.x).toBeGreaterThan(80);
+  await expect(page.getByLabel("Текст заметки")).toHaveValue("Keep text");
+});

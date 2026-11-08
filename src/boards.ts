@@ -1,5 +1,6 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 import { MarkerType, type Node, type Edge } from "@xyflow/react";
+import { labelLayouts } from "./layout";
 export type RegionComment = {
   id: string;
   text: string;
@@ -113,6 +114,7 @@ export type BoardNode = Node<
     image?: string;
     text?: string;
     regions?: Region[];
+    imageSize?: { width: number; height: number };
     status?: "open" | "done";
     createdAt?: string;
     resolvedAt?: string;
@@ -192,6 +194,7 @@ export async function importBoard(file: File): Promise<BoardData> {
   const screens = new Set<string>();
   const nodes: BoardNode[] = [];
   for (const n of raw.nodes) {
+    n.position = raw.layout?.nodes?.[n.id] ?? n.position;
     const id = text(n.id, 150);
     if (
       !id ||
@@ -230,6 +233,7 @@ export async function importBoard(file: File): Promise<BoardData> {
           : "image/jpeg";
       const blob = new Blob([new Uint8Array(bytes)], { type: mime });
       const bitmap = await createImageBitmap(blob);
+      data.imageSize = { width: bitmap.width, height: bitmap.height };
       const pixels = bitmap.width * bitmap.height;
       bitmap.close();
       if (pixels > 40_000_000) fail();
@@ -268,6 +272,10 @@ export async function importBoard(file: File): Promise<BoardData> {
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
       style: { stroke: "#7c879d", strokeWidth: 2 },
+      data:
+        raw.layout?.edges?.[id]?.label && raw.layout.edges[id].manual
+          ? { labelPosition: validPoint(raw.layout.edges[id].label) }
+          : undefined,
     };
   });
   for (const n of nodes)
@@ -305,7 +313,7 @@ export function exportBoard(board: BoardData): Uint8Array {
       files[path] = Uint8Array.from(binary, (c) => c.charCodeAt(0));
       data.image = path;
     }
-    return { id: n.id, type: n.type, position: n.position, data };
+    return { id: n.id, type: n.type, data };
   });
   files["board.json"] = strToU8(
     JSON.stringify(
@@ -313,6 +321,22 @@ export function exportBoard(board: BoardData): Uint8Array {
         version: 1,
         title: board.title,
         nodes,
+        layout: {
+          nodes: Object.fromEntries(board.nodes.map((n) => [n.id, n.position])),
+          edges: Object.fromEntries(
+            Object.entries(labelLayouts(board.nodes, board.edges)).map(
+              ([id, label]) => [
+                id,
+                {
+                  label,
+                  manual: Boolean(
+                    board.edges.find((e) => e.id === id)?.data?.labelPosition,
+                  ),
+                },
+              ],
+            ),
+          ),
+        },
         edges: board.edges.map((e) => ({
           id: e.id,
           source: e.source,
@@ -362,4 +386,9 @@ export function migrateBoard(board: BoardData): BoardData {
     },
   }));
   return { ...board, nodes: [...nodes, ...additions] };
+}
+
+function validPoint(p: any) {
+  if (!Number.isFinite(p?.x) || !Number.isFinite(p?.y)) fail();
+  return { x: p.x, y: p.y };
 }

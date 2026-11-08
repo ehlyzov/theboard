@@ -48,3 +48,31 @@ Local build PASS; eight current browser scenarios PASS. The earlier document
 check failed on missing Create document UI; its draft is now explicitly outside
 the executable suite under docs/work/drafts, for W005. It is not a green claim.
 Do not delay the current bounded PlanItForMe blockers for W005.
+
+## Latest interaction refinements
+
+MASK-12 replaces per-screen controls with a common brush toolbar and B shortcut.
+Bracket keys change radius; Ctrl/Cmd+Z undoes a stroke; Delete clears a draft;
+Enter completes one mask; Escape cancels. Clicking a saved mask reveals its
+trash icon. Hover highlights ordinary linked notes, with thin non-scaling visual
+connectors. IMAGE-01 uses intrinsic image/card ratio without cropping pixels.
+
+LAYOUT-01 auto-places labels outside node/label bounds, connects each label to
+its edge, and permits direct label dragging. Portable node and edge geometry
+is stored separately in `layout`; legacy inline node positions still import.
+Focus mode shows current screen plus one-hop destinations, preserving full data.
+Regression tests: tests/layout.spec.ts and tests/focus.spec.ts. These were added
+following actual user screenshots; do not claim every refinement was strict TDD.
+
+## Candidate preparation
+
+Local current suite: 11 browser tests PASS, including separate layout export,
+manual label dragging, image aspect ratios, focus, brush note links/delete Undo,
+viewport400% reload and modifier panning. Additional brush multi-stroke/hover
+regression added next. The visible runtime follows the production build rather
+than Vite dependency optimization. User requests added during review are material
+new deltas; earlier reviewer findings were repaired, but are not passed off as
+independent acceptance of the later layout/keyboard/aspect changes.
+
+DOCK-01 is recorded and remains a subsequent implementation requirement along
+with Markdown W005; neither is silently marked complete by this candidate.

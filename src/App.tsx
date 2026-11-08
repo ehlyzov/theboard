@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useMemo,
   type ChangeEvent,
 } from "react";
 import {
@@ -23,6 +24,7 @@ import {
   type Edge,
   type Node,
   type NodeProps,
+  ViewportPortal,
 } from "@xyflow/react";
 import {
   ArrowDownToLine,
@@ -54,10 +56,18 @@ import {
 } from "./boards";
 
 import RegionImage from "./RegionImage";
-import LabeledEdge from "./LabeledEdge";
+import LabeledEdge, { LabelPositions } from "./LabeledEdge";
+import { labelLayouts, freePosition, nodeSize } from "./layout";
 const edgeTypes = { smoothstep: LabeledEdge };
 
 type Actions = {
+  tool: "select" | "brush";
+  brushRadius: number;
+  brushScreenId: string | null;
+  startBrush: (id: string) => void;
+  cancelBrush: () => void;
+  deleteRegion: (screenId: string, regionId: string) => void;
+  hoverRegion: (screenId: string, regionId: string | null) => void;
   createRegion: (screenId: string, region: Region) => void;
   linkedNoteIds: string[];
   regionSelection: { screenId: string; regionId: string } | null;
@@ -75,6 +85,12 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
   return (
     <article
       data-testid="screen-node"
+      style={{
+        width:
+          data.imageSize && data.imageSize.width >= data.imageSize.height
+            ? 400
+            : 230,
+      }}
       className={`screen-card ${selected ? "is-selected" : ""} ${actions.connecting === id ? "is-source" : ""}`}
     >
       <div className="node-grip">
@@ -99,6 +115,21 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
             ? actions.regionSelection.regionId
             : undefined
         }
+        drawing={actions.tool === "brush"}
+        radius={actions.brushRadius}
+        activeScreen={actions.brushScreenId === id}
+        blocked={Boolean(actions.brushScreenId && actions.brushScreenId !== id)}
+        onStart={() => actions.startBrush(id)}
+        onCancel={actions.cancelBrush}
+        onImageSize={(width, height) => {
+          if (
+            data.imageSize?.width !== width ||
+            data.imageSize?.height !== height
+          )
+            actions.update(id, { imageSize: { width, height } });
+        }}
+        onDelete={(regionId) => actions.deleteRegion(id, regionId)}
+        onHover={(regionId) => actions.hoverRegion(id, regionId)}
         onCreate={(r) => actions.createRegion(id, r)}
         onSelect={(r) => actions.selectRegion(id, r)}
       />
@@ -185,19 +216,22 @@ function NoteNode({ id, data, selected }: NodeProps<BoardNode>) {
 
 const nodeTypes = { screen: ScreenNode, note: NoteNode };
 
-async function readImage(file: File): Promise<string> {
+async function readImage(
+  file: File,
+): Promise<{ image: string; imageSize: { width: number; height: number } }> {
   if (
     !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
     file.size > 10 * 1024 * 1024
   )
     throw new Error("format");
   const image = await createImageBitmap(file);
+  const imageSize = { width: image.width, height: image.height };
   const pixels = image.width * image.height;
   image.close();
   if (pixels > 40_000_000) throw new Error("size");
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
+    reader.onload = () => resolve({ image: String(reader.result), imageSize });
     reader.onerror = () => reject(new Error("read"));
     reader.readAsDataURL(file);
   });
@@ -239,6 +273,46 @@ function Editor() {
     screenId: string;
     regionId: string;
   } | null>(null);
+  const [tool, setTool] = useState<"select" | "brush">("select");
+  const [brushRadius, setBrushRadius] = useState(0.06);
+  const [brushScreenId, setBrushScreenId] = useState<string | null>(null);
+  const [hoveredRegion, setHoveredRegion] = useState<{
+    screenId: string;
+    regionId: string;
+  } | null>(null);
+  useEffect(() => {
+    const keys = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLInputElement &&
+          !["file", "checkbox", "range", "button"].includes(e.target.type)) ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
+      )
+        return;
+      if (e.code === "KeyB" && !e.ctrlKey && !e.metaKey) {
+        setTool("brush");
+        e.preventDefault();
+      }
+      if (e.key === "Escape") {
+        setTool("select");
+        setBrushScreenId(null);
+      }
+      if (
+        tool === "brush" &&
+        (e.code === "BracketRight" || e.code === "BracketLeft")
+      ) {
+        e.preventDefault();
+        setBrushRadius((r) =>
+          Math.max(
+            0.01,
+            Math.min(0.2, r + (e.code === "BracketRight" ? 0.01 : -0.01)),
+          ),
+        );
+      }
+    };
+    window.addEventListener("keydown", keys);
+    return () => window.removeEventListener("keydown", keys);
+  }, [tool]);
   const [pendingRegion, setPendingRegion] = useState<{
     screenId: string;
     region: Region;
@@ -251,6 +325,9 @@ function Editor() {
     region: Region;
   } | null>(null);
   const selectedScreen = nodes.find((n) => n.id === regionSelection?.screenId);
+  const hoverMask = nodes
+    .find((n) => n.id === hoveredRegion?.screenId)
+    ?.data.regions?.find((r) => r.id === hoveredRegion?.regionId);
   const selectedRegion = selectedScreen?.data.regions?.find(
     (r) => r.id === regionSelection?.regionId,
   );
@@ -290,7 +367,12 @@ function Editor() {
           id: noteId,
           type: "note",
           dragHandle: ".node-grip",
-          position: { x: screen.position.x + 280, y: screen.position.y + 80 },
+          position: freePosition(
+            { x: screen.position.x + 280, y: screen.position.y + 80 },
+            230,
+            183,
+            current.map((n) => ({ ...n.position, ...nodeSize(n) })),
+          ),
           data: {
             title: "Заметка области",
             text: newNoteText.trim(),
@@ -335,6 +417,10 @@ function Editor() {
   const displayEdges = focusActive
     ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId }))
     : edges;
+  const labelPositions = useMemo(
+    () => labelLayouts(displayNodes, displayEdges),
+    [nodes, edges, focusEnabled, currentScreenId],
+  );
   const [help, setHelp] = useState(false);
   const [boardId] = useState(() => currentBoard());
   const [title, setTitle] = useState("Новый поток");
@@ -583,17 +669,25 @@ function Editor() {
     let failures = 0;
     for (const file of files) {
       try {
-        const image = await readImage(file);
+        const { image, imageSize } = await readImage(file);
         const index = screens.length + additions.length;
         additions.push({
           id: crypto.randomUUID(),
           type: "screen",
           dragHandle: ".node-grip",
-          position: {
-            x: 70 + (index % 3) * 310,
-            y: 100 + Math.floor(index / 3) * 460,
-          },
-          data: { title: file.name.replace(/\.[^.]+$/, ""), image },
+          position: freePosition(
+            { x: 70 + (index % 3) * 480, y: 100 + Math.floor(index / 3) * 600 },
+            imageSize.width >= imageSize.height ? 400 : 230,
+            82 +
+              ((imageSize.width >= imageSize.height ? 380 : 210) *
+                imageSize.height) /
+                imageSize.width,
+            [...nodes, ...additions].map((n) => ({
+              ...n.position,
+              ...nodeSize(n),
+            })),
+          ),
+          data: { title: file.name.replace(/\.[^.]+$/, ""), image, imageSize },
         });
       } catch {
         failures++;
@@ -631,11 +725,34 @@ function Editor() {
       value={{
         update,
         regionSelection,
-        linkedNoteIds: selectedRegion?.noteIds ?? [],
+        tool,
+        brushRadius,
+        brushScreenId,
+        startBrush: setBrushScreenId,
+        cancelBrush: () => {
+          setTool("select");
+          setBrushScreenId(null);
+        },
+        deleteRegion: (screenId, regionId) => {
+          const screen = nodes.find((n) => n.id === screenId);
+          const region = screen?.data.regions?.find((r) => r.id === regionId);
+          if (!screen || !region) return;
+          setDeletedRegion({ screenId, region });
+          update(screenId, {
+            regions: screen.data.regions?.filter((r) => r.id !== regionId),
+          });
+          setRegionSelection(null);
+          setHoveredRegion(null);
+        },
+        hoverRegion: (screenId, regionId) =>
+          setHoveredRegion(regionId ? { screenId, regionId } : null),
+        linkedNoteIds: (hoverMask ?? selectedRegion)?.noteIds ?? [],
         createRegion: (screenId, region) => {
           setNoteChoice("");
           setNewNoteText("");
           setPendingRegion({ screenId, region });
+          setTool("select");
+          setBrushScreenId(null);
         },
         selectRegion: (screenId, regionId) =>
           setRegionSelection({ screenId, regionId }),
@@ -829,11 +946,24 @@ function Editor() {
               aria-label="Инструменты доски"
             >
               <button
-                className="tool active"
+                className={"tool " + (tool === "select" ? "active" : "")}
+                onClick={() => {
+                  setTool("select");
+                  setBrushScreenId(null);
+                }}
                 aria-label="Выделение и перемещение"
                 title="Перемещайте элементы за верхнюю полоску"
               >
                 <MousePointer2 size={19} />
+              </button>
+              <button
+                className={"tool " + (tool === "brush" ? "active" : "")}
+                aria-label="Кисть выделения"
+                aria-pressed={tool === "brush"}
+                title="Кисть: B; [ ] размер; Enter завершить; Esc отмена"
+                onClick={() => setTool("brush")}
+              >
+                <Scan size={19} />
               </button>
               <span className="toolbar-divider" />
               <button
@@ -874,52 +1004,118 @@ function Editor() {
               disabled={loading}
               onChange={upload}
             />
-            <ReactFlow
-              nodes={displayNodes}
-              edges={displayEdges}
-              onNodeClick={(_, node) => {
-                if (node.type === "screen") setCurrentScreenId(node.id);
-              }}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={connect}
-              connectOnClick={false}
-              onPaneClick={() => setConnecting(null)}
-              onNodesDelete={(deleted) => {
-                const ids = new Set(deleted.map((n) => n.id));
-                setNodes((current) =>
-                  current
-                    .filter((n) => !ids.has(n.id))
-                    .map((n) => ({
-                      ...n,
-                      data: {
-                        ...n.data,
-                        regions: n.data.regions?.map((r) => ({
-                          ...r,
-                          noteIds: r.noteIds?.filter((id) => !ids.has(id)),
-                        })),
-                      },
-                    })),
-                );
-                if (deleted.some((n) => n.id === connecting))
-                  setConnecting(null);
-              }}
-              defaultViewport={initialViewport}
-              minZoom={0.05}
-              maxZoom={4}
-              deleteKeyCode={["Backspace", "Delete"]}
-              isValidConnection={(c) => c.source !== c.target}
-              aria-label="Полотно пользовательского потока"
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={24}
-                size={1}
-                color="#d7dce6"
-              />
-            </ReactFlow>
+            <LabelPositions.Provider value={labelPositions}>
+              <ReactFlow
+                nodes={displayNodes}
+                edges={displayEdges}
+                onNodeClick={(_, node) => {
+                  if (node.type === "screen") setCurrentScreenId(node.id);
+                }}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={connect}
+                connectOnClick={false}
+                onPaneClick={() => setConnecting(null)}
+                onNodesDelete={(deleted) => {
+                  const ids = new Set(deleted.map((n) => n.id));
+                  setNodes((current) =>
+                    current
+                      .filter((n) => !ids.has(n.id))
+                      .map((n) => ({
+                        ...n,
+                        data: {
+                          ...n.data,
+                          regions: n.data.regions?.map((r) => ({
+                            ...r,
+                            noteIds: r.noteIds?.filter((id) => !ids.has(id)),
+                          })),
+                        },
+                      })),
+                  );
+                  if (deleted.some((n) => n.id === connecting))
+                    setConnecting(null);
+                }}
+                defaultViewport={initialViewport}
+                minZoom={0.05}
+                maxZoom={4}
+                deleteKeyCode={
+                  tool === "brush" ? null : ["Backspace", "Delete"]
+                }
+                isValidConnection={(c) => c.source !== c.target}
+                aria-label="Полотно пользовательского потока"
+              >
+                <ViewportPortal>
+                  <svg className="mask-note-connectors" width="1" height="1">
+                    {nodes
+                      .filter((n) => !focusActive || focusIds.has(n.id))
+                      .flatMap((screen) =>
+                        (screen.data.regions ?? []).flatMap((region) => {
+                          const points = region.strokes?.flatMap(
+                            (stroke) => stroke.points,
+                          );
+                          const center = points?.length
+                            ? {
+                                x:
+                                  points.reduce((s, p) => s + p.x, 0) /
+                                  points.length,
+                                y:
+                                  points.reduce((s, p) => s + p.y, 0) /
+                                  points.length,
+                              }
+                            : {
+                                x: region.x + region.width / 2,
+                                y: region.y + region.height / 2,
+                              };
+                          const ratio =
+                            (screen.data.imageSize?.width ?? 210) /
+                            (screen.data.imageSize?.height ?? 290);
+                          const width = ratio >= 1 ? 380 : 210,
+                            height = width / ratio;
+                          const x = screen.position.x + 10 + center.x * width,
+                            y = screen.position.y + 37 + center.y * height;
+                          return (region.noteIds ?? []).map((id) => {
+                            const note = nodes.find((n) => n.id === id);
+                            if (!note) return null;
+                            const targetX =
+                                note.position.x +
+                                (note.position.x < x ? 230 : 0),
+                              targetY = Math.max(
+                                note.position.y + 10,
+                                Math.min(note.position.y + 173, y),
+                              );
+                            return (
+                              <line
+                                key={screen.id + region.id + id}
+                                className="mask-note-connector"
+                                x1={x}
+                                y1={y}
+                                x2={targetX}
+                                y2={targetY}
+                                stroke={
+                                  hoveredRegion?.regionId === region.id ||
+                                  regionSelection?.regionId === region.id
+                                    ? "#9366c7"
+                                    : "#c7b6db"
+                                }
+                                strokeWidth="1"
+                                vectorEffect="non-scaling-stroke"
+                              />
+                            );
+                          });
+                        }),
+                      )}
+                  </svg>
+                </ViewportPortal>
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={24}
+                  size={1}
+                  color="#d7dce6"
+                />
+              </ReactFlow>
+            </LabelPositions.Provider>
             {!nodes.length && (
               <div className="empty-state">
                 <div className="empty-illustration" aria-hidden="true">
@@ -1015,8 +1211,10 @@ function Editor() {
               </button>
             </div>
             <div className="canvas-tip">
-              Пробел / Alt + перетаскивание — навигация <span>·</span> Колесо —
-              масштаб
+              {tool === "brush"
+                ? `Кисть ${Math.round(brushRadius * 100)}% · [ ] размер · Enter завершить · Esc отмена · Ctrl/Cmd+Z мазок`
+                : "Пробел / Alt + перетаскивание — навигация"}{" "}
+              <span>·</span> Колесо — масштаб
             </div>
             {pendingRegion && (
               <section className="region-discussion">
@@ -1119,22 +1317,6 @@ function Editor() {
                   }}
                 >
                   Добавить связь с заметкой
-                </button>
-                <button
-                  onClick={() => {
-                    setDeletedRegion({
-                      screenId: selectedScreen.id,
-                      region: selectedRegion,
-                    });
-                    update(selectedScreen.id, {
-                      regions: (selectedScreen.data.regions ?? []).filter(
-                        (r) => r.id !== selectedRegion.id,
-                      ),
-                    });
-                    setRegionSelection(null);
-                  }}
-                >
-                  Удалить выбранную область
                 </button>
               </section>
             )}

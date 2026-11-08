@@ -91,3 +91,22 @@ suite; it is not reported as passing or implemented.
   must clearly identify their edge and avoid overlap with other labels and
   diagram nodes. Provide manual layout adjustment, storing geometry in a
   separate `layout` section of the portable file, not mixed with graph meaning.
+
+- MASK-11 (`approved_by_human`, direct instruction): draw thin visual connectors
+  from a saved mask to its ordinary linked notes; hovering the mask highlights
+  those notes. These connectors express note links, not navigation edges.
+
+- MASK-12 (`approved_by_human`, direct screenshot feedback): select the brush
+  with B or the common toolbar; use keyboard radius controls, not per-screen
+  buttons/sliders. Multiple strokes form one draft mask until completion.
+  Show a trash icon on a selected saved mask. Preserve Delete/Undo semantics.
+- IMAGE-01 (`approved_by_human`, explicitly relayed instruction): portrait and
+  landscape cards follow intrinsic image aspect ratio, show all pixels without
+  cropping/stretching, and retain normalized mask geometry and note links.
+  Account for resulting bounds in layout. Do not alter source screenshot pixels.
+
+- DOCK-01 (`approved_by_human`, direct instructions, terminology corrected to
+  notes): dock/undock an ordinary note to any side of a screen card. The note
+  extends the composite card; arrows on that side connect to the note's outer
+  boundary. A docked note stretches to the full length of that side. Preserve
+  its identity/content, and keep docking geometry in the separate layout section.

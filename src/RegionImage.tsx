@@ -1,42 +1,90 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { Trash2 } from "lucide-react";
 import type { Region, Stroke } from "./boards";
 type Props = {
   image: string;
   title: string;
   regions: Region[];
   selected: string | undefined;
+  drawing: boolean;
+  radius: number;
+  activeScreen: boolean;
+  blocked: boolean;
+  onStart: () => void;
+  onCancel: () => void;
   onCreate: (region: Region) => void;
   onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  onHover: (id: string | null) => void;
+  onImageSize: (width: number, height: number) => void;
 };
+const isEditing = (target: EventTarget | null) =>
+  target instanceof HTMLTextAreaElement ||
+  (target instanceof HTMLInputElement &&
+    !["file", "button", "checkbox", "range"].includes(target.type)) ||
+  (target instanceof HTMLElement && target.isContentEditable);
 export default function RegionImage({
   image,
   title,
   regions,
   selected,
+  drawing,
+  radius,
+  activeScreen,
+  blocked,
+  onStart,
+  onCancel,
   onCreate,
   onSelect,
+  onDelete,
+  onHover,
+  onImageSize,
 }: Props) {
-  const [drawing, setDrawing] = useState(false);
   const [ratio, setRatio] = useState(1);
-  const [radius, setRadius] = useState(0.06);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [active, setActive] = useState<Stroke | null>(null);
   const strokeRef = useRef<Stroke | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
-  function cancel() {
-    setDrawing(false);
+  function reset() {
     setStrokes([]);
     setActive(null);
     strokeRef.current = null;
     setCursor(null);
   }
   useEffect(() => {
-    const escape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancel();
+    if (!drawing) reset();
+  }, [drawing]);
+  useEffect(() => {
+    const keys = (e: KeyboardEvent) => {
+      if (!drawing || !activeScreen || isEditing(e.target)) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        reset();
+        onCancel();
+      } else if (e.key === "Enter" && strokes.length) {
+        e.preventDefault();
+        onCreate({
+          id: crypto.randomUUID(),
+          x: 0,
+          y: 0,
+          width: 1,
+          height: 1,
+          comments: [],
+          noteIds: [],
+          strokes,
+        });
+        reset();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyZ") {
+        e.preventDefault();
+        setStrokes((s) => s.slice(0, -1));
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        setStrokes([]);
+      }
     };
-    window.addEventListener("keydown", escape);
-    return () => window.removeEventListener("keydown", escape);
-  }, []);
+    window.addEventListener("keydown", keys);
+    return () => window.removeEventListener("keydown", keys);
+  }, [drawing, activeScreen, strokes, onCreate, onCancel]);
   const point = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     return {
@@ -65,184 +113,147 @@ export default function RegionImage({
       />
     ));
   return (
-    <>
-      <div className="screen-image">
-        <div
-          data-testid="annotation-image"
-          className={"annotation-image nodrag " + (drawing ? "drawing" : "")}
-          style={{
-            width: ratio > 210 / 290 ? 210 : 290 * ratio,
-            height: ratio > 210 / 290 ? 210 / ratio : 290,
-          }}
-          onPointerDown={(e) => {
-            if (!drawing || e.button !== 0 || strokes.length>=1000) return;
+    <div className="screen-image">
+      <div
+        data-testid="annotation-image"
+        className={"annotation-image nodrag " + (drawing ? "drawing" : "")}
+        style={{
+          width: ratio >= 1 ? 380 : 210,
+          height: (ratio >= 1 ? 380 : 210) / ratio,
+        }}
+        onPointerDown={(e) => {
+          if (
+            !drawing ||
+            blocked ||
+            e.button !== 0 ||
+            strokes.length >= 1000 ||
+            regions.length >= 200
+          )
+            return;
+          e.stopPropagation();
+          e.preventDefault();
+          onStart();
+          const p = point(e);
+          const s = { radius, points: [p, { ...p }] };
+          strokeRef.current = s;
+          setActive(s);
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          setCursor(point(e));
+          if (strokeRef.current && strokeRef.current.points.length < 20000) {
             e.stopPropagation();
-            e.preventDefault();
-            const p = point(e);
-            const s = { radius, points: [p, { ...p }] };
+            const s = {
+              ...strokeRef.current,
+              points: [...strokeRef.current.points, point(e)],
+            };
             strokeRef.current = s;
             setActive(s);
-            e.currentTarget.setPointerCapture(e.pointerId);
+          }
+        }}
+        onPointerLeave={() => {
+          if (!strokeRef.current) setCursor(null);
+        }}
+        onPointerCancel={() => {
+          strokeRef.current = null;
+          setActive(null);
+        }}
+        onPointerUp={(e) => {
+          if (!strokeRef.current) return;
+          e.stopPropagation();
+          const completed = strokeRef.current;
+          setStrokes((current) => [...current, completed]);
+          strokeRef.current = null;
+          setActive(null);
+        }}
+      >
+        <img
+          src={image}
+          alt={title || "Экран приложения"}
+          draggable={false}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            setRatio(img.naturalWidth / img.naturalHeight);
+            onImageSize(img.naturalWidth, img.naturalHeight);
           }}
-          onPointerMove={(e) => {
-            const p = point(e);
-            setCursor(p);
-            if (strokeRef.current && strokeRef.current.points.length<20000) {
-              e.stopPropagation();
-              const s = {
-                ...strokeRef.current,
-                points: [...strokeRef.current.points, p],
-              };
-              strokeRef.current = s;
-              setActive(s);
-            }
-          }}
-          onPointerLeave={() => {
-            if (!strokeRef.current) setCursor(null);
-          }}
-          onPointerCancel={() => {
-            strokeRef.current = null;
-            setActive(null);
-          }}
-          onPointerUp={(e) => {
-            if (!strokeRef.current) return;
-            e.stopPropagation();
-            const completed = strokeRef.current;
-            setStrokes((current) => [...current, completed]);
-            strokeRef.current = null;
-            setActive(null);
-          }}
-        >
-          <img
-            src={image}
-            alt={title || "Экран приложения"}
-            draggable={false}
-            onLoad={(e) => {
-              const img = e.currentTarget;
-              setRatio(img.naturalWidth / img.naturalHeight);
-            }}
-          />
-          {regions.map((r, i) =>
-            r.strokes?.length ? (
-              <svg
-                key={r.id}
-                className={
-                  "brush-mask " + (selected === r.id ? "selected" : "")
-                }
-                viewBox={`0 0 1000 ${1000 / ratio}`}
-                style={{ pointerEvents: "none" }}
-              >
-                <g
-                  role="button"
-                  tabIndex={0}
-                  aria-label={"Область " + (i + 1)}
-                  style={{pointerEvents:drawing?"none":"stroke"}}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect(r.id);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onSelect(r.id);
-                    }
-                  }}
-                >
-                  {lines(r.strokes)}
-                </g>
-              </svg>
-            ) : (
-              <button
-                key={r.id}
-                type="button"
-                className={
-                  "region-mask " + (selected === r.id ? "selected" : "")
-                }
-                style={{
-                  ...shape(r),
-                  pointerEvents: drawing ? "none" : "auto",
-                }}
+        />
+        {regions.map((r, i) =>
+          r.strokes?.length ? (
+            <svg
+              key={r.id}
+              className={"brush-mask " + (selected === r.id ? "selected" : "")}
+              viewBox={`0 0 1000 ${1000 / ratio}`}
+              style={{ pointerEvents: "none" }}
+            >
+              <g
+                role="button"
+                tabIndex={0}
                 aria-label={"Область " + (i + 1)}
+                style={{ pointerEvents: drawing ? "none" : "stroke" }}
+                onPointerEnter={() => onHover(r.id)}
+                onPointerLeave={() => onHover(null)}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(r.id);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelect(r.id);
+                  }
+                }}
               >
-                <span>{i + 1}</span>
-              </button>
-            ),
-          )}
-          {drawing && (
-            <svg className="brush-draft" viewBox={`0 0 1000 ${1000 / ratio}`}>
-              {lines([...strokes, ...(active ? [active] : [])])}
+                {lines(r.strokes)}
+              </g>
             </svg>
-          )}
-          {drawing && cursor && (
-            <div
-              className="brush-cursor"
-              style={{
-                left: cursor.x * 100 + "%",
-                top: cursor.y * 100 + "%",
-                width: radius * 200 + "%",
-                aspectRatio: "1",
+          ) : (
+            <button
+              key={r.id}
+              type="button"
+              className={"region-mask " + (selected === r.id ? "selected" : "")}
+              style={{ ...shape(r), pointerEvents: drawing ? "none" : "auto" }}
+              aria-label={"Область " + (i + 1)}
+              onPointerEnter={() => onHover(r.id)}
+              onPointerLeave={() => onHover(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(r.id);
               }}
-            />
-          )}
-        </div>
-      </div>
-      {!drawing ? (
-        <button
-          type="button"
-          className="region-tool nodrag"
-          disabled={regions.length >= 200}
-          onClick={() => setDrawing(true)}
-        >
-          Выделить область
-        </button>
-      ) : (
-        <div className="brush-tools nodrag nowheel">
-          <label>
-            Радиус кисти: {Math.round(radius * 100)}%
-            <input
-              aria-label="Радиус кисти"
-              type="range"
-              min="1"
-              max="20"
-              value={radius * 100}
-              onChange={(e) => setRadius(Number(e.target.value) / 100)}
-            />
-          </label>
+            >
+              <span>{i + 1}</span>
+            </button>
+          ),
+        )}
+        {drawing && (
+          <svg className="brush-draft" viewBox={`0 0 1000 ${1000 / ratio}`}>
+            {lines([...strokes, ...(active ? [active] : [])])}
+          </svg>
+        )}
+        {drawing && cursor && (
+          <div
+            className="brush-cursor"
+            style={{
+              left: cursor.x * 100 + "%",
+              top: cursor.y * 100 + "%",
+              width: radius * 200 + "%",
+              aspectRatio: "1",
+            }}
+          />
+        )}
+        {!drawing && selected && (
           <button
-            disabled={!strokes.length}
-            onClick={() => setStrokes((s) => s.slice(0, -1))}
-          >
-            Отменить мазок
-          </button>
-          <button disabled={!strokes.length} onClick={() => setStrokes([])}>
-            Очистить выделение
-          </button>
-          <button
-            disabled={!strokes.length}
-            onClick={() => {
-              const region = {
-                id: crypto.randomUUID(),
-                x: 0,
-                y: 0,
-                width: 1,
-                height: 1,
-                comments: [],
-                noteIds: [],
-                strokes,
-              };
-              onCreate(region);
-              cancel();
+            className="mask-trash nodrag"
+            aria-label="Удалить выбранную область"
+            title="Удалить область; заметки останутся"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(selected);
             }}
           >
-            Завершить выделение
+            <Trash2 size={15} />
           </button>
-          <button onClick={cancel}>Отменить рисование</button>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 }

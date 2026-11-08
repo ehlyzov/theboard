@@ -74,3 +74,13 @@ mask/links; Undo restores it, while notes and images remain unchanged.
 Canvas viewport and last opened board are browser-local workspace preferences
 in localStorage, separate from portable content. They restore after reload;
 portable archives retain all board geometry and mask-to-note relationships.
+
+## Separate visual layout
+
+New exports store node coordinates in `layout.nodes[nodeId] = {x,y}` and edge
+label coordinates in `layout.edges[edgeId] = {label:{x,y},manual:boolean}`.
+Semantic `nodes`/`edges` do not carry exported node positions. Older archives
+with inline node.position remain importable; layout.nodes takes precedence.
+Drag nodes by their header and drag edge labels to adjust layout. Automatic
+label placement avoids node and other label bounds; leader lines identify the
+corresponding transition. Graph IDs, source/target, and labels retain meaning.

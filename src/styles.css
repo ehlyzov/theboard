@@ -1033,8 +1033,207 @@ a {
   }
 }
 
-.session-badge [role="status"]{white-space:nowrap;flex-shrink:0;display:inline;width:auto;height:auto;background:transparent}.session-badge{flex-shrink:0}.app-header .breadcrumb{min-width:0}.breadcrumb strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:1200px){.breadcrumb{display:none}.brand{min-width:0}.app-header{gap:12px}}
-html,body,#root{height:100%;overflow:hidden}.sidebar{min-height:0;overflow-y:auto}.sidebar-bottom{flex-shrink:0}
-.brush-mask,.brush-draft{position:absolute;inset:0;width:100%;height:100%;color:#9f72dc;opacity:.4;overflow:hidden;pointer-events:none}.brush-mask g{pointer-events:stroke;cursor:pointer}.brush-mask.selected{color:#6c32d2;opacity:.7}.brush-draft{color:#a66be4;opacity:.5}.brush-cursor{position:absolute;transform:translate(-50%,-50%);border:1px solid #6232b0;border-radius:50%;background:#a46ee41a;pointer-events:none}.annotation-image.drawing{cursor:none}.brush-tools{padding:8px;display:flex;gap:4px;flex-wrap:wrap;background:#f5f0ff;font-size:10px}.brush-tools label{width:100%}.brush-tools input{width:100%}.brush-tools button,.region-discussion>button{font-size:10px;padding:5px;border:1px solid #d6c8ec;background:white;border-radius:4px;margin:3px}.region-discussion select{display:block;max-width:100%;margin:8px 0}.note-card.is-linked{box-shadow:0 0 0 4px #a37ddb,0 4px 14px #674e9b44}.region-discussion input[type=checkbox]{margin-right:6px}
-.react-flow__edgelabel-renderer{z-index:5}.transition-label{position:absolute;background:#fff;color:#37415a;border:1px solid #e5dfec;border-radius:4px;padding:4px 7px;font-size:11px;line-height:1.4;max-width:240px;white-space:normal;box-shadow:0 1px 3px #28213c12;z-index:5;pointer-events:none}
-@media(max-width:1100px){.toolbar .tool.labeled>span{display:none}.canvas-heading h1{max-width:240px}}.brush-mask{overflow:hidden}
+.session-badge [role="status"] {
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline;
+  width: auto;
+  height: auto;
+  background: transparent;
+}
+.session-badge {
+  flex-shrink: 0;
+}
+.app-header .breadcrumb {
+  min-width: 0;
+}
+.breadcrumb strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1200px) {
+  .breadcrumb {
+    display: none;
+  }
+  .brand {
+    min-width: 0;
+  }
+  .app-header {
+    gap: 12px;
+  }
+}
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+.sidebar {
+  min-height: 0;
+  overflow-y: auto;
+}
+.sidebar-bottom {
+  flex-shrink: 0;
+}
+.brush-mask,
+.brush-draft {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: #9f72dc;
+  opacity: 0.4;
+  overflow: hidden;
+  pointer-events: none;
+}
+.brush-mask g {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.brush-mask.selected {
+  color: #6c32d2;
+  opacity: 0.7;
+}
+.brush-draft {
+  color: #a66be4;
+  opacity: 0.5;
+}
+.brush-cursor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 1px solid #6232b0;
+  border-radius: 50%;
+  background: #a46ee41a;
+  pointer-events: none;
+}
+.annotation-image.drawing {
+  cursor: none;
+}
+.brush-tools {
+  padding: 8px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  background: #f5f0ff;
+  font-size: 10px;
+}
+.brush-tools label {
+  width: 100%;
+}
+.brush-tools input {
+  width: 100%;
+}
+.brush-tools button,
+.region-discussion > button {
+  font-size: 10px;
+  padding: 5px;
+  border: 1px solid #d6c8ec;
+  background: white;
+  border-radius: 4px;
+  margin: 3px;
+}
+.region-discussion select {
+  display: block;
+  max-width: 100%;
+  margin: 8px 0;
+}
+.note-card.is-linked {
+  box-shadow:
+    0 0 0 4px #a37ddb,
+    0 4px 14px #674e9b44;
+}
+.region-discussion input[type="checkbox"] {
+  margin-right: 6px;
+}
+.react-flow__edgelabel-renderer {
+  z-index: 5;
+}
+.transition-label {
+  position: absolute;
+  background: #fff;
+  color: #37415a;
+  border: 1px solid #e5dfec;
+  border-radius: 4px;
+  padding: 4px 7px;
+  font-size: 11px;
+  line-height: 1.4;
+  max-width: 240px;
+  white-space: normal;
+  box-shadow: 0 1px 3px #28213c12;
+  z-index: 5;
+  pointer-events: none;
+}
+@media (max-width: 1100px) {
+  .toolbar .tool.labeled > span {
+    display: none;
+  }
+  .canvas-heading h1 {
+    max-width: 240px;
+  }
+}
+.brush-mask {
+  overflow: hidden;
+}
+.mask-trash {
+  position: absolute;
+  right: -8px;
+  top: -23px;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #ccb9e7;
+  background: white;
+  color: #9162b7;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.mask-note-connectors {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+.mask-note-connectors line {
+  pointer-events: none;
+}
+.screen-image {
+  height: auto;
+  min-height: 0;
+  margin: 0 8px;
+}
+.transition-label {
+  pointer-events: auto;
+  cursor: grab;
+  display: block;
+  max-width: 240px;
+  overflow-wrap: anywhere;
+  user-select: none;
+  touch-action: none;
+}
+.transition-label:active {
+  cursor: grabbing;
+}
+.transition-index {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 19px;
+  margin-right: 5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #ece7f5;
+  color: #796094;
+}
+.label-leader {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 4;
+}
+.mask-trash {
+  top: 4px;
+  right: 4px;
+}

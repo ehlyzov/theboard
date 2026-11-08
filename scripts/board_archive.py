@@ -18,7 +18,7 @@ def validate(document, paths):
         ids.add(node['id'])
         assert node['type'] in ('screen', 'note'), 'Unknown node type'
         for coordinate in ('x', 'y'):
-            value = node['position'][coordinate]
+            value = document.get('layout', {}).get('nodes', {}).get(node['id'], node.get('position', {}))[coordinate]
             assert isinstance(value, (float, int)) and abs(value) < float('inf'), 'Invalid coordinate'
         assert isinstance(node['data']['title'], str), 'Missing title'
         if node['type'] == 'screen':

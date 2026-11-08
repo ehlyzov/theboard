@@ -10,7 +10,7 @@ for(const direction of ['RIGHT','DOWN']) test(`MASK-15 ${direction} keeps ordina
       regions:id==='c'?mask(['n-one','n-shared']):id==='f'?mask(['n-shared']):[]}})),
     ...['n-one','n-shared','docked','legend'].map(id=>({id,type:'note',data:{title:id,text:id==='n-one'?'First note':id==='n-shared'?'Shared note':id}})),
   ],edges:[...ids.slice(1).map((id,i)=>({id:ids[i]+id,source:ids[i],target:id,label:'Continue '+id})),{id:'af',source:'a',target:'f',label:'Jump'}],
-    layout:{docks:{docked:{screenId:'c',side:'bottom'}}}};
+    layout:{nodes:Object.fromEntries([...ids,'n-one','n-shared','docked','legend'].map((id,i)=>[id,{x:i*500,y:100}])),docks:{docked:{screenId:'c',side:'bottom'}}}};
   await page.goto('/');
   await page.getByLabel('Импорт архива').setInputFiles({name:'annotations.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
     'board.json':strToU8(JSON.stringify(board)),'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png'),

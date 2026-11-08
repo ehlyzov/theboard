@@ -697,14 +697,14 @@ function Editor() {
       for(const screen of nodes.filter(n=>n.type==='screen')){
         const el=[...document.querySelectorAll<HTMLElement>('[data-testid="screen-node"]')].find(el=>el.dataset.boardNodeId===screen.id);
         const core=el?.querySelector<HTMLElement>('.screen-core');if(!el||!core)continue;
-        const rect=el.getBoundingClientRect(),c=core.getBoundingClientRect();
+        const rect=el.getBoundingClientRect(),c=core.getBoundingClientRect(),scale=rect.width/el.offsetWidth||zoom;
         const notes:Record<string,{x:number;y:number;width:number;height:number}>={};
         for(const child of el.querySelectorAll<HTMLElement>('[data-testid="note-node"]')){
           const r=child.getBoundingClientRect(),id=child.dataset.boardNodeId!;
-          const box={x:screen.position.x+(r.x-rect.x)/zoom,y:screen.position.y+(r.y-rect.y)/zoom,width:r.width/zoom,height:r.height/zoom};
+          const box={x:screen.position.x+(r.x-rect.x)/scale,y:screen.position.y+(r.y-rect.y)/scale,width:child.offsetWidth,height:child.offsetHeight};
           notes[id]=box;notePositions.set(id,{x:box.x,y:box.y});
         }
-        next[screen.id]={core:{x:(c.x-rect.x)/zoom,y:(c.y-rect.y)/zoom},notes};
+        next[screen.id]={core:{x:(c.x-rect.x)/scale,y:(c.y-rect.y)/scale},notes};
       }
       setAnchors(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);
       setNodes(current=>current.some(n=>{const p=notePositions.get(n.id);return p&&(Math.abs(p.x-n.position.x)>.2||Math.abs(p.y-n.position.y)>.2);})?
@@ -1148,18 +1148,19 @@ function Editor() {
                   setBrushScreenId(null);
                 }}
                 aria-label="Выделение и перемещение"
-                title="Перемещайте элементы за верхнюю полоску"
+                title={automatic ? 'Для ручного размещения выключите автоматическую компоновку слева' : 'Перемещайте элементы за верхнюю полоску'}
               >
                 <MousePointer2 size={19} />
               </button>
               <button
-                className={"tool " + (tool === "brush" ? "active" : "")}
+                className={"tool labeled " + (tool === "brush" ? "active" : "")}
                 aria-label="Кисть выделения"
                 aria-pressed={tool === "brush"}
                 title="Кисть: B; [ ] размер; Enter завершить; Esc отмена"
                 onClick={() => setTool("brush")}
               >
                 <Scan size={19} />
+                <span>Область</span>
               </button>
               <span className="toolbar-divider" />
               <button
@@ -1578,6 +1579,11 @@ function Editor() {
                   <li>
                     Выделите стрелку и нажмите Delete, чтобы убрать переход.
                   </li>
+                  <li>Выберите «Область» или нажмите B. Нарисуйте маску на экране;
+                    [ и ] меняют размер кисти, Enter завершает выделение. Затем
+                    выберите заметку или создайте новую.</li>
+                  <li>Автокомпоновка включается слева. Выключите её, чтобы
+                    размещать карточки и подписи вручную.</li>
                 </ol>
                 <p>Escape отменяет создание стрелки.</p>
               </section>

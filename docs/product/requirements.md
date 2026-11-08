@@ -146,3 +146,7 @@ suite; it is not reported as passing or implemented.
   the current screen and its visible destinations in the sidebar. Add a left
   sidebar switch for showing all versus the focused neighborhood, synchronized
   with the existing focus control. Inactive items remain clickable.
+
+- UI-03 (direct discoverability feedback): keep the mask tool easy to find in
+  the full editor. The common toolbar now labels it “Область”; B and bracket
+  shortcuts remain supported. The standalone layout example is read-only.

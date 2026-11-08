@@ -11,14 +11,18 @@ test('AUTO-01 hidden docked-note coordinates follow their composite when directi
  await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(2);
  const exported=async()=>{await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();return JSON.parse(strFromU8(unzipSync(fs.readFileSync((await(await download).path())!))['board.json']));};
  const before=await exported();
+ const relative=await page.locator('[data-testid="screen-node"][data-board-node-id="c"]').evaluate(el=>{
+   const p=el.getBoundingClientRect(),n=el.querySelector('[data-testid="note-node"]')!.getBoundingClientRect(),scale=p.width/(el as HTMLElement).offsetWidth;
+   return {x:(n.x-p.x)/scale,y:(n.y-p.y)/scale};
+ });
  await page.locator('.screen-list').getByRole('button',{name:/01 A/}).click();await page.getByRole('switch',{name:'Режим фокуса'}).click();
- const path=await page.locator('.react-flow__edge-path').getAttribute('d');await page.getByLabel('Направление компоновки').selectOption('DOWN');
- await expect(page.locator('.react-flow__edge-path')).not.toHaveAttribute('d',path!);
+ const path=await page.locator('.react-flow__edge-path').first().getAttribute('d');await page.getByLabel('Направление компоновки').selectOption('DOWN');
+ await expect(page.locator('.react-flow__edge-path').first()).not.toHaveAttribute('d',path!);
  const after=await exported();expect(after.layout.engine.options['elk.direction']).toBe('DOWN');
- const a=before.layout.nodes.c,b=after.layout.nodes.c,n=before.layout.nodes['n-c'],m=after.layout.nodes['n-c'];
+ const a=before.layout.nodes.c,b=after.layout.nodes.c,m=after.layout.nodes['n-c'];
  expect(Math.hypot(b.x-a.x,b.y-a.y)).toBeGreaterThan(100);
- expect(Math.abs((m.x-b.x)-(n.x-a.x))).toBeLessThan(1);
- expect(Math.abs((m.y-b.y)-(n.y-a.y))).toBeLessThan(1);
+ expect(Math.abs(m.x-b.x-relative.x)).toBeLessThan(1);
+ expect(Math.abs(m.y-b.y-relative.y)).toBeLessThan(1);
 });
 test('AUTO-01..02 full editor layout is optional, confirmed, portable and keeps editing',async({page})=>{
  await page.goto('/?board=auto-layout-test');

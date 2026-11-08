@@ -19,14 +19,27 @@ export async function arrangeBoard(nodes: BoardNode[], edges: Edge[], direction:
       label.append(route,index,document.createTextNode(String(edge.label??'')));measure.append(label);
       labelSizes.set(edge.id,{width:label.offsetWidth,height:label.offsetHeight});
     }
+    const elements=new Map([...document.querySelectorAll<HTMLElement>('[data-board-node-id]')].map(el=>[el.dataset.boardNodeId!,el]));
+    const dockOffsets=new Map<string,{screenId:string;x:number;y:number}>();
+    for(const note of nodes.filter(n=>n.data.dock)){
+      const screenId=note.data.dock!.screenId,parent=elements.get(screenId),child=elements.get(note.id);
+      if(!parent||!child)throw new Error('Composite note is not measured');
+      const p=parent.getBoundingClientRect(),c=child.getBoundingClientRect(),scale=p.width/parent.offsetWidth;
+      if(!scale)throw new Error('Composite bounds are unavailable');
+      dockOffsets.set(note.id,{screenId,x:(c.x-p.x)/scale,y:(c.y-p.y)/scale});
+    }
     const {default:ELK}=await import('elkjs/lib/elk.bundled.js');
     const graph = await new ELK().layout({id:'root',layoutOptions:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction},children:nodes.filter(n=>!n.data.dock).map(n=>{
-      const el=[...document.querySelectorAll<HTMLElement>('[data-board-node-id]')].find(el=>el.dataset.boardNodeId===n.id);
+      const el=elements.get(n.id);
       const size=el?{width:el.offsetWidth,height:el.offsetHeight}:nodeSize(n);
       return {id:n.id,...size};
     }),edges:edges.map(e=>({id:e.id,sources:[e.source],targets:[e.target],
           labels:e.label?[{id:'label-'+e.id,text:String(e.label),...labelSizes.get(e.id)!}]:[]}))} as import('elkjs/lib/elk-api').ElkNode);
-    return {positions:new Map(graph.children!.map(n=>[n.id,{x:n.x!,y:n.y!}])),
+    const positions=new Map(graph.children!.map(n=>[n.id,{x:n.x!,y:n.y!}]));
+    // Commit hidden children's coordinates in the same result as their parent.
+    // A focus filter may hide them before the post-render anchor observer runs.
+    for(const [id,offset]of dockOffsets){const p=positions.get(offset.screenId)!;positions.set(id,{x:p.x+offset.x,y:p.y+offset.y});}
+    return {positions,
       edges:new Map(graph.edges!.map(e=>[e.id,{
         route:e.sections!.flatMap(s=>[s.startPoint,...(s.bendPoints??[]),s.endPoint]),
         labelPosition:e.labels?.[0]?{x:e.labels[0].x!,y:e.labels[0].y!}:undefined,

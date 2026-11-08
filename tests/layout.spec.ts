@@ -98,7 +98,10 @@ test('IMAGE-01 cached image dimensions survive focus remount before the load eve
   // use known dimensions, including after hidden cards mount again.
   await page.addInitScript(() => {
     const listen = HTMLImageElement.prototype.addEventListener;
-    HTMLImageElement.prototype.addEventListener = function(type, listener, options) {
+    HTMLImageElement.prototype.addEventListener = function(
+      type: string, listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) {
       if (type !== 'load') return listen.call(this, type, listener, options);
     };
   });

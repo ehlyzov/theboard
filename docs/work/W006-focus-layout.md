@@ -52,3 +52,14 @@ route change no longer means that the requested global DOWN calculation has
 finished. The DOWN engine and hidden dock-coordinate assertions are unchanged.
 Full suite25/25 PASS after workspace-coordinate assertions were added; diff
 check PASS. Independent review pending. Human acceptance pending.
+
+## Compact-group framing correction
+
+Own local private-board viewing found that the old readable-source fallback
+could leave destinations outside the viewport even after positions compacted.
+The synthetic fixture now includes a third outgoing destination and asserts all
+focused screen bounds fit the canvas. Test-only4d714d7 on0de4f94 FAIL in both
+global modes on that viewport assertion. Focus-result fitting now frames the
+whole compact root group (including visible linked notes), while clicking the
+current sidebar item still explicitly recenters that screen. The normal-view
+viewport and canonical geometry remain unchanged.

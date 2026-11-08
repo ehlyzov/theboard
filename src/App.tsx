@@ -803,9 +803,8 @@ function Editor() {
     if(!focusGeometry)return;
     const frame=requestAnimationFrame(()=>{
       updateNodeInternals([...focusGeometry.positions.keys()]);
-      void fitView({nodes:focusFrame(displayNodes,focusIds,currentScreenId!,{
-        width:board.current?.clientWidth??1000,height:board.current?.clientHeight??800,
-      }),padding:.2,maxZoom:1,duration:150});
+      void fitView({nodes:focusNodes.filter(n=>!n.data.dock).map(n=>({id:n.id})),
+        padding:.2,maxZoom:1,duration:150});
     });
     return()=>cancelAnimationFrame(frame);
   },[focusGeometry]);

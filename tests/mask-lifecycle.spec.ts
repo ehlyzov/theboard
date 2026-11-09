@@ -68,3 +68,17 @@ test('MASK-18 local legacy boards clean empty/stale masks and retain migrated hi
  expect(source.data.regions[0].noteIds).toEqual(['n2']);
  expect(data.nodes.find((n:any)=>n.id===source.data.regions[1].noteIds[0]).data).toMatchObject({text:'Local history',status:'done',createdAt:'2026-11-09T10:00:00.000Z'});
 });
+test('MASK-16 composing an extra linked note after another owner is deleted never resurrects its ID',async({page})=>{
+ await page.goto('/');await page.getByLabel('Импорт архива').setInputFiles(pack(fixture()));
+ const source=page.locator('[data-testid="screen-node"][data-board-node-id="s"]');
+ await source.getByRole('button',{name:'Область 2',exact:true}).press('Enter');
+ await page.getByRole('button',{name:'Добавить связь с заметкой'}).click();
+ await page.getByLabel('Текст новой заметки').fill('New surviving association');
+ await page.locator('[data-testid="note-node"][data-board-node-id="n1"]').getByRole('button',{name:'Удалить заметку'}).click();
+ await page.getByRole('button',{name:'Создать и связать',exact:true}).click();
+ await page.getByRole('button',{name:'Экспорт архива'}).click();
+ await expect(page.getByRole('alert')).toHaveCount(0);
+ const data=await exported(page),mask=data.nodes.find((n:any)=>n.id==='s').data.regions[0];
+ expect(mask.id).toBe('shared');expect(mask.noteIds).toHaveLength(2);expect(mask.noteIds).toContain('n2');expect(mask.noteIds).not.toContain('n1');
+ expect(data.nodes.find((n:any)=>n.id===mask.noteIds.find((id:string)=>id!=='n2')).data.text).toBe('New surviving association');
+});

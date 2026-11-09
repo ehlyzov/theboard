@@ -26,7 +26,6 @@ import {
   type Edge,
   type Node,
   type NodeProps,
-  ViewportPortal,
 } from "@xyflow/react";
 import {
   ArrowDownToLine,
@@ -64,6 +63,7 @@ import {
 } from "./boards";
 
 import RegionImage from "./RegionImage";
+import MaskNoteConnectors from "./MaskNoteConnectors";
 import { NOTE_COLORS, COLOR_NAMES, type NoteColor } from "./noteColors";
 import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
 import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS, focusFrame } from "./layout";
@@ -433,7 +433,6 @@ function Editor() {
   const [autoWarning,setAutoWarning]=useState(false);
   const fitAfterArrange=useRef(false);
   const [arranging,setArranging]=useState(false);
-  const [anchors,setAnchors]=useState<Record<string,{core:{x:number;y:number};notes:Record<string,{x:number;y:number;width:number;height:number}>}>>({});
   const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -559,7 +558,6 @@ function Editor() {
           data: {
             title: "Заметка области",
             text: newNoteText.trim(),
-            status: "open",
           },
         });
       return result;
@@ -806,20 +804,17 @@ function Editor() {
   const { zoom } = viewport;
   useEffect(()=>{
     const frame=requestAnimationFrame(()=>{
-      const next:typeof anchors={};const notePositions=new Map<string,{x:number;y:number}>();
+      const notePositions=new Map<string,{x:number;y:number}>();
       for(const screen of nodes.filter(n=>n.type==='screen')){
         const el=[...document.querySelectorAll<HTMLElement>('[data-testid="screen-node"]')].find(el=>el.dataset.boardNodeId===screen.id);
-        const core=el?.querySelector<HTMLElement>('.screen-core');if(!el||!core)continue;
-        const rect=el.getBoundingClientRect(),c=core.getBoundingClientRect(),scale=rect.width/el.offsetWidth||zoom;
-        const notes:Record<string,{x:number;y:number;width:number;height:number}>={};
+        if(!el)continue;
+        const rect=el.getBoundingClientRect(),scale=rect.width/el.offsetWidth||zoom;
         for(const child of el.querySelectorAll<HTMLElement>('[data-testid="note-node"]')){
           const r=child.getBoundingClientRect(),id=child.dataset.boardNodeId!;
           const box={x:screen.position.x+(r.x-rect.x)/scale,y:screen.position.y+(r.y-rect.y)/scale,width:child.offsetWidth,height:child.offsetHeight};
-          notes[id]=box;notePositions.set(id,{x:box.x,y:box.y});
+          notePositions.set(id,{x:box.x,y:box.y});
         }
-        next[screen.id]={core:{x:(c.x-rect.x)/scale,y:(c.y-rect.y)/scale},notes};
       }
-      setAnchors(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);
       setNodes(current=>current.some(n=>{const p=notePositions.get(n.id);return p&&(Math.abs(p.x-n.position.x)>.2||Math.abs(p.y-n.position.y)>.2);})?
         current.map(n=>{const p=notePositions.get(n.id);return p?{...n,position:p}:n;}):current);
     });return()=>cancelAnimationFrame(frame);
@@ -1064,7 +1059,7 @@ function Editor() {
         },
         hoverRegion: (screenId, regionId) =>
           setHoveredRegion(regionId ? { screenId, regionId } : null),
-        linkedNoteIds: (hoverMask ?? selectedRegion)?.noteIds ?? [],
+        linkedNoteIds: [...new Set([...(selectedRegion?.noteIds??[]),...(hoverMask?.noteIds??[])])],
         createRegion: (screenId, region) => {
           setNoteChoice("");
           setNewNoteText("");
@@ -1378,76 +1373,7 @@ function Editor() {
                   isValidConnection={(c) => c.source !== c.target}
                   aria-label="Полотно пользовательского потока"
                 >
-                  <ViewportPortal>
-                    <svg className="mask-note-connectors" width="1" height="1">
-                      {displayNodes
-                        .filter((n) => !focusActive || focusIds.has(n.id))
-                        .flatMap((screen) =>
-                          (screen.data.regions ?? []).flatMap((region) => {
-                            const points = region.strokes?.flatMap(
-                              (stroke) => stroke.points,
-                            );
-                            const center = points?.length
-                              ? {
-                                  x:
-                                    points.reduce((s, p) => s + p.x, 0) /
-                                    points.length,
-                                  y:
-                                    points.reduce((s, p) => s + p.y, 0) /
-                                    points.length,
-                                }
-                              : {
-                                  x: region.x + region.width / 2,
-                                  y: region.y + region.height / 2,
-                                };
-                            const ratio =
-                              (screen.data.imageSize?.width ?? 210) /
-                              (screen.data.imageSize?.height ?? 290);
-                            const width = ratio >= 1 ? 380 : 210,
-                              height = width / ratio;
-                            const offset=anchors[screen.id]?.core??{x:0,y:0};
-                            const x = screen.position.x + offset.x + 10 + center.x * width,
-                              y = screen.position.y + offset.y + 37 + center.y * height;
-                            return (region.noteIds ?? []).map((id) => {
-                              const note = displayNodes.find((n) => n.id === id);
-                              if (!note) return null;
-                              const dockId=note.data.dock?.screenId;
-                              const anchor=dockId ? anchors[dockId]?.notes[id] : undefined;
-                              const parent=displayNodes.find(n=>n.id===dockId),canonicalParent=nodes.find(n=>n.id===dockId);
-                              const box=anchor&&parent&&canonicalParent ? {...anchor,
-                                x:anchor.x+parent.position.x-canonicalParent.position.x,
-                                y:anchor.y+parent.position.y-canonicalParent.position.y,
-                              } : {...note.position,...nodeSize(note)};
-                              const targetX =
-                                  box.x +
-                                  (box.x < x ? box.width : 0),
-                                targetY = Math.max(
-                                  box.y + 10,
-                                  Math.min(box.y + box.height - 10, y),
-                                );
-                              return (
-                                <line
-                                  key={screen.id + region.id + id}
-                                  className="mask-note-connector"
-                                  x1={x}
-                                  y1={y}
-                                  x2={targetX}
-                                  y2={targetY}
-                                  stroke={
-                                    hoveredRegion?.regionId === region.id ||
-                                    regionSelection?.regionId === region.id
-                                      ? "#9366c7"
-                                      : "#c7b6db"
-                                  }
-                                  strokeWidth="1"
-                                  vectorEffect="non-scaling-stroke"
-                                />
-                              );
-                            });
-                          }),
-                        )}
-                    </svg>
-                  </ViewportPortal>
+                  <MaskNoteConnectors nodes={displayNodes} selected={regionSelection} hovered={hoveredRegion}/>
                   <Background
                     variant={BackgroundVariant.Dots}
                     gap={24}
@@ -1627,21 +1553,7 @@ function Editor() {
                             update(noteId, { text: e.target.value })
                           }
                         />
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={note.data.status === "done"}
-                            onChange={(e) =>
-                              update(noteId, {
-                                status: e.target.checked ? "done" : "open",
-                                resolvedAt: e.target.checked
-                                  ? new Date().toISOString()
-                                  : undefined,
-                              })
-                            }
-                          />
-                          Выполнена · остаётся на доске
-                        </label>
+
                       </article>
                     )
                   );

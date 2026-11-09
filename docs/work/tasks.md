@@ -39,6 +39,6 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W011](W011-context-panel-styles.md) | Consistent annotation form and direct magnet docking | done | TheBoard chat; independent reviewer | Technical PASS; final CI/integration/deployment evidence in PR10; human acceptance pending |
 
-| [W012](W012-demagnetize-icon.md) | Crossed-out magnet for the demagnetize action | active | TheBoard chat | Verify icon states and existing docking regressions |
+| [W012](W012-demagnetize-icon.md) | Crossed-out magnet for the demagnetize action | done | TheBoard chat; independent reviewer | Technical9/9 and icon/reload PASS; shared rollout with W013 |
 
-| [W013](W013-note-owned-masks.md) | Note-owned mask lifecycle and screen-core dock width | active | TheBoard chat | Test-first lifecycle, migration and mixed-side sizing |
+| [W013](W013-note-owned-masks.md) | Note-owned masks, screen-core docks and visible nearest-boundary links | review | TheBoard chat | Local42/42 and Pages2/2 PASS; independent review and protected rollout |

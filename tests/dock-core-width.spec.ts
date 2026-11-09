@@ -7,9 +7,16 @@ for(const image of ['Вход','landscape'])test(`DOCK-06 ${image} top/bottom no
  await page.goto('/');await page.getByLabel('Импорт архива').setInputFiles({name:'core.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({'board.json':strToU8(JSON.stringify(board)),'assets/a.png':fs.readFileSync(`tests/fixtures/${image}.png`)}))});
  const source=page.getByTestId('screen-node');await expect(source).toHaveCount(1);
  const check=async()=>{
-  const core=await source.locator('.screen-core').boundingBox();
-  for(const side of ['top','bottom']){const n=await page.locator(`[data-testid="note-node"][data-board-node-id="${side}"]`).boundingBox();expect(Math.abs(n!.width-core!.width)).toBeLessThan(2);expect(Math.abs(n!.x-core!.x)).toBeLessThan(2);}
-  for(const side of ['left','right']){const n=await page.locator(`[data-testid="note-node"][data-board-node-id="${side}"]`).boundingBox();expect(Math.abs(n!.height-core!.height)).toBeLessThan(2);}
+  // Read all bounds in one frame: focus fit animates the viewport transform.
+  await expect.poll(()=>source.evaluate(el=>{
+   const core=el.querySelector('.screen-core')!.getBoundingClientRect();
+   return ['top','bottom','left','right'].every(side=>{
+    const note=el.querySelector(`[data-testid="note-node"][data-board-node-id="${side}"]`)!.getBoundingClientRect();
+    return side==='top'||side==='bottom'
+      ? Math.abs(note.width-core.width)<2 && Math.abs(note.x-core.x)<2
+      : Math.abs(note.height-core.height)<2;
+   });
+  })).toBe(true);
   await expect(page.getByTestId('note-node')).toHaveCount(4);
  };
  await check();

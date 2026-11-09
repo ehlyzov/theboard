@@ -57,3 +57,14 @@ test('MASK-16 stale note choice cannot commit a draft after the note is deleted'
  expect((await exported(page)).nodes.find((n:any)=>n.id==='s').data.regions).toEqual([]);
  await page.getByRole('button',{name:'Отменить выбор заметки'}).click();await expect(page.getByTestId('pending-region-preview')).toHaveCount(0);
 });
+test('MASK-18 local legacy boards clean empty/stale masks and retain migrated history',async({page})=>{
+ const board:any=fixture();board.nodes[0].data.regions=[region('empty',[]),region('stale',['missing']),region('valid',['n2','missing']),{...region('legacy',[]),comments:[{id:'old',text:'Local history',status:'done',createdAt:'2026-11-09T10:00:00.000Z'}]}];
+ for(const n of board.nodes.filter((n:any)=>n.type==='screen'))n.data.image='data:image/png;base64,'+fs.readFileSync('tests/fixtures/Вход.png').toString('base64');
+ await page.goto('/');await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();
+ await page.evaluate(async board=>{await new Promise<void>((resolve,reject)=>{const request=indexedDB.open('theboard',1);request.onsuccess=()=>{const db=request.result,tx=db.transaction('boards','readwrite');tx.objectStore('boards').put(board,'local-mask-legacy');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};request.onerror=()=>reject(request.error);});},board);
+ await page.goto('/?board=local-mask-legacy');await expect(page.getByTestId('note-node')).toHaveCount(4);
+ const data=await exported(page),source=data.nodes.find((n:any)=>n.id==='s');
+ expect(source.data.regions.map((r:any)=>r.id)).toEqual(['valid','legacy']);
+ expect(source.data.regions[0].noteIds).toEqual(['n2']);
+ expect(data.nodes.find((n:any)=>n.id===source.data.regions[1].noteIds[0]).data).toMatchObject({text:'Local history',status:'done',createdAt:'2026-11-09T10:00:00.000Z'});
+});

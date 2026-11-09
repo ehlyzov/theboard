@@ -1,6 +1,6 @@
 # W013 — note-owned masks and screen-bound dock sizing
 
-Status: active. Owner: TheBoard chat. Human acceptance pending.
+Status: review. Owner: TheBoard chat. Human acceptance pending.
 Base: `a36746c79e1f66a8d217043e0fad5ab31edd9e4a` (W012 icon candidate).
 Branch: `fix/demagnetize-icon`; one writer, shared publication with W012.
 Source: direct owner requests/screenshots, 2026-11-09.
@@ -27,8 +27,8 @@ mask survival, migration/legacy history, draft/chooser/replacement cleanup and
 mixed-side portrait/landscape composites. Prior independent mask deletion/Undo
 expectations are explicitly superseded by MASK-17, not weakened for a green run.
 Existing archive validation, pending preview, docking and focus outcomes remain.
-Technical verdict NOT_RUN. Next: meaningful red checks, implementation, scoped
-independent review, protected green CI and Pages publication.
+Technical verdict: author local PASS. Next: scoped independent review and
+protected green CI/Pages publication.
 
 ## Additional accepted presentation requirements
 
@@ -43,3 +43,37 @@ independent review, protected green CI and Pages publication.
 Checkpoint: six lifecycle/mixed-side cases PASS after meaningful red at068dfeb:
 independent mask deletion was present and top note was414px wider than the core.
 The following connection/status tests precede their implementation.
+
+
+## Implementation and author evidence
+
+- Persisted masks are normalized after legacy comment migration. Local load,
+  save and export clean empty masks; archive import still rejects invalid note
+  references before migration. Legacy comment text/status/timestamps become
+  ordinary notes before empty-mask pruning.
+- Both note-trash and React Flow keyboard deletion use one cleanup helper.
+  Shared masks retain surviving note IDs; final-note deletion removes masks on
+  every source. Draft linking guards stale note/mask IDs and closes stale UI.
+  Saved mask deletion, its Undo state and controls are removed.
+- Top/bottom slots occupy the screen core column. Existing DOM-based automatic
+  and focus measurement reads the resulting group; no new stored geometry or
+  routing schema. Derived connection paths use measured image/note rectangles,
+  not approximate card offsets, and redraw after resize, pan and zoom. Active
+  paths have a non-scaling halo and draw above nodes without intercepting input.
+- Completion control/text/updates and new-note status creation are removed.
+  Historical archive metadata remains read-only for compatibility.
+
+Meaningful red:068dfeb exposed the obsolete mask trash and a414px excess dock
+width. e6aaf44 connector test failed because none of the five selected links
+had the required active overlay. Initial new core-width test sampled separate
+frames during animated focus fitting; one full run yielded41/42. The test now
+reads all geometry in one frame and polls the same <2px criterion, without
+weakening precision. No product geometry change was needed for that timing.
+
+`npm run build` PASS; full suite on dedicated4362 using the ignored W011 config
+PASS42/42; `npm run build:pages && npm run test:pages` PASS2/2. The former
+independent-mask deletion/Undo test is superseded by the direct MASK-17 request;
+replacement now checks stale selection/composition and recovery, and dedicated
+lifecycle cases check both deletion paths, shared masks, legacy/local migration,
+archive roundtrip and invalid-reference rejection. All other regression
+outcomes remain. Independent expanded-scope review and hosted rollout pending.

@@ -990,10 +990,6 @@ a {
   color: #8a6caf;
   font-size: 10px;
 }
-.region-comment.done {
-  background: #f3f7f3;
-  border-color: #8caa92;
-}
 .region-comment button {
   display: block;
   font-size: 10px;
@@ -1175,9 +1171,9 @@ body,
   position: absolute;
   overflow: visible;
   pointer-events: none;
-  z-index: 1;
+  z-index: 1002;
 }
-.mask-note-connectors line {
+.mask-note-connectors path {
   pointer-events: none;
 }
 .screen-image {

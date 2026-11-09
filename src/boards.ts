@@ -120,6 +120,7 @@ export type BoardNode = Node<
     regions?: Region[];
     imageSize?: { width: number; height: number };
     color?: NoteColor;
+    /** Read-only metadata retained from archives predating NOTE-03. */
     status?: "open" | "done";
     createdAt?: string;
     resolvedAt?: string;

@@ -218,3 +218,12 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
 - DOCK-05 (`approved_by_human`, direct instruction, 2026-11-09): a docked note's
   magnet is crossed out and identifies the demagnetize action. After detaching,
   restore the plain attach magnet. Preserve all existing attachment behavior.
+
+- MASK-16..18 (`approved_by_human`, direct instruction, 2026-11-09): persisted
+  masks require existing note links. Deleting the final linked note deletes the
+  mask; deleting one of several notes preserves other associations. Mask-only
+  deletion/Undo is superseded. Drafts remain temporary; old empty masks are
+  cleaned after legacy comments are converted to notes, preserving history.
+- DOCK-06 (`approved_by_human`, direct screenshot, 2026-11-09): top/bottom notes
+  span the screen core only, excluding side notes. Mixed-side composites keep
+  correct measured geometry for ordinary/automatic/focus layout and routing.

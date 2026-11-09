@@ -128,3 +128,23 @@ reviewedb224c17. [PR11](https://github.com/ehlyzov/theboard/pull/11) records the
 exact final head, up-to-date protected checks, merge/main deployment and live
 public smoke. Those gates must finish before delivery. Next product work stays
 in the existing queue; human functional acceptance is not implied.
+
+
+## Final main gate navigation race
+
+Main226a4ff [run42670450142](https://github.com/ehlyzov/theboard/actions/runs/42670450142)
+correctly blocked deployment:44/45 editor cases PASS, keyboard lifecycle case
+failed on `page.reload: net::ERR_ABORTED`. The test re-imported the same board
+(so old screen count and saved status already matched) and reloaded before
+`location.assign` completed. This was a test navigation race, not a relaxed
+product expectation. The follow-up waits for the new board URL/load after
+setInputFiles before checking/reloading the roundtrip. No assertion, timeout,
+retry setting or product byte changes. Protected follow-up CI/deployment and
+public verification remain required; PR11 links that final repair record.
+
+The downloaded failed trace confirms old-document assertions completed only
+21ms after setInputFiles returned, then reload started while asynchronous import
+navigation was still possible. Artifact retained at
+`/tmp/theboard-navrace-42670450142/`. The changed test explicitly awaits a
+*different* URL with load complete, retaining every orphan/history/reload
+assertion. Both affected trash/keyboard cases PASS locally after the repair.

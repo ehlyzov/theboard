@@ -208,3 +208,8 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   mask-to-note and note-docking panels with the application's form styling:
   consistent typography, fields, inset chevrons, focus/disabled states and clear
   spacing. Preserve native select accessibility and all linking/docking behavior.
+
+- DOCK-02..04 (`approved_by_human`, direct instruction, 2026-11-09): replace the
+  note pin/picker with a magnet. Press-drag-release or click-then-click attaches
+  to a highlighted screen side. Preserve full-side layout, detachment and
+  portable docking data; allow cancellation and keyboard target activation.

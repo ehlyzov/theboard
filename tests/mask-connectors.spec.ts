@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 import fs from 'node:fs';
-import {zipSync,strToU8} from 'fflate';
+import {zipSync,unzipSync,strToU8,strFromU8} from 'fflate';
 const sides=['left','right','top','bottom'];
 test('MASK-19 selected mask shows every nearest-side connection above cards; NOTE-03 has no completion control',async({page})=>{
  const region={id:'r',x:.3,y:.25,width:.2,height:.2,comments:[],noteIds:[...sides,'free']};
@@ -29,4 +29,25 @@ test('MASK-19 selected mask shows every nearest-side connection above cards; NOT
  }
  await page.getByRole('button',{name:'Закрыть связанные заметки'}).click();
  await expect(page.locator('.mask-note-connector[data-active="true"]')).toHaveCount(0);
+});
+for(const automatic of [false,true])test(`MASK-19 focus keeps a cross-parent docked annotation visible without changing its saved dock (${automatic})`,async({page})=>{
+ const board={version:1,title:'Cross-parent focus',nodes:[
+  {id:'s',type:'screen',position:{x:70,y:100},data:{title:'Source',image:'assets/a.png',regions:[{id:'r',x:.3,y:.25,width:.2,height:.2,comments:[],noteIds:['free','cross']}]}},
+  {id:'other',type:'screen',position:{x:1000,y:600},data:{title:'Other',image:'assets/a.png'}},
+  ...['free','cross'].map((id,i)=>({id,type:'note',position:{x:500,y:100+i*200},data:{title:id,text:'Linked '+id}})),
+ ],edges:[],layout:{docks:{cross:{screenId:'other',side:'left'}}}};
+ await page.goto('/');await page.getByLabel('Импорт архива').setInputFiles({name:'cross.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({'board.json':strToU8(JSON.stringify(board)),'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png')}))});
+ if(automatic){await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).click();await page.getByRole('button',{name:'Включить автокомпоновку',exact:true}).click();await expect(page.getByText('Расчёт компоновки…',{exact:true})).toHaveCount(0);}
+ await page.locator('.screen-list').getByRole('button',{name:'01 Source',exact:true}).click();
+ const source=page.locator('[data-testid="screen-node"][data-board-node-id="s"]');await source.getByRole('button',{name:'Область 1',exact:true}).press('Enter');
+ await expect(page.locator('.mask-note-connector[data-active="true"]')).toHaveCount(2);
+ const exported=async()=>{await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();const d=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();return JSON.parse(strFromU8(unzipSync(fs.readFileSync((await(await d).path())!))['board.json']));};
+ const before=await exported();await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ await expect(page.getByTestId('screen-node')).toHaveCount(1);
+ await expect(page.locator('[data-testid="note-node"][data-board-node-id="cross"]')).toBeVisible();
+ await expect(page.locator('.mask-note-connector[data-active="true"]')).toHaveCount(2);
+ expect(await exported()).toEqual(before);
+ await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ await expect(page.locator('[data-testid="screen-node"][data-board-node-id="other"] [data-testid="note-node"][data-board-node-id="cross"]')).toBeVisible();
+ expect(await exported()).toEqual(before);
 });

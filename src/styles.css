@@ -662,6 +662,9 @@ a {
 .note-card textarea::placeholder {
   color: #b09b62;
 }
+.note-card textarea:focus-visible {
+  outline: none;
+}
 .note-card.is-selected {
   box-shadow: 0 0 0 2px #c2a95d;
 }

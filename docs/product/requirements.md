@@ -244,3 +244,6 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
 - DOCK-07 (`approved_by_human`, direct screenshot, 2026-11-09): remove white
   empty corners around composite screen/note groups. Empty cells show the
   canvas; keep the screen card surface, selection, docks and routing geometry.
+- NOTE-05 (`approved_by_human`, direct screenshot21:33, 2026-11-09): omit the
+  purple focus rectangle around a note's text area while retaining text focus,
+  caret and the note's selection. Other application controls keep focus styles.

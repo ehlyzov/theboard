@@ -1,10 +1,15 @@
 # W014 — visible new notes and transparent composite corners
 
-Status: active. Owner: TheBoard chat (single writer).
+Status: review. Owner: TheBoard chat (single writer).
 Base: `0e17fa6b7a1a72a115c7c76ba7d13727e0aa0b61`.
 Branch: `fix/visible-new-notes`. Human acceptance: pending.
 Sources: owner's local-board report and empty white corner screenshot,
 2026-11-09. No private board is used as a fixture.
+
+Additional owner screenshot21:33: remove the purple rectangle around the note
+textarea while typing (NOTE-05). Keep DOM focus/caret and the note's selection.
+Validate the narrow CSS change by visual/computed focus inspection and typing;
+do not add an implementation-mirroring cosmetic test.
 
 ## Criteria before implementation
 
@@ -47,4 +52,8 @@ dimensions; surface/outline/shadow now belong only to the screen core.
 
 Author build and full48/48 PASS; Pages build and2/2 PASS. Mixed-side core widths
 and selected link geometry remain green. Synthetic corner capture:
-`output/playwright/w014-transparent-corner.png`; visual check/review pending.
+`output/playwright/w014-transparent-corner.png`: author visually confirmed the
+bottom-right empty cell shows the canvas dots while the core and both docked
+notes retain their surfaces. Local4173 preview serves the rebuilt candidate.
+Independent exact-SHA review of `a2ed0b6cc8bd00cc848a1882b9d7edad3296f082`
+is in progress. Other browser engines remain unverified.

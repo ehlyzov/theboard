@@ -38,3 +38,5 @@ The W004 card carries provenance, human acceptance and pending product scope.
 | [W010](W010-license-pages.md) | Apache licensing and tested GitHub Pages publication | done | TheBoard chat | Published; independent review, CI/deploy and public smoke PASS; human acceptance pending |
 
 | [W011](W011-context-panel-styles.md) | Consistent annotation form and direct magnet docking | done | TheBoard chat; independent reviewer | Technical PASS; final CI/integration/deployment evidence in PR10; human acceptance pending |
+
+| [W012](W012-demagnetize-icon.md) | Crossed-out magnet for the demagnetize action | active | TheBoard chat | Verify icon states and existing docking regressions |

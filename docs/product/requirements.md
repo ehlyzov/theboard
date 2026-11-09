@@ -214,3 +214,7 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   note pin/picker with a magnet. Press-drag-release or click-then-click attaches
   to a highlighted screen side. Preserve full-side layout, detachment and
   portable docking data; allow cancellation and keyboard target activation.
+
+- DOCK-05 (`approved_by_human`, direct instruction, 2026-11-09): a docked note's
+  magnet is crossed out and identifies the demagnetize action. After detaching,
+  restore the plain attach magnet. Preserve all existing attachment behavior.

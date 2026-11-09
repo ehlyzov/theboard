@@ -73,9 +73,14 @@ export async function arrangeBoard(nodes: BoardNode[], edges: Edge[], direction:
       if(el){
         const slot=el.querySelector('.docked-'+side);
         const outer=side==='left'||side==='top'?slot?.firstElementChild:slot?.lastElementChild;
-        const face=outer??el.querySelector('.screen-core')??el;
-        const p=el.getBoundingClientRect(),r=face.getBoundingClientRect(),scale=p.width/el.offsetWidth;
-        if(scale)rect={x:(r.x-p.x)/scale,y:(r.y-p.y)/scale,width:r.width/scale,height:r.height/scale};
+        const core=el.querySelector<HTMLElement>('.screen-core');
+        const face=(outer??core??el) as HTMLElement;
+        // Both core and dock cards have the positioned screen as offsetParent.
+        // Local CSS pixels keep saved routes independent of viewport transforms.
+        rect={x:face===el?0:face.offsetLeft+el.clientLeft,
+          y:face===el?0:face.offsetTop+el.clientTop,width:face.offsetWidth,height:face.offsetHeight};
+        // The core has a1px external outline; dock cards include their border.
+        if(face===core)rect={x:rect.x-1,y:rect.y-1,width:rect.width+2,height:rect.height+2};
       }
       return side==='top'||side==='bottom'
         ? {x:rect.x+rect.width*fraction,y:rect.y+(side==='bottom'?rect.height:0)}

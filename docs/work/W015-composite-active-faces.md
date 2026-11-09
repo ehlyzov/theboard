@@ -49,3 +49,17 @@ assertions remain; only diagnostic context was added to failure messages.
 Two isolated old-case repeats passed before the guard; the final combined
 automatic/docking/new-face run repeated twice PASS28/28 after it. Build PASS.
 Full root, Pages, independent review and hosted gates follow.
+
+Initial19ed3fa full root54/56: exact automatic focus reload and satellite
+boundary checks failed. Independent16/17 also reproduced the exact reload
+failure; base35a6ba7 focus/linked checks4/4 PASS. These are candidate regressions,
+not weakened requirements. Client-rect/zoom arithmetic had introduced subpixel
+drift in saved routes/labels. Active-face measurement now uses local offset
+coordinates/sizes, including the core's visible1px outline.
+
+Repair focused13/14 preserves exact focus geometry and RIGHT. Legacy MASK-15
+DOWN compares against the entire group's transparent1px border, whereas DOCK-08
+explicitly makes the actual bottom note's external border-box its active face.
+Update that expected target to the real DOM note boundary, keeping the same
+<1px precision and all satellite/canonical assertions. Independent reviewer
+confirmed this target follows the new owner requirement; no threshold change.

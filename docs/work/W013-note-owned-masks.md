@@ -77,3 +77,24 @@ replacement now checks stale selection/composition and recovery, and dedicated
 lifecycle cases check both deletion paths, shared masks, legacy/local migration,
 archive roundtrip and invalid-reference rejection. All other regression
 outcomes remain. Independent expanded-scope review and hosted rollout pending.
+
+## Independent findings and targeted repairs
+
+Fresh-context Sol/high review ofc9f6299: FAIL on two reproducible requirements,
+while the independent build and15 affected scenarios PASS. Report:
+`/tmp/theboard-mask-review-c9f6299/report/REVIEW.md`.
+
+1. A note docked to a hidden unrelated parent disappeared from focus, dropping
+   one selected link. Regression7f7fb71 fails meaningfully on the missing note.
+   Focus now includes it as a standalone temporary solver satellite, retaining
+   canonical dock data and rendering the real demagnetize action. Tests compare
+   the entire exported board before/during/after focus in manual and automatic
+   modes; the unrelated screen remains hidden.
+2. Composing an extra note after deleting another owner used the form's stale
+   region snapshot, resurrected a deleted ID and broke immediate export.
+   Regression51fe019 fails on the export alert. Attachment now reads the current
+   region inside its atomic node update and merges only its surviving owners.
+
+Repair build and13 focused lifecycle/connection/focus/automatic scenarios PASS.
+No assertion/timeout was weakened. Expanded final suite and independent targeted
+recheck follow. The original FAIL remains part of the evidence, not a PASS.

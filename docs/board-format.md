@@ -158,3 +158,9 @@ board coordinates. Selected/hovered associations are drawn above cards with
 non-scaling strokes. Free notes use a nearest boundary point; docked notes use
 a shortest Manhattan approach normal to a nearest face. These paths are derived
 presentation, never saved as semantic edges or manual navigation routes.
+
+In focus, a mask-linked note docked to a hidden, unrelated parent is presented
+as a temporary standalone annotation satellite. Its true dock remains available
+to its magnet action. The stored dock/coordinates and hidden parent stay intact;
+leaving focus restores the ordinary composite. Adding another note to an
+existing mask merges its current surviving links, never a stale form snapshot.

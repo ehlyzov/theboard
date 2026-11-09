@@ -523,11 +523,11 @@ function Editor() {
     const { screenId, region, existing } = pendingRegion;
     setNodes((current) => {
       const screen = current.find((n) => n.id === screenId);
-      if (!screen || (existingId && !current.some(n => n.id === existingId && n.type === 'note'))
-        || (existing && !screen.data.regions?.some(r => r.id === region.id))) return current;
+      const currentRegion = existing ? screen?.data.regions?.find(r => r.id === region.id) : region;
+      if (!screen || !currentRegion || (existingId && !current.some(n => n.id === existingId && n.type === 'note'))) return current;
       const linked = {
-        ...region,
-        noteIds: Array.from(new Set([...(region.noteIds ?? []), noteId])),
+        ...currentRegion,
+        noteIds: Array.from(new Set([...(currentRegion.noteIds ?? []), noteId])),
       };
       const result = current.map((n) =>
         n.id === screenId
@@ -592,8 +592,14 @@ function Editor() {
   const focusActive =
     focusEnabled &&
     !arranging && Boolean(nodes.find((n) => n.id === currentScreenId && n.type === "screen"));
-  const focusNodes = nodes.filter(n => focusIds.has(n.id) ||
-    (n.data.dock ? focusIds.has(n.data.dock.screenId) : focusedNoteIds.has(n.id)));
+  const foreignFocusNote = (n:BoardNode) => Boolean(focusActive && n.data.dock &&
+    focusedNoteIds.has(n.id) && !focusIds.has(n.data.dock.screenId));
+  // Keep linked notes visible even when their stored docking parent is outside
+  // this flow. Only the temporary solver sees them as standalone satellites;
+  // the renderer/actions retain the real dock and save/export stay canonical.
+  const focusNodes = nodes.filter(n => focusIds.has(n.id) || focusedNoteIds.has(n.id) ||
+    (n.data.dock && focusIds.has(n.data.dock.screenId)))
+    .map(n => foreignFocusNote(n) ? {...n,data:{...n.data,dock:undefined}} : n);
   const focusEdges = edges.filter(e => e.source === currentScreenId);
   const focusKey = focusActive ? JSON.stringify({ source:currentScreenId,direction,
     nodes:focusNodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,measured:n.measured,noteIds:annotationNoteIds(n)})),
@@ -606,7 +612,7 @@ function Editor() {
   const displayNodes = nodes.map(n=>({...n,
     zIndex:tool==='brush'&&brushScreenId===n.id ? 1000 : n.zIndex,
     position:focusGeometry?.positions.get(n.id) ?? n.position,
-    hidden:Boolean(n.data.dock)||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
+    hidden:(Boolean(n.data.dock)&&!foreignFocusNote(n))||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
   }));
   const displayEdges = focusActive
     ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId,

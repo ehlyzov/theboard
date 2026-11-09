@@ -1,6 +1,6 @@
 # W012 — distinct demagnetize action
 
-Status: active. Owner: TheBoard chat. Human acceptance pending.
+Status: review. Owner: TheBoard chat. Human acceptance pending.
 Base: `2d39588ccc82922ca08a2b5c2f78f0508fc06c51`.
 Source: owner screenshot/request, 2026-11-09: a docked note must display a
 crossed-out magnet representing the demagnetize action.
@@ -16,4 +16,10 @@ Cosmetic verification: inspect both icon states and tooltip/accessible names;
 run existing docking/magnet regressions, adapting only the renamed action in
 locators. Do not add implementation-mirroring icon tests. Fresh-context review
 of the exact candidate and green protected CI/Pages deployment remain required.
-Technical result NOT_RUN. Next: scoped presentation update and verification.
+Technical result: author build and nine affected regressions PASS.
+The existing Lucide magnet composes a diagonal slash only when dock data exists;
+its SVG stays decorative, and the button has the requested accessible action.
+No event handler, style, schema, geometry or dependency changes. Existing tests
+change only the renamed detach action locator; assertions are unchanged.
+`npm run build`, existing docking/magnet tests on dedicated4362, and
+`git diff --check`: PASS. Visual state/reload review and protected rollout next.

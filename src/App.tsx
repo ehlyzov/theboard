@@ -296,10 +296,10 @@ function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|
         </span>
         <GripHorizontal size={16} />
         <button className="icon-button nodrag nopan note-magnet"
-          aria-label={data.dock?'Отклеить заметку':'Приклеить заметку'}
+          aria-label={data.dock?'Размагнитить заметку':'Приклеить заметку'}
           aria-pressed={!data.dock && actions.dockingNoteId===id}
           disabled={!data.dock && !actions.nodes.some(n=>n.type==='screen')}
-          title={data.dock?'Отклеить заметку':'Магнит: перетащите к стороне экрана или нажмите и выберите сторону · Esc отмена'}
+          title={data.dock?'Размагнитить':'Магнит: перетащите к стороне экрана или нажмите и выберите сторону · Esc отмена'}
           onPointerDown={e=>{
             e.stopPropagation();
             if(data.dock || e.button!==0)return;
@@ -326,7 +326,9 @@ function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|
             e.stopPropagation();
             if(data.dock)actions.dockNote(id);
             else if(e.detail===0)actions.startDock(id,true);
-          }}><Magnet size={14}/></button>
+          }}><Magnet size={14} aria-hidden="true">
+            {data.dock && <path d="m3 3 18 18"/>}
+          </Magnet></button>
         <button
           className="icon-button nodrag"
           aria-label="Цвет заметки"

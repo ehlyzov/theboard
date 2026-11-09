@@ -36,3 +36,5 @@ The W004 card carries provenance, human acceptance and pending product scope.
 | [W009](W009-pending-mask.md) | Visible mask target and nearby linked-note layout | done | TheBoard chat; independent reviewer | Technical PASS; local30/30, source CI green; PR #7 final-head/main pipeline gate |
 
 | [W010](W010-license-pages.md) | Apache licensing and tested GitHub Pages publication | done | TheBoard chat | Published; independent review, CI/deploy and public smoke PASS; human acceptance pending |
+
+| [W011](W011-context-panel-styles.md) | Consistent annotation and note-docking panel styles | active | TheBoard chat | Scoped presentation changes, visual check and existing regressions |

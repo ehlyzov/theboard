@@ -203,3 +203,8 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   project code under Apache2.0 and publish the static app on GitHub Pages, with
   green checks before deployment. Preserve third-party notices and local-only
   board data; support the /theboard/ base path and ZIP transfer between origins.
+
+- UI-05..07 (`approved_by_human`, direct screenshots, 2026-11-09): align the
+  mask-to-note and note-docking panels with the application's form styling:
+  consistent typography, fields, inset chevrons, focus/disabled states and clear
+  spacing. Preserve native select accessibility and all linking/docking behavior.

@@ -1,6 +1,6 @@
 # W013 — note-owned masks and screen-bound dock sizing
 
-Status: review. Owner: TheBoard chat. Human acceptance pending.
+Status: done (bounded technical outcome; protected rollout record in PR11). Owner: TheBoard chat. Human acceptance pending.
 Base: `a36746c79e1f66a8d217043e0fad5ab31edd9e4a` (W012 icon candidate).
 Branch: `fix/demagnetize-icon`; one writer, shared publication with W012.
 Source: direct owner requests/screenshots, 2026-11-09.
@@ -27,8 +27,8 @@ mask survival, migration/legacy history, draft/chooser/replacement cleanup and
 mixed-side portrait/landscape composites. Prior independent mask deletion/Undo
 expectations are explicitly superseded by MASK-17, not weakened for a green run.
 Existing archive validation, pending preview, docking and focus outcomes remain.
-Technical verdict: author local PASS. Next: scoped independent review and
-protected green CI/Pages publication.
+Technical verdict: PASS after targeted independent repairs/recheck.
+Human acceptance remains pending; final rollout is recorded in PR11.
 
 ## Additional accepted presentation requirements
 
@@ -98,3 +98,33 @@ while the independent build and15 affected scenarios PASS. Report:
 Repair build and13 focused lifecycle/connection/focus/automatic scenarios PASS.
 No assertion/timeout was weakened. Expanded final suite and independent targeted
 recheck follow. The original FAIL remains part of the evidence, not a PASS.
+
+
+## Final technical checkpoint
+
+Repaired candidate `b224c17ddbb7c1c87f5bbb8b6f5c14df89bed598`: author build,
+full45/45 and Pages2/2 PASS. Source
+[CI42669457961](https://github.com/ehlyzov/theboard/actions/runs/42669457961)
+editor-checks and pages-checks PASS; deployment skipped on PR as intended.
+
+One independent targeted recheck of exactb224c17: PASS,9/9 requested lifecycle/
+connector cases. The original six-link mixed fixture shows6 active paths and6
+notes with only1 screen in focus; the cross-parent note keeps its real
+"Размагнитить заметку" action. Entire before/during/after board.json deep-equals;
+the note returns to its parent's left slot on exit. Actual rendered endpoints
+and shortest lengths pass with endpoint error0px. The original stale-composition
+sequence now exports immediately without alerts, retains6 valid surviving
+associations and never restores the deleted ID. No remaining blocker in the
+repaired scenarios. Original FAIL evidence is retained separately.
+
+Report: `/tmp/theboard-mask-recheck-b224c17/report/RECHECK.md`; synthetic proof:
+`report/repaired-six-links-focus.png`. No private/user board was opened or
+changed. Earlier unaffected independent geometry/migration observations remain
+valid; no second broad review was run. Other browser engines and arbitrary dense
+routing are not established by these examples.
+
+This final update changes reports/status only; product/test bytes remain the
+reviewedb224c17. [PR11](https://github.com/ehlyzov/theboard/pull/11) records the
+exact final head, up-to-date protected checks, merge/main deployment and live
+public smoke. Those gates must finish before delivery. Next product work stays
+in the existing queue; human functional acceptance is not implied.

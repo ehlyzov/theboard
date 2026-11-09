@@ -95,4 +95,17 @@ Repair: reveal from the effect after the latest layout result is committed and
 arranging is false. Track the accepted layout signature and retain the pending
 new-note ID through fitting; discard stale fit completion if a newer layout or
 new creation superseded it. Containment assertion, timeout and retries unchanged.
-Focused repair checks and independent targeted recheck follow.
+Repair candidate `7dfc09bf41ab85f25ef102b51739aaf0626f4781`: author root build,
+full48/48 and final Pages build/2smoke PASS. A preliminary repeated run had8/9
+with its final case interrupted by an in-progress source edit/HMR; it is not
+claimed as immutable evidence. Final author suite used the fixed candidate.
+
+Independent targeted recheck on detached immutable7dfc09b: PASS9/9 (three
+unchanged NOTE-04 cases repeated3 times,15.9s, no HMR). Separate Chromium CPUx4
+scenario: three rounds of focus ->3 rapid new notes ->direction change; latest
+note visible, selected and typing each round, automatic retained and focus
+disabled. No blocker; no assertions, timeouts or retry changes. Report
+`/tmp/theboard-w014-race-review-report.md`; synthetic capture
+`/tmp/theboard-w014-race-review/output/playwright/w014-auto-cpu4.png`.
+Earlier style/geometry review remains applicable. Final report-only head keeps
+these repaired product/test bytes; PR13 holds the exact-head/main/public gates.

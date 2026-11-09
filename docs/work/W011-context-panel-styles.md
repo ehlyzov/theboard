@@ -1,6 +1,6 @@
 # W011 — consistent annotation panel and direct magnetic docking
 
-Status: review. Owner: TheBoard chat. Human acceptance: pending.
+Status: done (bounded technical outcome; rollout evidence in PR10). Owner: TheBoard chat. Human acceptance: pending.
 Base: `434f363aae1745cbc0fe09ce9cee26d590f23830`.
 Branch: `fix/context-panel-styles`.
 Source: owner screenshots, 2026-11-09, showing mismatched native selects and
@@ -24,7 +24,7 @@ panels visually in a clean browser, including keyboard focus and narrow width;
 run the existing annotation/docking regression cases. Independent fresh-context
 review follows the exact candidate. Existing hosted checks and main deployment
 must be green before delivery; record final rollout evidence in the PR.
-Technical verdict: local PASS. Next: independent review and protected rollout.
+Technical verdict: PASS in the observed scope. Human acceptance pending.
 
 ## Accepted scope update before magnetic docking implementation
 
@@ -75,6 +75,37 @@ The obsolete docking picker and its CSS are removed.
   `output/playwright/annotation-panel-w011.png`.
 - `git diff --check`: PASS. Existing upstream build warnings remain nonfatal.
 
-Independent review, narrow/zoom adverse checks and final CI/deployment remain
-pending. Human functional acceptance is not claimed. Final integration and
-public smoke evidence will be recorded in this task's PR.
+Independent review and adverse observations are recorded below. Final exact-head
+CI, integration and deployment evidence live in [PR10](https://github.com/ehlyzov/theboard/pull/10).
+Publication is authorized but must wait for those gates; no successful future
+run or human functional acceptance is implied by this technical completion.
+
+## Independent review and integration gate
+
+Separate fresh-context read-only review of
+`bcc902ef61c6fb266888b4be13353fca2f760f78` against base434f363: PASS in the
+observed scope, no actionable product defect. Isolated git archive, own4363
+server/browser profiles, unchanged test assertions. All15 affected tests PASS.
+Additional observed PASS: selecting the correct side of a second screen;
+Escape during a captured highlighted drag with whole-archive equality;400%
+zoom after Alt-pan with actual22px hit band and successful coordinate click;
+360px form with a long note choice, no horizontal overflow, visible focus and
+wrapped actions. Root/user boards and shared builds were not touched.
+
+Full native-select keyboard selection is BLOCKED by the review browser
+environment: headless and headed Chromium show the same failure on a minimal
+standalone native select without app code/CSS. Native semantics remain;
+programmatic selection and real keyboard activation of linking buttons PASS.
+Do not describe that as native-select keyboard-selection coverage. Other browser
+engines and touch hardware remain unverified.
+
+Local independent report:
+`/tmp/theboard-magnet-review-bcc902e/REVIEW.md`; screenshots/logs under its
+`output/` directory. Author full35/35 and Pages2/2 evidence is separate.
+[Source CI42663792286](https://github.com/ehlyzov/theboard/actions/runs/42663792286)
+passed editor-checks and pages-checks; PR deployment correctly skipped.
+
+This completion update changes reports/status only. Reviewed product/test bytes
+remain bcc902e. The final report head still requires up-to-date protected CI;
+PR10 records final SHA, main/deployment run and public smoke. Next product
+scope remains the existing queue, including W005 Markdown.

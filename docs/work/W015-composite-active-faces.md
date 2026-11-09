@@ -1,6 +1,7 @@
 # W015 — route transitions through active composite faces
 
-Status: active. Owner: TheBoard chat (single writer).
+Status: done (bounded technical outcome; protected release record in PR14).
+Owner: TheBoard chat (single writer).
 Base: `35a6ba79cf69061549008bbcb5ebf3cda7e28460`.
 Branch: `fix/composite-active-faces`. Human acceptance pending.
 Source: owner screenshot/instruction21:50,2026-11-09.
@@ -63,3 +64,24 @@ explicitly makes the actual bottom note's external border-box its active face.
 Update that expected target to the real DOM note boundary, keeping the same
 <1px precision and all satellite/canonical assertions. Independent reviewer
 confirmed this target follows the new owner requirement; no threshold change.
+
+## Final checkpoint
+
+Repaired1bb2877da0cac9b5d78398c95fb1abb5180b3ec8: author build and full56/56
+PASS; final Pages build and2/2 PASS. Initial independent FAIL19ed3fa is retained
+at `/tmp/theboard-w015-review-artifacts/review-19ed3fa.md`. One targeted repair
+recheck of immutable1bb2877: PASS14/14, exact canonical focus/reload equality
+retained and<1px active-boundary checks preserved.
+
+Independent synthetic right2-note and mixed2-per-side stacks:38/38 actual SVG
+endpoints PASS across RIGHT/DOWN and focus; manual handles centered on screen
+row. IDs, labels, docks and hidden child offsets preserved. Report
+`/tmp/theboard-w015-review-artifacts/recheck-1bb2877.md`; proof
+`recheck-right-stacked-down.png` and`recheck-mixed-stacked-down.png` in that folder.
+Author inspected the synthetic right-stack view. No private/user board modified.
+
+Only report/status changes follow the reviewed product/test bytes. PR14 records
+the exact final head/base, protected checks, merge/main deployment and live
+smoke/artifact equality. Those gates remain required before public delivery.
+Other browser engines and arbitrary dense graphs are not established by these
+fixtures. Human acceptance remains pending; next product work stays in queue.

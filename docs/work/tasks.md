@@ -45,4 +45,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W014](W014-visible-notes.md) | Visible new notes, transparent composite corners and unobtrusive text focus | done | TheBoard chat; independent reviewer | Local48/48, Pages2/2 and independent review/recheck PASS; final protected CI/deployment/public verification record in PR13; human acceptance pending |
 
-| [W015](W015-composite-active-faces.md) | Transition endpoints use core spans and exposed dock faces | active | TheBoard chat | Test-first actual endpoint/handle geometry, implementation and independent review |
+| [W015](W015-composite-active-faces.md) | Transition endpoints use core spans and exposed dock faces | done | TheBoard chat; independent reviewer | Local56/56, Pages2/2 and targeted independent14/14 plus38 endpoint checks PASS; protected rollout record in PR14; human acceptance pending |

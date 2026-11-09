@@ -205,9 +205,10 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   board data; support the /theboard/ base path and ZIP transfer between origins.
 
 - UI-05..07 (`approved_by_human`, direct screenshots, 2026-11-09): align the
-  mask-to-note and note-docking panels with the application's form styling:
+  mask-to-note panel with the application's form styling (the docking picker is
+  replaced by DOCK-02..04 below):
   consistent typography, fields, inset chevrons, focus/disabled states and clear
-  spacing. Preserve native select accessibility and all linking/docking behavior.
+  spacing. Preserve native select accessibility and all note-linking behavior.
 
 - DOCK-02..04 (`approved_by_human`, direct instruction, 2026-11-09): replace the
   note pin/picker with a magnet. Press-drag-release or click-then-click attaches

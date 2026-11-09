@@ -37,4 +37,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W010](W010-license-pages.md) | Apache licensing and tested GitHub Pages publication | done | TheBoard chat | Published; independent review, CI/deploy and public smoke PASS; human acceptance pending |
 
-| [W011](W011-context-panel-styles.md) | Consistent annotation and note-docking panel styles | active | TheBoard chat | Scoped presentation changes, visual check and existing regressions |
+| [W011](W011-context-panel-styles.md) | Consistent annotation form and direct magnet docking | review | TheBoard chat | Local35/35 and Pages2/2 PASS; independent review and protected rollout |

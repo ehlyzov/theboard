@@ -6,6 +6,7 @@ import {
   useState,
   useMemo,
   type ChangeEvent,
+  type CSSProperties,
 } from "react";
 import {
   ReactFlow,
@@ -45,7 +46,7 @@ import {
   StickyNote,
   Trash2,
   Palette,
-  Pin,
+  Magnet,
   X,
 } from "lucide-react";
 
@@ -67,9 +68,18 @@ import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
 import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS, focusFrame } from "./layout";
 import { arrangeBoard, annotationNoteIds, ANNOTATION_LAYOUT_OPTIONS } from './autoLayout';
 const edgeTypes = { smoothstep: LabeledEdge };
+const DOCK_SIDES = {left:'слева',right:'справа',top:'сверху',bottom:'снизу'} as const;
 type PendingRegion = { screenId: string; region: Region; existing?: boolean };
 
 type Actions = {
+  dockingNoteId: string | null;
+  dockTarget: Dock | null;
+  startDock: (id: string, keyboard?: boolean) => void;
+  previewDock: (dock: Dock | null) => void;
+  previewDockAt: (x: number, y: number) => void;
+  finishDock: (dock: Dock | null) => void;
+  finishDockAt: (x: number, y: number) => void;
+  cancelDock: () => void;
   pendingRegion: PendingRegion | null;
   nodes: BoardNode[];
   dockNote: (id: string, dock?: Dock) => void;
@@ -119,6 +129,20 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       }}
       className={`screen-card ${actions.hoveredFlowNodes.includes(id) ? "flow-highlighted" : ""} ${selected ? "is-selected" : ""} ${actions.connecting === id ? "is-source" : ""}`}
     >
+      {actions.dockingNoteId && <div className="dock-targets nodrag nopan"
+        style={{'--dock-target-size':`${22/zoom}px`,'--dock-target-border':`${1/zoom}px`} as CSSProperties}>
+        {Object.entries(DOCK_SIDES).map(([side,label])=><button key={side}
+          className={`dock-target dock-target-${side} ${actions.dockTarget?.screenId===id && actions.dockTarget.side===side?'is-active':''}`}
+          data-dock-screen-id={id} data-dock-side={side}
+          aria-label={`Приклеить ${label} к экрану ${data.title}`}
+          title={`Приклеить ${label} · ${data.title}`}
+          onPointerDown={e=>e.stopPropagation()}
+          onPointerEnter={()=>actions.previewDock({screenId:id,side:side as Dock['side']})}
+          onPointerLeave={()=>actions.previewDock(null)}
+          onFocus={()=>actions.previewDock({screenId:id,side:side as Dock['side']})}
+          onBlur={()=>actions.previewDock(null)}
+          onClick={e=>{e.stopPropagation();actions.finishDock({screenId:id,side:side as Dock['side']});}}/>) }
+      </div>}
       {slot('top','1 / 4',1)}
       {slot('left','1',2)}
       <div className="screen-core" style={{gridColumn:2,gridRow:2,width:coreWidth-2}}>
@@ -248,9 +272,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
 function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|'selected'>) {
   const actions = useContext(ActionsContext);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [dockOpen,setDockOpen]=useState(false);
-  const [dockScreen,setDockScreen]=useState(data.dock?.screenId??'');
-  const [dockSide,setDockSide]=useState<Dock['side']>(data.dock?.side??'bottom');
+  const dockGesture=useRef<{x:number;y:number;dragged:boolean}|null>(null);
   const area=useRef<HTMLTextAreaElement>(null);
   useEffect(()=>{
     if (!data.dock || !['top','bottom'].includes(data.dock.side) || !area.current) return;
@@ -273,8 +295,38 @@ function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|
           <StickyNote size={13} /> ЗАМЕТКА
         </span>
         <GripHorizontal size={16} />
-        <button className="icon-button nodrag" aria-label={data.dock?'Отклеить заметку':'Приклеить заметку'}
-          onClick={()=>{if(data.dock)actions.dockNote(id);else{setDockScreen(actions.nodes.find(n=>n.type==='screen')?.id??'');setDockOpen(v=>!v);}}}><Pin size={13}/></button>
+        <button className="icon-button nodrag nopan note-magnet"
+          aria-label={data.dock?'Отклеить заметку':'Приклеить заметку'}
+          aria-pressed={!data.dock && actions.dockingNoteId===id}
+          disabled={!data.dock && !actions.nodes.some(n=>n.type==='screen')}
+          title={data.dock?'Отклеить заметку':'Магнит: перетащите к стороне экрана или нажмите и выберите сторону · Esc отмена'}
+          onPointerDown={e=>{
+            e.stopPropagation();
+            if(data.dock || e.button!==0)return;
+            e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            dockGesture.current={x:e.clientX,y:e.clientY,dragged:false};
+            actions.startDock(id);
+          }}
+          onPointerMove={e=>{
+            const gesture=dockGesture.current;
+            if(!gesture || actions.dockingNoteId!==id)return;
+            if(Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>5)gesture.dragged=true;
+            if(gesture.dragged)actions.previewDockAt(e.clientX,e.clientY);
+          }}
+          onPointerUp={e=>{
+            const gesture=dockGesture.current;dockGesture.current=null;
+            if(!gesture)return;
+            e.stopPropagation();
+            if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);
+            if(gesture.dragged && actions.dockingNoteId===id)actions.finishDockAt(e.clientX,e.clientY);
+          }}
+          onPointerCancel={()=>{dockGesture.current=null;actions.cancelDock();}}
+          onClick={e=>{
+            e.stopPropagation();
+            if(data.dock)actions.dockNote(id);
+            else if(e.detail===0)actions.startDock(id,true);
+          }}><Magnet size={14}/></button>
         <button
           className="icon-button nodrag"
           aria-label="Цвет заметки"
@@ -307,16 +359,6 @@ function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|
           ))}
         </div>
       )}
-      {dockOpen && <div className="dock-picker nodrag">
-        <label>Экран<select aria-label="Экран для приклеивания" value={dockScreen} onChange={e=>setDockScreen(e.target.value)}>
-          {actions.nodes.filter(n=>n.type==='screen').map(n=><option key={n.id} value={n.id}>{n.data.title}</option>)}
-        </select></label>
-        <label>Сторона<select aria-label="Сторона приклеивания" value={dockSide} onChange={e=>setDockSide(e.target.value as Dock['side'])}>
-          <option value="left">Слева</option><option value="right">Справа</option><option value="top">Сверху</option><option value="bottom">Снизу</option>
-        </select></label>
-        <button disabled={!dockScreen} onClick={()=>{actions.dockNote(id,{screenId:dockScreen,side:dockSide});setDockOpen(false);}}>Приклеить</button>
-        <button onClick={()=>setDockOpen(false)}>Отмена</button>
-      </div>}
       {data.title&&data.title!=='Заметка'&&<div className="note-heading">{data.title}</div>}
       <textarea
         ref={area}
@@ -391,6 +433,8 @@ function Editor() {
   const fitAfterArrange=useRef(false);
   const [arranging,setArranging]=useState(false);
   const [anchors,setAnchors]=useState<Record<string,{core:{x:number;y:number};notes:Record<string,{x:number;y:number;width:number;height:number}>}>>({});
+  const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
+  const [dockTarget,setDockTarget]=useState<Dock|null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -422,6 +466,7 @@ function Editor() {
       )
         return;
       if (e.code === "KeyB" && !e.ctrlKey && !e.metaKey) {
+        setDockingNoteId(null);setDockTarget(null);
         const id = brushScreenId ?? hoveredScreenRef.current ?? brushContextRef.current;
         if (id && nodes.some(n => n.id === id && n.type === "screen")) {
           setBrushScreenId(id);
@@ -843,6 +888,8 @@ function Editor() {
     const cancel = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setConnecting(null);
+        setDockingNoteId(null);
+        setDockTarget(null);
         setPendingRegion(null);
         setHelp(false);
       }
@@ -966,16 +1013,42 @@ function Editor() {
     ]);
   }
 
+  const dockNote: Actions['dockNote']=(id,dock)=>{
+    setNodes(current=>current.map(n=>n.id===id
+      ? {...n,selected:!dock||n.selected,data:{...n.data,dock}}
+      : !dock?{...n,selected:false}:n));
+    if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));
+  };
+  const dockAt=(x:number,y:number):Dock|null=>{
+    // Hit-test rendered side controls: this follows pan, zoom and focus geometry
+    // without writing any temporary geometry into the board.
+    const target=document.elementsFromPoint(x,y).find(el=>
+      el instanceof HTMLElement && el.dataset.dockSide && board.current?.contains(el)) as HTMLElement|undefined;
+    return target?{screenId:target.dataset.dockScreenId!,side:target.dataset.dockSide as Dock['side']}:null;
+  };
+  const finishDock=(dock:Dock|null)=>{
+    if(dockingNoteId && dock && nodes.some(n=>n.id===dockingNoteId&&n.type==='note'&&!n.data.dock)
+      && nodes.some(n=>n.id===dock.screenId&&n.type==='screen'))dockNote(dockingNoteId,dock);
+    setDockingNoteId(null);setDockTarget(null);
+  };
+
   return (
     <ActionsContext.Provider
       value={{
         pendingRegion,
         nodes,
         selectNote:(id)=>setNodes(current=>current.map(n=>({...n,selected:n.id===id}))),
-        dockNote:(id,dock)=>{
-          setNodes(current=>current.map(n=>n.id===id?{...n,data:{...n.data,dock}}:n));
-          if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));
+        dockNote,
+        dockingNoteId,dockTarget,
+        startDock:(id,keyboard)=>{
+          setDockingNoteId(current=>keyboard&&current===id?null:id);
+          setDockTarget(null);setConnecting(null);setTool('select');setBrushScreenId(null);
+          if(keyboard)requestAnimationFrame(()=>board.current?.querySelector<HTMLButtonElement>('[data-dock-side]')?.focus());
         },
+        previewDock:setDockTarget,
+        previewDockAt:(x,y)=>setDockTarget(dockAt(x,y)),
+        finishDock,finishDockAt:(x,y)=>finishDock(dockAt(x,y)),
+        cancelDock:()=>{setDockingNoteId(null);setDockTarget(null);},
         update,
         regionSelection,
         hoveredFlowNodes: activeTransition
@@ -986,6 +1059,7 @@ function Editor() {
         changeBrushRadius:radius=>setBrushRadius(Math.max(.01,Math.min(.2,radius))),
         brushScreenId,
         activateBrush: (id) => {
+          setDockingNoteId(null);setDockTarget(null);
           if (brushScreenId && brushScreenId !== id) return;
           setBrushScreenId(id);
           setTool("brush");
@@ -1243,6 +1317,7 @@ function Editor() {
                 onClick={() => {
                   setTool("select");
                   setBrushScreenId(null);
+                  setDockingNoteId(null);setDockTarget(null);
                 }}
                 aria-label="Выделение и перемещение"
                 title={automatic ? 'Для ручного размещения выключите автоматическую компоновку слева' : 'Перемещайте элементы за верхнюю полоску'}
@@ -1301,12 +1376,12 @@ function Editor() {
                   nodeTypes={nodeTypes}
                   edgeTypes={edgeTypes}
                   onNodesChange={changes=>onNodesChange(focusActive ? changes.filter(c=>c.type!=='position') : changes)}
-                  nodesDraggable={!automatic&&!focusActive}
+                  nodesDraggable={!automatic&&!focusActive&&!dockingNoteId}
                   onNodeDragStart={()=>{if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));}}
                   onEdgesChange={onEdgesChange}
                   onConnect={connect}
                   connectOnClick={false}
-                  onPaneClick={() => setConnecting(null)}
+                  onPaneClick={() => {setConnecting(null);setDockingNoteId(null);setDockTarget(null);}}
                   onNodesDelete={(deleted) => {
                     const ids = new Set(deleted.map((n) => n.id));
                     setNodes((current) =>
@@ -1331,7 +1406,7 @@ function Editor() {
                   minZoom={0.05}
                   maxZoom={4}
                   deleteKeyCode={
-                    tool === "brush" || autoWarning ? null : ["Backspace", "Delete"]
+                    tool === "brush" || autoWarning || dockingNoteId ? null : ["Backspace", "Delete"]
                   }
                   isValidConnection={(c) => c.source !== c.target}
                   aria-label="Полотно пользовательского потока"
@@ -1510,9 +1585,10 @@ function Editor() {
               </button>
             </div>
             {pendingRegion && (
-              <section className="region-discussion">
+              <section className="region-discussion context-panel">
                 <h2>Связать с заметкой</h2>
-                <label>
+                <div className="panel-group">
+                <label className="panel-field">
                   Существующая заметка
                   <select
                     aria-label="Заметка для области"
@@ -1528,12 +1604,14 @@ function Editor() {
                   </select>
                 </label>
                 <button
+                  className="panel-button"
                   disabled={!noteChoice}
                   onClick={() => attachNote(noteChoice)}
                 >
                   Связать с заметкой
                 </button>
-                <label>
+                </div>
+                <label className="panel-field">
                   Новая заметка
                   <textarea
                     aria-label="Текст новой заметки"
@@ -1542,15 +1620,18 @@ function Editor() {
                     onChange={(e) => setNewNoteText(e.target.value)}
                   />
                 </label>
+                <div className="panel-actions">
                 <button
+                  className="panel-button is-primary"
                   disabled={!newNoteText.trim()}
                   onClick={() => attachNote(undefined)}
                 >
                   Создать и связать
                 </button>
-                <button onClick={() => setPendingRegion(null)}>
+                <button className="panel-button" onClick={() => setPendingRegion(null)}>
                   Отменить выбор заметки
                 </button>
+                </div>
               </section>
             )}
             {selectedRegion && selectedScreen && !pendingRegion && (
@@ -1671,6 +1752,9 @@ function Editor() {
                     Бегунок у маркера или [ и ] меняют размер кисти;
                     Enter завершает выделение. Затем
                     выберите заметку или создайте новую.</li>
+                  <li>Магнит в шапке заметки приклеивает её к стороне экрана:
+                    перетащите его или нажмите и выберите подсвеченную сторону.
+                    Повторное нажатие магнита на приклеенной заметке отклеивает её.</li>
                   <li>Автокомпоновка включается слева. Выключите её, чтобы
                     размещать карточки и подписи вручную.</li>
                 </ol>
@@ -1691,7 +1775,9 @@ function Editor() {
           </span>
           <span className="version-label">THEBOARD PREVIEW</span>
           <div className="canvas-tip">
-            {tool === "brush"
+            {dockingNoteId
+              ? "Магнит: выберите сторону экрана или перетащите к ней · Esc отмена"
+              : tool === "brush"
               ? `Кисть ${Math.round(brushRadius * 100)}% · [ ] размер · Enter завершить · Esc отмена · Ctrl/Cmd+Z мазок`
               : "Пробел / Alt + перетаскивание — навигация"}
             {" · Колесо — масштаб · Наведите на подпись, чтобы увидеть её стрелку"}

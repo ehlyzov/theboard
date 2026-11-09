@@ -35,7 +35,7 @@ preview stays visible while you write or choose a linked note.
 Navigation hints appear below the canvas in the status area.
 
 The current editing increment adds brush masks linked to ordinary notes, eight
-pastel note colors, four-side note docking, focus navigation and saved viewport
+pastel note colors, four-side magnetic note docking, focus navigation and saved viewport
 preferences. The sidebar can switch between automatic ELK arrangement and
 manual placement. Enabling automatic layout warns before resetting manual
 positions; cancelling preserves the arrangement. Docked notes remain editable
@@ -137,3 +137,8 @@ Small sequential changes: scenarios → checks → implementation → independen
 technical review → functional acceptance. Read [CONTRIBUTING.md](CONTRIBUTING.md),
 the [task queue](docs/work/tasks.md), and the [initial workflow pilot](docs/work/W001-workflow.md).
 Repository documentation is English; communication with the owner is Russian.
+
+To attach a note, drag its magnet to a highlighted screen side, or click the
+magnet and then click a side. Escape cancels. Clicking an attached note's magnet
+detaches it; the note text and color remain. The side targets also support Tab
+and Enter/Space.

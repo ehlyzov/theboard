@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { Trash2 } from "lucide-react";
 import type { Region, Stroke } from "./boards";
 type Props = {
   image: string;
@@ -16,7 +15,6 @@ type Props = {
   onCancel: () => void;
   onCreate: (region: Region) => void;
   onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
   onHover: (id: string | null) => void;
   onImageSize: (width: number, height: number) => void;
 };
@@ -40,7 +38,6 @@ export default function RegionImage({
   onCancel,
   onCreate,
   onSelect,
-  onDelete,
   onHover,
   onImageSize,
 }: Props) {
@@ -258,19 +255,6 @@ export default function RegionImage({
               aspectRatio: "1",
             }}
           />
-        )}
-        {!drawing && selected && (
-          <button
-            className="mask-trash nodrag"
-            aria-label="Удалить выбранную область"
-            title="Удалить область; заметки останутся"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(selected);
-            }}
-          >
-            <Trash2 size={15} />
-          </button>
         )}
       </div>
     </div>

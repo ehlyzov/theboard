@@ -162,7 +162,7 @@ export async function saveBoard(id: string, data: BoardData) {
   try {
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction("boards", "readwrite");
-      transaction.objectStore("boards").put(data, id);
+      transaction.objectStore("boards").put(migrateBoard(data), id);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error);
@@ -347,6 +347,8 @@ export function exportBoard(board: BoardData): Uint8Array {
       for (const id of r.noteIds ?? [])
         if (!board.nodes.some((note) => note.type === "note" && note.id === id))
           fail();
+  board = migrateBoard(board);
+  if (board.nodes.length > 500) throw new Error("Board size limit");
   const labelPositions=labelLayouts(board.nodes,board.edges);
   const files: Record<string, Uint8Array> = {};
   const nodes = board.nodes.map((n, index) => {
@@ -399,6 +401,23 @@ export function exportBoard(board: BoardData): Uint8Array {
   return zipSync(files, { level: 3 });
 }
 
+// A saved mask belongs to one or more surviving ordinary notes. Draft masks
+// are kept outside BoardData until the editor attaches a note.
+export function pruneUnlinkedRegions(nodes: BoardNode[]): BoardNode[] {
+  const notes = new Set(nodes.filter(n => n.type === "note").map(n => n.id));
+  return nodes.map(n => ({...n, data: {...n.data,
+    regions: n.data.regions?.map(r => ({...r,
+      noteIds: [...new Set((r.noteIds ?? []).filter(id => notes.has(id)))],
+    })).filter(r => r.noteIds.length > 0),
+  }}));
+}
+
+export function removeBoardNodes(nodes: BoardNode[], ids: Set<string>): BoardNode[] {
+  return pruneUnlinkedRegions(nodes.filter(n => !ids.has(n.id)).map(n => ({...n,
+    data: {...n.data, dock: n.data.dock && ids.has(n.data.dock.screenId) ? undefined : n.data.dock},
+  })));
+}
+
 export function migrateBoard(board: BoardData): BoardData {
   const additions: BoardNode[] = [];
   const nodes = board.nodes.map((n) => ({
@@ -431,7 +450,8 @@ export function migrateBoard(board: BoardData): BoardData {
       }),
     },
   }));
-  return { ...board, nodes: [...nodes, ...additions] };
+  // Convert legacy history before removing genuinely note-less masks.
+  return { ...board, nodes: pruneUnlinkedRegions([...nodes, ...additions]) };
 }
 
 function validPoint(p: any) {

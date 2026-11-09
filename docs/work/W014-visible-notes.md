@@ -1,7 +1,7 @@
 # W014 — visible new notes and transparent composite corners
 
-Status: done (bounded local technical outcome; hosted rollout blocked by external
-GitHub Actions outage). Owner: TheBoard chat (single writer).
+Status: done (bounded local technical outcome; hosted rollout record in
+[PR13](https://github.com/ehlyzov/theboard/pull/13)). Owner: TheBoard chat (single writer).
 Base: `0e17fa6b7a1a72a115c7c76ba7d13727e0aa0b61`.
 Branch: `fix/visible-new-notes`. Human acceptance: pending.
 Sources: owner's local-board report and empty white corner screenshot,
@@ -31,8 +31,8 @@ Reuse mixed-side dock/connector regression tests; visually inspect the synthetic
 corner at useful zoom. Record test-only red before behavior. One independent
 fresh-context reviewer checks the exact candidate, without modifying files.
 
-Publication depends on PR12's navigation synchronization repair. GitHub Actions
-is currently reporting an external outage; green required checks remain a gate.
+Publication includes PR12's navigation synchronization repair. During preparation
+GitHub Actions reported an external outage; green required checks remain a gate.
 No bypass or claim of a live update while deployment is blocked.
 
 ## Author checkpoint
@@ -73,7 +73,9 @@ JS/geometry; it was not repeated for this scoped style delta.
 
 No private/user board was accessed or changed. Other browser engines and human
 acceptance remain unverified. Final report-only head retains the reviewed
-product/test bytes. Next: protected PR integration once exact-head checks are
-green, main deployment, then public smoke and deployed artifact verification.
+product/test bytes. PR13 records the exact final head and protected checks,
+integration, main deployment, public smoke and deployed artifact verification.
+These gates must finish before public delivery; technical checks do not imply
+human acceptance.
 This branch also includes reviewed PR12's navigation synchronization repair;
 merge this combined branch rather than dropping that prerequisite.

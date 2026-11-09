@@ -1,6 +1,7 @@
 # W014 — visible new notes and transparent composite corners
 
-Status: review. Owner: TheBoard chat (single writer).
+Status: done (bounded local technical outcome; hosted rollout blocked by external
+GitHub Actions outage). Owner: TheBoard chat (single writer).
 Base: `0e17fa6b7a1a72a115c7c76ba7d13727e0aa0b61`.
 Branch: `fix/visible-new-notes`. Human acceptance: pending.
 Sources: owner's local-board report and empty white corner screenshot,
@@ -55,5 +56,24 @@ and selected link geometry remain green. Synthetic corner capture:
 `output/playwright/w014-transparent-corner.png`: author visually confirmed the
 bottom-right empty cell shows the canvas dots while the core and both docked
 notes retain their surfaces. Local4173 preview serves the rebuilt candidate.
-Independent exact-SHA review of `a2ed0b6cc8bd00cc848a1882b9d7edad3296f082`
-is in progress. Other browser engines remain unverified.
+Independent exact-SHA review of `a2ed0b6cc8bd00cc848a1882b9d7edad3296f082`:
+PASS; build,8/8 focused and Pages2/2. Independent synthetic right+bottom visual
+inspection confirmed transparent corners and actual core selection. Eight rapid
+UI creations on a60-note panned47% board left the newest visible, selected and
+ready to type. Report `/tmp/theboard-w014-review-report.md`.
+
+The additional NOTE-05 change is one scoped CSS rule. Build PASS. Independent
+targeted recheck of `6ca14bab6637e67502bcff563b25aab7e4a7b788`: PASS, no purple
+textarea rectangle, typing and newest focus after8 rapid creations preserved.
+The note's gold selection and other controls'3px keyboard focus remain.
+Report `/tmp/theboard-w014-targeted-report.md`; screenshot
+`/tmp/theboard-w014-targeted/output/playwright/w014-note-focus-without-rectangle.png`.
+Final Pages build and2/2 smoke PASS. The earlier48-case suite is from the same
+JS/geometry; it was not repeated for this scoped style delta.
+
+No private/user board was accessed or changed. Other browser engines and human
+acceptance remain unverified. Final report-only head retains the reviewed
+product/test bytes. Next: protected PR integration once exact-head checks are
+green, main deployment, then public smoke and deployed artifact verification.
+This branch also includes reviewed PR12's navigation synchronization repair;
+merge this combined branch rather than dropping that prerequisite.

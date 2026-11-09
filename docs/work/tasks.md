@@ -43,4 +43,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W013](W013-note-owned-masks.md) | Note-owned masks, screen-core docks and visible nearest-boundary links | done | TheBoard chat; independent reviewer | Technical45/45, Pages2/2 and targeted recheck PASS; final rollout PR11; human acceptance pending |
 
-| [W014](W014-visible-notes.md) | Visible new notes and transparent composite corners | review | TheBoard chat; independent reviewer | Local48/48 and Pages2/2 PASS; exact candidate review in progress, rollout awaits green GitHub Actions |
+| [W014](W014-visible-notes.md) | Visible new notes, transparent composite corners and unobtrusive text focus | done | TheBoard chat; independent reviewer | Local48/48, Pages2/2 and independent review/recheck PASS; hosted rollout blocked by GitHub Actions outage, exact-head green checks required |

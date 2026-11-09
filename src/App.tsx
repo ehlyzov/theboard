@@ -228,6 +228,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       </div>
       {slot('right','3',2)}
       {slot('bottom','2',3)}
+      <div className="screen-flow-handles">
       <Handle
         type="target"
         position={Position.Left}
@@ -264,6 +265,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
           }
         }}
       />
+      </div>
     </article>
   );
 }
@@ -839,6 +841,9 @@ function Editor() {
     return()=>cancelAnimationFrame(frame);
   },[nodes,automatic,arranging]);
   useEffect(()=>{
+    // The solver commits parent and child coordinates atomically. A DOM read
+    // during its controlled-node update can otherwise overwrite that result.
+    if(automatic)return;
     const frame=requestAnimationFrame(()=>{
       const notePositions=new Map<string,{x:number;y:number}>();
       for(const screen of nodes.filter(n=>n.type==='screen')){
@@ -854,7 +859,7 @@ function Editor() {
       setNodes(current=>current.some(n=>{const p=notePositions.get(n.id);return p&&(Math.abs(p.x-n.position.x)>.2||Math.abs(p.y-n.position.y)>.2);})?
         current.map(n=>{const p=notePositions.get(n.id);return p?{...n,position:p}:n;}):current);
     });return()=>cancelAnimationFrame(frame);
-  },[nodes,zoom]);
+  },[nodes,zoom,automatic]);
   const [initialViewport] = useState(() => workspace(boardId));
   const normalViewport = useRef(initialViewport);
   const wasFocused = useRef(focusEnabled);

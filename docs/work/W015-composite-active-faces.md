@@ -28,3 +28,24 @@ No real/private board is used as a fixture.
 
 Prior W014 release is complete: PR13 merged35a6ba7; main42677499194 all3 jobs
 PASS; public smoke2/2 and exact index/allJS-CSS artifact equality PASS.
+
+## Author checkpoint
+
+Test-only9a383a9:8/8 meaningful failures. Top/bottom docks misplaced manual
+handle centers; side docks allowed automatic endpoints outside the core span.
+Traces retained `/tmp/theboard-w015-red`. No assertions/timeouts relaxed.
+
+ELK now gets fixed measured ports for every screen, using the relevant exposed
+core/note face rather than the entire composite rectangle. Stacked sides use
+the outermost note. Existing padding bridges for annotation satellites remain.
+Manual handles occupy only grid row2, so top/bottom notes do not shift them.
+
+Initial targeted run13/14 exposed an intermittent existing child-coordinate
+sync hazard after automatic direction/focus changes (hidden child's x offset
+was1523px wrong). The solver already updates parent+children together; the
+separate DOM sync now runs only in manual mode. It cannot overwrite an atomic
+automatic result while controlled positions are changing. The old invariant
+assertions remain; only diagnostic context was added to failure messages.
+Two isolated old-case repeats passed before the guard; the final combined
+automatic/docking/new-face run repeated twice PASS28/28 after it. Build PASS.
+Full root, Pages, independent review and hosted gates follow.

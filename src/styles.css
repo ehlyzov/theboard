@@ -565,6 +565,15 @@ a {
   box-shadow: 0 5px 13px #2933500b;
   overflow: visible;
 }
+.screen-flow-handles {
+  grid-column: 1 / 4;
+  grid-row: 2;
+  position: relative;
+  pointer-events: none;
+}
+.screen-flow-handles .react-flow__handle {
+  pointer-events: all;
+}
 .node-grip {
   height: 36px;
   display: flex;

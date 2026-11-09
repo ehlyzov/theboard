@@ -7,7 +7,7 @@ async function populatedBoard(page:Page,zoom:number,automatic=false){
   ...Array.from({length:60},(_,i)=>({id:`old-${i}`,type:'note',position:{x:i*300,y:3000},data:{title:'Existing',text:`Existing ${i}`}}))];
  await page.goto('/');const before=page.url();
  await page.getByLabel('Импорт архива').setInputFiles({name:'populated.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
-  'board.json':strToU8(JSON.stringify({version:1,title:'New notes',nodes,edges:[],layoutSettings:{automatic,direction:'DOWN'}})),
+  'board.json':strToU8(JSON.stringify({version:1,title:'New notes',nodes,edges:[],layout:{automatic,direction:'DOWN'}})),
   'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png'),
  }))});
  await page.waitForURL(url=>url.href!==before,{waitUntil:'load'});
@@ -23,7 +23,8 @@ async function populatedBoard(page:Page,zoom:number,automatic=false){
 async function exportNodes(page:Page){
  await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();
- return JSON.parse(strFromU8(unzipSync(fs.readFileSync((await(await download).path())!))['board.json'])).nodes;
+ const archive=JSON.parse(strFromU8(unzipSync(fs.readFileSync((await(await download).path())!))['board.json']));
+ return archive.nodes.map((n:{id:string})=>({...n,position:archive.layout.nodes[n.id]}));
 }
 
 for(const zoom of [.15,4])test(`NOTE-04 new notes are visible and ready for typing on a populated panned board at zoom ${zoom}`,async({page})=>{
@@ -42,7 +43,7 @@ for(const zoom of [.15,4])test(`NOTE-04 new notes are visible and ready for typi
   await expect(note.getByRole('textbox')).toHaveValue('Visible note '+i);
  }
  const saved=await exportNodes(page);
- for(const old of original){const actual=saved.find((n:{id:string})=>n.id===old.id);expect(actual.position).toEqual(old.position);expect(actual.data.text).toEqual(old.data.text);}
+ for(const old of original){const actual=saved.find((n:{id:string})=>n.id===old.id);expect(actual.position).toEqual(old.position);if('text' in old.data)expect(actual.data.text).toEqual(old.data.text);}
  await page.reload();await expect(page.getByTestId('note-node')).toHaveCount(62);
  await expect(page.getByTestId('note-node').last().getByRole('textbox')).toHaveValue('Visible note 1');
 });

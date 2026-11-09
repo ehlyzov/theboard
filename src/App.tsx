@@ -432,6 +432,8 @@ function Editor() {
   const [direction,setDirection]=useState<'RIGHT'|'DOWN'>('RIGHT');
   const [autoWarning,setAutoWarning]=useState(false);
   const fitAfterArrange=useRef(false);
+  const newNoteToReveal=useRef<string|null>(null);
+  const noteRevealSequence=useRef(0);
   const [arranging,setArranging]=useState(false);
   const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
@@ -701,6 +703,7 @@ function Editor() {
             const placed=nodes.map(n=>({...n,position:result.positions.get(n.id)??n.position}));
             void fitView({nodes:focusEnabled&&currentScreenId?focusFrame(placed,focusIds,currentScreenId,{width:board.current?.clientWidth??1000,height:board.current?.clientHeight??800}):undefined,padding:.15,maxZoom:1,duration:150});
           }
+          if(newNoteToReveal.current && result.positions.has(newNoteToReveal.current))revealNewNote();
         });
       }).catch(()=>{if(!disposed){setAutomatic(false);setError('Не удалось рассчитать компоновку. Текущее расположение сохранено.');}})
         .finally(()=>{if(!disposed)setArranging(false);}));
@@ -808,6 +811,26 @@ function Editor() {
   } = useReactFlow<BoardNode>();
   const viewport = useViewport();
   const { zoom } = viewport;
+  function revealNewNote(){
+    const id=newNoteToReveal.current;
+    if(!id)return;
+    const el=[...board.current!.querySelectorAll<HTMLElement>('[data-testid="note-node"]')]
+      .find(el=>el.dataset.boardNodeId===id);
+    if(!el)return;
+    newNoteToReveal.current=null;
+    // Frame the measured card at an editable size after placement, without
+    // changing any canonical node position. preventScroll avoids page jumps.
+    const sequence=noteRevealSequence.current;
+    void fitView({nodes:[{id}],padding:.5,maxZoom:1,duration:150}).then(()=>{
+      if(sequence!==noteRevealSequence.current)return;
+      el.querySelector('textarea')?.focus({preventScroll:true});
+    });
+  }
+  useEffect(()=>{
+    if(automatic || !newNoteToReveal.current)return;
+    const frame=requestAnimationFrame(revealNewNote);
+    return()=>cancelAnimationFrame(frame);
+  },[nodes,automatic]);
   useEffect(()=>{
     const frame=requestAnimationFrame(()=>{
       const notePositions=new Map<string,{x:number;y:number}>();
@@ -990,15 +1013,22 @@ function Editor() {
 
   function addNote() {
     const bounds = board.current!.getBoundingClientRect();
-    const position = screenToFlowPosition({
-      x: bounds.x + bounds.width / 2 - 105 + notes.length * 18,
-      y: bounds.y + bounds.height / 2 - 80 + notes.length * 18,
-    });
+    const center = screenToFlowPosition({x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2});
+    const position={x:center.x-115,y:center.y-91};
+    const id=crypto.randomUUID();
+    newNoteToReveal.current=id;
+    noteRevealSequence.current++;
+    setFocusEnabled(false);
+    setRegionSelection(null);
+    setPendingRegion(null);
+    setDockingNoteId(null);
+    setDockTarget(null);
     setNodes((current) => [
-      ...current,
+      ...current.map(n=>({...n,selected:false})),
       {
-        id: crypto.randomUUID(),
+        id,
         type: "note",
+        selected:true,
         dragHandle: ".node-grip",
         position,
         data: { title: "Заметка", text: "" },

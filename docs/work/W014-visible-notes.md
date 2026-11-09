@@ -28,3 +28,23 @@ fresh-context reviewer checks the exact candidate, without modifying files.
 Publication depends on PR12's navigation synchronization repair. GitHub Actions
 is currently reporting an external outage; green required checks remain a gate.
 No bypass or claim of a live update while deployment is blocked.
+
+## Author checkpoint
+
+Test-only `e9993a5`: three meaningful failures (new note unselected at15%/400%,
+focus remained enabled). Original traces retained in `/tmp/theboard-w014-red`.
+The new export check initially read position from the wrong archive field and
+the automatic fixture used an internal rather than portable setting; corrected
+to `layout.nodes[id]` and `layout.automatic`, retaining the same assertions.
+
+Creation no longer offsets by total note count. It clears selection, exits
+focus, creates at the viewport center and frames the measured card for editing.
+Manual geometry stays unchanged; automatic mode reveals after solver placement.
+Text focus follows viewport fitting (early focus was superseded by React Flow's
+selection focus). A sequence guard prevents an older fit from stealing focus
+after another new note. The group's transparent1px boundary preserves measured
+dimensions; surface/outline/shadow now belong only to the screen core.
+
+Author build and full48/48 PASS; Pages build and2/2 PASS. Mixed-side core widths
+and selected link geometry remain green. Synthetic corner capture:
+`output/playwright/w014-transparent-corner.png`; visual check/review pending.

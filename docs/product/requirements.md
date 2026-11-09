@@ -235,3 +235,12 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
 - NOTE-03 (`approved_by_human`, direct instruction, 2026-11-09): remove note
   completion controls/text and state-changing code. Completion is no longer a
   product workflow; retain historical archive metadata without editable UI.
+
+- NOTE-04 (`approved_by_human`, reported invisible new notes, 2026-11-09):
+  Add note reveals the new note, selects it and focuses its text for typing,
+  independent of existing note count, pan or zoom. Reveal after automatic
+  placement; exit focus when creating an unlinked note. Preserve existing
+  manual positions and the automatic-layout setting.
+- DOCK-07 (`approved_by_human`, direct screenshot, 2026-11-09): remove white
+  empty corners around composite screen/note groups. Empty cells show the
+  canvas; keep the screen card surface, selection, docks and routing geometry.

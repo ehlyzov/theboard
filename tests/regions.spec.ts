@@ -168,15 +168,10 @@ test("MASK-01..05 brush links existing/new notes, cancel, reload and archive", a
     .getByRole("button", { name: "Создать и связать", exact: true })
     .click();
   await expect(page.getByTestId("note-node")).toHaveCount(2);
-  await page.getByRole("button", { name: "Удалить выбранную область" }).click();
-  await expect(
-    page.getByRole("button", { name: "Область 1", exact: true }),
-  ).toHaveCount(0);
-  await expect(page.getByTestId("note-node")).toHaveCount(2);
-  await page.getByRole("button", { name: "Отменить удаление области" }).click();
-  await page
-    .getByRole("button", { name: "Область 1", exact: true })
-    .press("Enter");
+  // MASK-17 supersedes independent mask deletion/Undo: notes own the mask.
+  await expect(page.getByRole('button',{name:'Удалить выбранную область'})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Область 1',exact:true})).toHaveCount(1);
+  await expect(page.getByTestId('note-node')).toHaveCount(2);
   await page.getByRole("button", { name: "Закрыть связанные заметки" }).click();
   await paint(page);
   await page.getByRole("button", { name: "Отменить выбор заметки" }).click();

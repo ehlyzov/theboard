@@ -68,8 +68,12 @@ strokes per mask and 20,000 points per stroke are accepted.
 Optional legacy `comments` are migrated into ordinary note nodes, retaining
 text, open/done status, and timestamps; new masks use note links, not a separate
 comment workflow. Notes optionally store `status: open|done`, `createdAt`, and
-`resolvedAt`. Done notes remain present. Deleting a region removes only the
-mask/links; Undo restores it, while notes and images remain unchanged.
+`resolvedAt` in older files. Completion metadata is retained read-only for
+compatibility; NOTE-03 removes completion controls and new-note status creation.
+Persisted masks require at least one existing note. Deleting the last linked
+note removes its mask; shared masks keep their other links. There is no separate
+mask deletion/Undo. Empty old masks are cleaned after migrating legacy comments,
+so historical text/status/timestamps survive as ordinary notes.
 
 Canvas viewport and last opened board are browser-local workspace preferences
 in localStorage, separate from portable content. They restore after reload;
@@ -102,7 +106,8 @@ Docking remains visual layout, separate from note content:
 
 The note is still an ordinary `nodes` entry with the same ID, text, title,
 color, completion status and mask links. Sides are `left`, `right`, `top` and
-`bottom`. A docked note spans the attachment side; the composite moves as one
+`bottom`. Top/bottom notes span only the screen core width, excluding side notes.
+Left/right notes span the core row height. The composite moves as one
 obstacle and routing attaches to its outer boundary. Deleting a screen undocks
 its notes rather than deleting them. Archives preserve this mapping; legacy
 archives without it contain independent notes.
@@ -147,3 +152,15 @@ resulting coordinates belong to `layout.nodes`, without an implicit `layout.dock
 entry or a new navigation edge. Shared notes use one deterministic primary
 visible source (lowest ID); explicit docking takes precedence. Engine options
 `theboard.annotationPlacement`/`theboard.annotationGap` describe this adapter.
+
+Mask connection lines use actual rendered image/note bounds, transformed into
+board coordinates. Selected/hovered associations are drawn above cards with
+non-scaling strokes. Free notes use a nearest boundary point; docked notes use
+a shortest Manhattan approach normal to a nearest face. These paths are derived
+presentation, never saved as semantic edges or manual navigation routes.
+
+In focus, a mask-linked note docked to a hidden, unrelated parent is presented
+as a temporary standalone annotation satellite. Its true dock remains available
+to its magnet action. The stored dock/coordinates and hidden parent stay intact;
+leaving focus restores the ordinary composite. Adding another note to an
+existing mask merges its current surviving links, never a stale form snapshot.

@@ -142,3 +142,8 @@ To attach a note, drag its magnet to a highlighted screen side, or click the
 magnet and then click a side. Escape cancels. Clicking an attached note's magnet
 detaches it; the note text and color remain. The side targets also support Tab
 and Enter/Space.
+
+Masks are owned by their notes: deleting the last associated note also removes
+the mask. Shared masks survive while another linked note exists. Top/bottom
+docked notes match the screen core width, excluding side notes. Select a mask
+to emphasize all its note connections. Notes no longer have a completion UI.

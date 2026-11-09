@@ -53,7 +53,7 @@ test('DOCK-03 keyboard/click targets, Escape, invalid drop and detach preserve d
   await magnet.press('Enter');
   await page.getByRole('button',{name:'Приклеить сверху к экрану Вход',exact:true}).press('Enter');
   await expect(page.getByTestId('note-node')).toHaveClass(/is-docked/);
-  await page.getByRole('button',{name:'Отклеить заметку',exact:true}).click();
+  await page.getByRole('button',{name:'Размагнитить заметку',exact:true}).click();
   await expect(page.getByTestId('note-node')).not.toHaveClass(/is-docked/);
   await expect(page.getByLabel('Текст заметки',{exact:true})).toHaveValue('Magnetic note');
   await magnet.click();

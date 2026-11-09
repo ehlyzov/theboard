@@ -26,7 +26,6 @@ import {
   type Edge,
   type Node,
   type NodeProps,
-  ViewportPortal,
 } from "@xyflow/react";
 import {
   ArrowDownToLine,
@@ -55,6 +54,7 @@ import {
   saveBoard,
   importBoard,
   exportBoard,
+  removeBoardNodes,
   type BoardNode,
   type BoardData,
   type Region,
@@ -63,6 +63,7 @@ import {
 } from "./boards";
 
 import RegionImage from "./RegionImage";
+import MaskNoteConnectors from "./MaskNoteConnectors";
 import { NOTE_COLORS, COLOR_NAMES, type NoteColor } from "./noteColors";
 import LabeledEdge, { LabelPositions, HoveredTransition } from "./LabeledEdge";
 import { labelLayouts, freePosition, nodeSize, AUTO_LAYOUT_OPTIONS, focusFrame } from "./layout";
@@ -93,7 +94,6 @@ type Actions = {
   hoverScreen: (id: string | null) => void;
   startBrush: (id: string) => void;
   cancelBrush: () => void;
-  deleteRegion: (screenId: string, regionId: string) => void;
   hoverRegion: (screenId: string, regionId: string | null) => void;
   createRegion: (screenId: string, region: Region) => void;
   linkedNoteIds: string[];
@@ -143,7 +143,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
           onBlur={()=>actions.previewDock(null)}
           onClick={e=>{e.stopPropagation();actions.finishDock({screenId:id,side:side as Dock['side']});}}/>) }
       </div>}
-      {slot('top','1 / 4',1)}
+      {slot('top','2',1)}
       {slot('left','1',2)}
       <div className="screen-core" style={{gridColumn:2,gridRow:2,width:coreWidth-2}}>
       <div className="node-grip">
@@ -212,7 +212,6 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
           )
             actions.update(id, { imageSize: { width, height } });
         }}
-        onDelete={(regionId) => actions.deleteRegion(id, regionId)}
         onHover={(regionId) => actions.hoverRegion(id, regionId)}
         onCreate={(r) => actions.createRegion(id, r)}
         onSelect={(r) => actions.selectRegion(id, r)}
@@ -228,7 +227,7 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       </div>
       </div>
       {slot('right','3',2)}
-      {slot('bottom','1 / 4',3)}
+      {slot('bottom','2',3)}
       <Handle
         type="target"
         position={Position.Left}
@@ -296,10 +295,10 @@ function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|
         </span>
         <GripHorizontal size={16} />
         <button className="icon-button nodrag nopan note-magnet"
-          aria-label={data.dock?'Отклеить заметку':'Приклеить заметку'}
+          aria-label={data.dock?'Размагнитить заметку':'Приклеить заметку'}
           aria-pressed={!data.dock && actions.dockingNoteId===id}
           disabled={!data.dock && !actions.nodes.some(n=>n.type==='screen')}
-          title={data.dock?'Отклеить заметку':'Магнит: перетащите к стороне экрана или нажмите и выберите сторону · Esc отмена'}
+          title={data.dock?'Размагнитить':'Магнит: перетащите к стороне экрана или нажмите и выберите сторону · Esc отмена'}
           onPointerDown={e=>{
             e.stopPropagation();
             if(data.dock || e.button!==0)return;
@@ -326,7 +325,9 @@ function NoteNode({ id, data, selected }: Pick<NodeProps<BoardNode>,'id'|'data'|
             e.stopPropagation();
             if(data.dock)actions.dockNote(id);
             else if(e.detail===0)actions.startDock(id,true);
-          }}><Magnet size={14}/></button>
+          }}><Magnet size={14} aria-hidden="true">
+            {data.dock && <path d="m3 3 18 18"/>}
+          </Magnet></button>
         <button
           className="icon-button nodrag"
           aria-label="Цвет заметки"
@@ -432,7 +433,6 @@ function Editor() {
   const [autoWarning,setAutoWarning]=useState(false);
   const fitAfterArrange=useRef(false);
   const [arranging,setArranging]=useState(false);
-  const [anchors,setAnchors]=useState<Record<string,{core:{x:number;y:number};notes:Record<string,{x:number;y:number;width:number;height:number}>}>>({});
   const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -497,10 +497,6 @@ function Editor() {
   const [pendingRegion, setPendingRegion] = useState<PendingRegion | null>(null);
   const [noteChoice, setNoteChoice] = useState("");
   const [newNoteText, setNewNoteText] = useState("");
-  const [deletedRegion, setDeletedRegion] = useState<{
-    screenId: string;
-    region: Region;
-  } | null>(null);
   const selectedScreen = nodes.find((n) => n.id === regionSelection?.screenId);
   const hoverMask = nodes
     .find((n) => n.id === hoveredRegion?.screenId)
@@ -512,6 +508,14 @@ function Editor() {
     setNoteChoice("");
     setNewNoteText("");
   }, [regionSelection?.screenId, regionSelection?.regionId]);
+  useEffect(() => {
+    if (noteChoice && !nodes.some(n => n.id === noteChoice && n.type === 'note')) setNoteChoice('');
+    if (regionSelection && !selectedRegion) setRegionSelection(null);
+    if (pendingRegion) {
+      const screen = nodes.find(n => n.id === pendingRegion.screenId && n.type === 'screen');
+      if (!screen || (pendingRegion.existing && !screen.data.regions?.some(r => r.id === pendingRegion.region.id))) setPendingRegion(null);
+    }
+  }, [nodes, noteChoice, regionSelection, pendingRegion]);
   function attachNote(existingId: string | undefined) {
     if (!pendingRegion) return;
     if (!existingId && !newNoteText.trim()) return;
@@ -519,10 +523,11 @@ function Editor() {
     const { screenId, region, existing } = pendingRegion;
     setNodes((current) => {
       const screen = current.find((n) => n.id === screenId);
-      if (!screen) return current;
+      const currentRegion = existing ? screen?.data.regions?.find(r => r.id === region.id) : region;
+      if (!screen || !currentRegion || (existingId && !current.some(n => n.id === existingId && n.type === 'note'))) return current;
       const linked = {
-        ...region,
-        noteIds: Array.from(new Set([...(region.noteIds ?? []), noteId])),
+        ...currentRegion,
+        noteIds: Array.from(new Set([...(currentRegion.noteIds ?? []), noteId])),
       };
       const result = current.map((n) =>
         n.id === screenId
@@ -553,7 +558,6 @@ function Editor() {
           data: {
             title: "Заметка области",
             text: newNoteText.trim(),
-            status: "open",
           },
         });
       return result;
@@ -588,8 +592,14 @@ function Editor() {
   const focusActive =
     focusEnabled &&
     !arranging && Boolean(nodes.find((n) => n.id === currentScreenId && n.type === "screen"));
-  const focusNodes = nodes.filter(n => focusIds.has(n.id) ||
-    (n.data.dock ? focusIds.has(n.data.dock.screenId) : focusedNoteIds.has(n.id)));
+  const foreignFocusNote = (n:BoardNode) => Boolean(focusActive && n.data.dock &&
+    focusedNoteIds.has(n.id) && !focusIds.has(n.data.dock.screenId));
+  // Keep linked notes visible even when their stored docking parent is outside
+  // this flow. Only the temporary solver sees them as standalone satellites;
+  // the renderer/actions retain the real dock and save/export stay canonical.
+  const focusNodes = nodes.filter(n => focusIds.has(n.id) || focusedNoteIds.has(n.id) ||
+    (n.data.dock && focusIds.has(n.data.dock.screenId)))
+    .map(n => foreignFocusNote(n) ? {...n,data:{...n.data,dock:undefined}} : n);
   const focusEdges = edges.filter(e => e.source === currentScreenId);
   const focusKey = focusActive ? JSON.stringify({ source:currentScreenId,direction,
     nodes:focusNodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,measured:n.measured,noteIds:annotationNoteIds(n)})),
@@ -602,7 +612,7 @@ function Editor() {
   const displayNodes = nodes.map(n=>({...n,
     zIndex:tool==='brush'&&brushScreenId===n.id ? 1000 : n.zIndex,
     position:focusGeometry?.positions.get(n.id) ?? n.position,
-    hidden:Boolean(n.data.dock)||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
+    hidden:(Boolean(n.data.dock)&&!foreignFocusNote(n))||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
   }));
   const displayEdges = focusActive
     ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId,
@@ -718,7 +728,7 @@ function Editor() {
         setLayoutEngine(imported.layoutEngine);
         setFocusEnabled(false); setCurrentScreenId(undefined); setRegionSelection(null);
         setHoveredRegion(null); setPendingRegion(null); setConnecting(null);
-        setDeletedRegion(null); setHoveredTransition(null); setNoteChoice(''); setNewNoteText('');
+        setHoveredTransition(null); setNoteChoice(''); setNewNoteText('');
         setTool('select'); setBrushScreenId(null); setLoading(false);
         return;
       }
@@ -800,20 +810,17 @@ function Editor() {
   const { zoom } = viewport;
   useEffect(()=>{
     const frame=requestAnimationFrame(()=>{
-      const next:typeof anchors={};const notePositions=new Map<string,{x:number;y:number}>();
+      const notePositions=new Map<string,{x:number;y:number}>();
       for(const screen of nodes.filter(n=>n.type==='screen')){
         const el=[...document.querySelectorAll<HTMLElement>('[data-testid="screen-node"]')].find(el=>el.dataset.boardNodeId===screen.id);
-        const core=el?.querySelector<HTMLElement>('.screen-core');if(!el||!core)continue;
-        const rect=el.getBoundingClientRect(),c=core.getBoundingClientRect(),scale=rect.width/el.offsetWidth||zoom;
-        const notes:Record<string,{x:number;y:number;width:number;height:number}>={};
+        if(!el)continue;
+        const rect=el.getBoundingClientRect(),scale=rect.width/el.offsetWidth||zoom;
         for(const child of el.querySelectorAll<HTMLElement>('[data-testid="note-node"]')){
           const r=child.getBoundingClientRect(),id=child.dataset.boardNodeId!;
           const box={x:screen.position.x+(r.x-rect.x)/scale,y:screen.position.y+(r.y-rect.y)/scale,width:child.offsetWidth,height:child.offsetHeight};
-          notes[id]=box;notePositions.set(id,{x:box.x,y:box.y});
+          notePositions.set(id,{x:box.x,y:box.y});
         }
-        next[screen.id]={core:{x:(c.x-rect.x)/scale,y:(c.y-rect.y)/scale},notes};
       }
-      setAnchors(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);
       setNodes(current=>current.some(n=>{const p=notePositions.get(n.id);return p&&(Math.abs(p.x-n.position.x)>.2||Math.abs(p.y-n.position.y)>.2);})?
         current.map(n=>{const p=notePositions.get(n.id);return p?{...n,position:p}:n;}):current);
     });return()=>cancelAnimationFrame(frame);
@@ -905,21 +912,7 @@ function Editor() {
       ),
     );
   const remove = (id: string) => {
-    setNodes((current) =>
-      current
-        .filter((n) => n.id !== id)
-        .map((n) => ({
-          ...n,
-          data: {
-            ...n.data,
-            dock:n.data.dock?.screenId===id?undefined:n.data.dock,
-            regions: n.data.regions?.map((r) => ({
-              ...r,
-              noteIds: r.noteIds?.filter((noteId) => noteId !== id),
-            })),
-          },
-        })),
-    );
+    setNodes(current => removeBoardNodes(current, new Set([id])));
     setEdges((current) =>
       current.filter((e) => e.source !== id && e.target !== id),
     );
@@ -1070,20 +1063,9 @@ function Editor() {
           setTool("select");
           setBrushScreenId(null);
         },
-        deleteRegion: (screenId, regionId) => {
-          const screen = nodes.find((n) => n.id === screenId);
-          const region = screen?.data.regions?.find((r) => r.id === regionId);
-          if (!screen || !region) return;
-          setDeletedRegion({ screenId, region });
-          update(screenId, {
-            regions: screen.data.regions?.filter((r) => r.id !== regionId),
-          });
-          setRegionSelection(null);
-          setHoveredRegion(null);
-        },
         hoverRegion: (screenId, regionId) =>
           setHoveredRegion(regionId ? { screenId, regionId } : null),
-        linkedNoteIds: (hoverMask ?? selectedRegion)?.noteIds ?? [],
+        linkedNoteIds: [...new Set([...(selectedRegion?.noteIds??[]),...(hoverMask?.noteIds??[])])],
         createRegion: (screenId, region) => {
           setNoteChoice("");
           setNewNoteText("");
@@ -1384,21 +1366,7 @@ function Editor() {
                   onPaneClick={() => {setConnecting(null);setDockingNoteId(null);setDockTarget(null);}}
                   onNodesDelete={(deleted) => {
                     const ids = new Set(deleted.map((n) => n.id));
-                    setNodes((current) =>
-                      current
-                        .filter((n) => !ids.has(n.id))
-                        .map((n) => ({
-                          ...n,
-                          data: {
-                            ...n.data,
-                            dock:n.data.dock&&ids.has(n.data.dock.screenId)?undefined:n.data.dock,
-                            regions: n.data.regions?.map((r) => ({
-                              ...r,
-                              noteIds: r.noteIds?.filter((id) => !ids.has(id)),
-                            })),
-                          },
-                        })),
-                    );
+                    setNodes(current => removeBoardNodes(current, ids));
                     if (deleted.some((n) => n.id === connecting))
                       setConnecting(null);
                   }}
@@ -1411,76 +1379,7 @@ function Editor() {
                   isValidConnection={(c) => c.source !== c.target}
                   aria-label="Полотно пользовательского потока"
                 >
-                  <ViewportPortal>
-                    <svg className="mask-note-connectors" width="1" height="1">
-                      {displayNodes
-                        .filter((n) => !focusActive || focusIds.has(n.id))
-                        .flatMap((screen) =>
-                          (screen.data.regions ?? []).flatMap((region) => {
-                            const points = region.strokes?.flatMap(
-                              (stroke) => stroke.points,
-                            );
-                            const center = points?.length
-                              ? {
-                                  x:
-                                    points.reduce((s, p) => s + p.x, 0) /
-                                    points.length,
-                                  y:
-                                    points.reduce((s, p) => s + p.y, 0) /
-                                    points.length,
-                                }
-                              : {
-                                  x: region.x + region.width / 2,
-                                  y: region.y + region.height / 2,
-                                };
-                            const ratio =
-                              (screen.data.imageSize?.width ?? 210) /
-                              (screen.data.imageSize?.height ?? 290);
-                            const width = ratio >= 1 ? 380 : 210,
-                              height = width / ratio;
-                            const offset=anchors[screen.id]?.core??{x:0,y:0};
-                            const x = screen.position.x + offset.x + 10 + center.x * width,
-                              y = screen.position.y + offset.y + 37 + center.y * height;
-                            return (region.noteIds ?? []).map((id) => {
-                              const note = displayNodes.find((n) => n.id === id);
-                              if (!note) return null;
-                              const dockId=note.data.dock?.screenId;
-                              const anchor=dockId ? anchors[dockId]?.notes[id] : undefined;
-                              const parent=displayNodes.find(n=>n.id===dockId),canonicalParent=nodes.find(n=>n.id===dockId);
-                              const box=anchor&&parent&&canonicalParent ? {...anchor,
-                                x:anchor.x+parent.position.x-canonicalParent.position.x,
-                                y:anchor.y+parent.position.y-canonicalParent.position.y,
-                              } : {...note.position,...nodeSize(note)};
-                              const targetX =
-                                  box.x +
-                                  (box.x < x ? box.width : 0),
-                                targetY = Math.max(
-                                  box.y + 10,
-                                  Math.min(box.y + box.height - 10, y),
-                                );
-                              return (
-                                <line
-                                  key={screen.id + region.id + id}
-                                  className="mask-note-connector"
-                                  x1={x}
-                                  y1={y}
-                                  x2={targetX}
-                                  y2={targetY}
-                                  stroke={
-                                    hoveredRegion?.regionId === region.id ||
-                                    regionSelection?.regionId === region.id
-                                      ? "#9366c7"
-                                      : "#c7b6db"
-                                  }
-                                  strokeWidth="1"
-                                  vectorEffect="non-scaling-stroke"
-                                />
-                              );
-                            });
-                          }),
-                        )}
-                    </svg>
-                  </ViewportPortal>
+                  <MaskNoteConnectors nodes={displayNodes} selected={regionSelection} hovered={hoveredRegion}/>
                   <Background
                     variant={BackgroundVariant.Dots}
                     gap={24}
@@ -1660,21 +1559,7 @@ function Editor() {
                             update(noteId, { text: e.target.value })
                           }
                         />
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={note.data.status === "done"}
-                            onChange={(e) =>
-                              update(noteId, {
-                                status: e.target.checked ? "done" : "open",
-                                resolvedAt: e.target.checked
-                                  ? new Date().toISOString()
-                                  : undefined,
-                              })
-                            }
-                          />
-                          Выполнена · остаётся на доске
-                        </label>
+
                       </article>
                     )
                   );
@@ -1693,37 +1578,6 @@ function Editor() {
                   Добавить связь с заметкой
                 </button>
               </section>
-            )}
-            {deletedRegion && (
-              <div className="connection-hint mask-undo" role="status">
-                Область удалена; заметки сохранены
-                <button
-                  onClick={() => {
-                    const screen = nodes.find(
-                      (n) => n.id === deletedRegion.screenId,
-                    );
-                    if (screen)
-                      update(screen.id, {
-                        regions: [
-                          ...(screen.data.regions ?? []),
-                          {
-                            ...deletedRegion.region,
-                            noteIds: (
-                              deletedRegion.region.noteIds ?? []
-                            ).filter((id) =>
-                              nodes.some(
-                                (n) => n.id === id && n.type === "note",
-                              ),
-                            ),
-                          },
-                        ],
-                      });
-                    setDeletedRegion(null);
-                  }}
-                >
-                  Отменить удаление области
-                </button>
-              </div>
             )}
             {help && (
               <section className="help-panel">

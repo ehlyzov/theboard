@@ -247,3 +247,9 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
 - NOTE-05 (`approved_by_human`, direct screenshot21:33, 2026-11-09): omit the
   purple focus rectangle around a note's text area while retaining text focus,
   caret and the note's selection. Other application controls keep focus styles.
+- DOCK-08..09 (`approved_by_human`, direct screenshot21:50, 2026-11-09):
+  transition connection spans belong to the screen core. Each docked note
+  extends only its outward face, opposite the screen attachment. Side notes
+  are not top/bottom connection areas; empty corners are never endpoints.
+  Apply to incoming/outgoing automatic and focus routes in both directions;
+  manual left/right handles remain centered on the screen row.

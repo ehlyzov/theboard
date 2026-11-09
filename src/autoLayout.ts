@@ -67,17 +67,34 @@ export async function arrangeBoard(nodes: BoardNode[], edges: Edge[], direction:
     let nextPort=0;
     const portId=()=>{let id;do{id='__theboard_layout_port_'+nextPort++;}while(reserved.has(id));reserved.add(id);return id;};
     const sourcePorts=new Map<string,{id:string;x:number;y:number}>(),targetPorts=new Map<string,{id:string;x:number;y:number}>();
+    const activeAnchor=(node:BoardNode,side:'left'|'right'|'top'|'bottom',fraction:number)=>{
+      const el=elements.get(node.id),size=sizes.get(node.id)!;
+      let rect={x:0,y:0,...size};
+      if(el){
+        const slot=el.querySelector('.docked-'+side);
+        const outer=side==='left'||side==='top'?slot?.firstElementChild:slot?.lastElementChild;
+        const core=el.querySelector<HTMLElement>('.screen-core');
+        const face=(outer??core??el) as HTMLElement;
+        // Both core and dock cards have the positioned screen as offsetParent.
+        // Local CSS pixels keep saved routes independent of viewport transforms.
+        rect={x:face===el?0:face.offsetLeft+el.clientLeft,
+          y:face===el?0:face.offsetTop+el.clientTop,width:face.offsetWidth,height:face.offsetHeight};
+        // The core has a1px external outline; dock cards include their border.
+        if(face===core)rect={x:rect.x-1,y:rect.y-1,width:rect.width+2,height:rect.height+2};
+      }
+      return side==='top'||side==='bottom'
+        ? {x:rect.x+rect.width*fraction,y:rect.y+(side==='bottom'?rect.height:0)}
+        : {x:rect.x+(side==='right'?rect.width:0),y:rect.y+rect.height*fraction};
+    };
     const children=nodes.filter(n=>!n.data.dock&&!owners.has(n.id)).map(n=>{
-      const size=sizes.get(n.id)!,box=bounds.get(n.id)!;
-      if(!grouped.has(n.id))return {id:n.id,...box};
+      const box=bounds.get(n.id)!;
+      if(n.type!=='screen')return {id:n.id,...box};
       const ports=(source:boolean)=>{
         const incident=edges.filter(e=>(source?e.source:e.target)===n.id);
         return incident.map((edge,i)=>{
           const fraction=(i+1)/(incident.length+1),down=direction==='DOWN';
-          const anchor={id:portId(),
-            x:down ? size.width*fraction : (source ? size.width : 0),
-            y:down ? (source ? size.height : 0) : size.height*fraction,
-          };
+          const face=down?(source?'bottom':'top'):(source?'right':'left');
+          const anchor={id:portId(),...activeAnchor(n,face,fraction)};
           (source?sourcePorts:targetPorts).set(edge.id,anchor);
           const side=down ? (source?'SOUTH':'NORTH') : (source?'EAST':'WEST');
           return {...anchor,width:0,height:0,layoutOptions:{'elk.port.side':side}};
@@ -100,7 +117,7 @@ export async function arrangeBoard(nodes: BoardNode[], edges: Edge[], direction:
         const route=e.sections!.flatMap(s=>[s.startPoint,...(s.bendPoints??[]),s.endPoint]);
         const original=edgesById.get(e.id)!;
         // ELK fixes ports to the reserved box border. Bridge any empty padding
-        // back to the actual composite boundary, never to a satellite note.
+        // back to the exposed screen/dock face, never to a satellite or corner.
         for(const [anchor,nodeId,source]of [[sourcePorts.get(e.id),original.source,true],[targetPorts.get(e.id),original.target,false]] as const){
           if(!anchor)continue;
           const p=positions.get(nodeId)!,point={x:p.x+anchor.x,y:p.y+anchor.y},end=source?route[0]:route[route.length-1];

@@ -24,8 +24,8 @@ test('AUTO-01 hidden docked-note coordinates follow their composite when directi
  const after=await exported();expect(after.layout.engine.options['elk.direction']).toBe('DOWN');
  const a=before.layout.nodes.c,b=after.layout.nodes.c,m=after.layout.nodes['n-c'];
  expect(Math.hypot(b.x-a.x,b.y-a.y)).toBeGreaterThan(100);
- expect(Math.abs(m.x-b.x-relative.x)).toBeLessThan(1);
- expect(Math.abs(m.y-b.y-relative.y)).toBeLessThan(1);
+ expect(Math.abs(m.x-b.x-relative.x),JSON.stringify({a,b,m,relative})).toBeLessThan(1);
+ expect(Math.abs(m.y-b.y-relative.y),JSON.stringify({a,b,m,relative})).toBeLessThan(1);
 });
 test('AUTO-01..02 full editor layout is optional, confirmed, portable and keeps editing',async({page})=>{
  await page.goto('/?board=auto-layout-test');

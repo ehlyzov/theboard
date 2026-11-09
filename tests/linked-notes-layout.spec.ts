@@ -45,7 +45,14 @@ for(const direction of ['RIGHT','DOWN']) test(`MASK-15 ${direction} keeps ordina
   expect(before.layout.docks).toEqual(board.layout.docks);
   const start=before.layout.edges.cd.points[0],c=normal.c;
   if(direction==='RIGHT')expect(Math.abs(start.x-c.x-c.width)).toBeLessThan(1);
-  else expect(Math.abs(start.y-c.y-c.height)).toBeLessThan(1);
+  else {
+    // DOCK-08: the exposed bottom note face, excluding the group's transparent border.
+    const bottom=await page.locator('[data-testid="screen-node"][data-board-node-id="c"]').evaluate(el=>{
+      const group=el.getBoundingClientRect(),note=el.querySelector('.docked-bottom .note-card:last-child')!.getBoundingClientRect();
+      return (note.bottom-group.top)/(group.width/(el as HTMLElement).offsetWidth);
+    });
+    expect(Math.abs(start.y-c.y-bottom)).toBeLessThan(1);
+  }
   await page.locator('.screen-list').getByRole('button',{name:'03 C',exact:true}).click();
   await page.getByRole('switch',{name:'Режим фокуса'}).click();
   await expect(page.getByTestId('screen-node')).toHaveCount(3);

@@ -227,3 +227,11 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
 - DOCK-06 (`approved_by_human`, direct screenshot, 2026-11-09): top/bottom notes
   span the screen core only, excluding side notes. Mixed-side composites keep
   correct measured geometry for ordinary/automatic/focus layout and routing.
+
+- MASK-19 (`approved_by_human`, direct instruction, 2026-11-09): selecting a mask
+  emphasizes every associated note connection above the cards. Docked notes use
+  a shortest orthogonal approach to a nearest face; free notes use the nearest
+  boundary point. Follow actual geometry under zoom/pan and focus layout.
+- NOTE-03 (`approved_by_human`, direct instruction, 2026-11-09): remove note
+  completion controls/text and state-changing code. Completion is no longer a
+  product workflow; retain historical archive metadata without editable UI.

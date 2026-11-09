@@ -29,3 +29,17 @@ expectations are explicitly superseded by MASK-17, not weakened for a green run.
 Existing archive validation, pending preview, docking and focus outcomes remain.
 Technical verdict NOT_RUN. Next: meaningful red checks, implementation, scoped
 independent review, protected green CI and Pages publication.
+
+## Additional accepted presentation requirements
+
+- MASK-19: selecting a mask emphasizes all its note links above the cards.
+  Docked-note links take the shortest orthogonal approach to the nearest face;
+  free-note links go straight to the nearest boundary point. Geometry follows
+  real screen/image/note bounds under pan, zoom, docking and transient focus.
+- NOTE-03: remove the completion checkbox, its text and the completion-changing
+  code from note UI. New notes do not initialize completion state. Old archive
+  metadata is retained read-only for compatibility; no history is discarded.
+
+Checkpoint: six lifecycle/mixed-side cases PASS after meaningful red at068dfeb:
+independent mask deletion was present and top note was414px wider than the core.
+The following connection/status tests precede their implementation.

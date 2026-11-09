@@ -79,3 +79,20 @@ These gates must finish before public delivery; technical checks do not imply
 human acceptance.
 This branch also includes reviewed PR12's navigation synchronization repair;
 merge this combined branch rather than dropping that prerequisite.
+
+## Hosted gate caught a rendering race
+
+Initial final-head CI42675587102:47/48 PASS, NOTE-04 automatic/focus containment
+FAIL; deployment correctly skipped. Initial-head CI42675430082 passed48/48
+with identical product bytes, establishing timing sensitivity rather than a
+different expected outcome. Failed trace at `/tmp/theboard-w014-ci-failure`
+shows the new note at(1262,1262) when framing was requested, then at final
+solver position(12,12) while the viewport stayed at(-779,-913.5), zoom1.
+Framing inside the solver's RAF callback ran before the controlled React Flow
+store accepted the new positions. Selection/text focus passed; visibility failed.
+
+Repair: reveal from the effect after the latest layout result is committed and
+arranging is false. Track the accepted layout signature and retain the pending
+new-note ID through fitting; discard stale fit completion if a newer layout or
+new creation superseded it. Containment assertion, timeout and retries unchanged.
+Focused repair checks and independent targeted recheck follow.

@@ -434,6 +434,8 @@ function Editor() {
   const fitAfterArrange=useRef(false);
   const newNoteToReveal=useRef<string|null>(null);
   const noteRevealSequence=useRef(0);
+  const arrangedSignature=useRef('');
+  const latestLayoutSignature=useRef('');
   const [arranging,setArranging]=useState(false);
   const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
@@ -686,6 +688,8 @@ function Editor() {
   }, [ready, title, nodes, edges, boardId,automatic,direction,layoutEngine]);
   const layoutSignature=JSON.stringify({nodes:nodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,noteIds:annotationNoteIds(n)})),
     edges:edges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label}))});
+  const arrangeKey=direction+layoutSignature;
+  latestLayoutSignature.current=arrangeKey;
   useEffect(()=>{
     if(!ready||!automatic||!nodes.length)return;
     let disposed=false;
@@ -693,6 +697,7 @@ function Editor() {
     const timer=setTimeout(()=>{
       requestAnimationFrame(()=>void arrangeBoard(nodes,edges,direction).then(result=>{
         if(disposed)return;
+        arrangedSignature.current=arrangeKey;
         setNodes(current=>current.map(n=>({...n,position:result.positions.get(n.id)??n.position})));
         setEdges(current=>current.map(e=>({...e,data:{...e.data,...result.edges.get(e.id)}})));
         setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction,...ANNOTATION_LAYOUT_OPTIONS}});
@@ -703,7 +708,6 @@ function Editor() {
             const placed=nodes.map(n=>({...n,position:result.positions.get(n.id)??n.position}));
             void fitView({nodes:focusEnabled&&currentScreenId?focusFrame(placed,focusIds,currentScreenId,{width:board.current?.clientWidth??1000,height:board.current?.clientHeight??800}):undefined,padding:.15,maxZoom:1,duration:150});
           }
-          if(newNoteToReveal.current && result.positions.has(newNoteToReveal.current))revealNewNote();
         });
       }).catch(()=>{if(!disposed){setAutomatic(false);setError('Не удалось рассчитать компоновку. Текущее расположение сохранено.');}})
         .finally(()=>{if(!disposed)setArranging(false);}));
@@ -817,20 +821,23 @@ function Editor() {
     const el=[...board.current!.querySelectorAll<HTMLElement>('[data-testid="note-node"]')]
       .find(el=>el.dataset.boardNodeId===id);
     if(!el)return;
-    newNoteToReveal.current=null;
     // Frame the measured card at an editable size after placement, without
     // changing any canonical node position. preventScroll avoids page jumps.
     const sequence=noteRevealSequence.current;
+    const signature=latestLayoutSignature.current;
     void fitView({nodes:[{id}],padding:.5,maxZoom:1,duration:150}).then(()=>{
-      if(sequence!==noteRevealSequence.current)return;
+      if(sequence!==noteRevealSequence.current || newNoteToReveal.current!==id ||
+        (automatic && signature!==latestLayoutSignature.current))return;
+      newNoteToReveal.current=null;
       el.querySelector('textarea')?.focus({preventScroll:true});
     });
   }
   useEffect(()=>{
-    if(automatic || !newNoteToReveal.current)return;
+    if(!newNoteToReveal.current || (automatic &&
+      (arranging || arrangedSignature.current!==arrangeKey)))return;
     const frame=requestAnimationFrame(revealNewNote);
     return()=>cancelAnimationFrame(frame);
-  },[nodes,automatic]);
+  },[nodes,automatic,arranging]);
   useEffect(()=>{
     const frame=requestAnimationFrame(()=>{
       const notePositions=new Map<string,{x:number;y:number}>();

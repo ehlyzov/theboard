@@ -432,6 +432,10 @@ function Editor() {
   const [direction,setDirection]=useState<'RIGHT'|'DOWN'>('RIGHT');
   const [autoWarning,setAutoWarning]=useState(false);
   const fitAfterArrange=useRef(false);
+  const newNoteToReveal=useRef<string|null>(null);
+  const noteRevealSequence=useRef(0);
+  const arrangedSignature=useRef('');
+  const latestLayoutSignature=useRef('');
   const [arranging,setArranging]=useState(false);
   const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
@@ -684,6 +688,8 @@ function Editor() {
   }, [ready, title, nodes, edges, boardId,automatic,direction,layoutEngine]);
   const layoutSignature=JSON.stringify({nodes:nodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,noteIds:annotationNoteIds(n)})),
     edges:edges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label}))});
+  const arrangeKey=direction+layoutSignature;
+  latestLayoutSignature.current=arrangeKey;
   useEffect(()=>{
     if(!ready||!automatic||!nodes.length)return;
     let disposed=false;
@@ -691,6 +697,7 @@ function Editor() {
     const timer=setTimeout(()=>{
       requestAnimationFrame(()=>void arrangeBoard(nodes,edges,direction).then(result=>{
         if(disposed)return;
+        arrangedSignature.current=arrangeKey;
         setNodes(current=>current.map(n=>({...n,position:result.positions.get(n.id)??n.position})));
         setEdges(current=>current.map(e=>({...e,data:{...e.data,...result.edges.get(e.id)}})));
         setLayoutEngine({name:'elk-layered',version:'0.12.1',options:{...AUTO_LAYOUT_OPTIONS,'elk.direction':direction,...ANNOTATION_LAYOUT_OPTIONS}});
@@ -808,6 +815,29 @@ function Editor() {
   } = useReactFlow<BoardNode>();
   const viewport = useViewport();
   const { zoom } = viewport;
+  function revealNewNote(){
+    const id=newNoteToReveal.current;
+    if(!id)return;
+    const el=[...board.current!.querySelectorAll<HTMLElement>('[data-testid="note-node"]')]
+      .find(el=>el.dataset.boardNodeId===id);
+    if(!el)return;
+    // Frame the measured card at an editable size after placement, without
+    // changing any canonical node position. preventScroll avoids page jumps.
+    const sequence=noteRevealSequence.current;
+    const signature=latestLayoutSignature.current;
+    void fitView({nodes:[{id}],padding:.5,maxZoom:1,duration:150}).then(()=>{
+      if(sequence!==noteRevealSequence.current || newNoteToReveal.current!==id ||
+        (automatic && signature!==latestLayoutSignature.current))return;
+      newNoteToReveal.current=null;
+      el.querySelector('textarea')?.focus({preventScroll:true});
+    });
+  }
+  useEffect(()=>{
+    if(!newNoteToReveal.current || (automatic &&
+      (arranging || arrangedSignature.current!==arrangeKey)))return;
+    const frame=requestAnimationFrame(revealNewNote);
+    return()=>cancelAnimationFrame(frame);
+  },[nodes,automatic,arranging]);
   useEffect(()=>{
     const frame=requestAnimationFrame(()=>{
       const notePositions=new Map<string,{x:number;y:number}>();
@@ -990,15 +1020,22 @@ function Editor() {
 
   function addNote() {
     const bounds = board.current!.getBoundingClientRect();
-    const position = screenToFlowPosition({
-      x: bounds.x + bounds.width / 2 - 105 + notes.length * 18,
-      y: bounds.y + bounds.height / 2 - 80 + notes.length * 18,
-    });
+    const center = screenToFlowPosition({x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2});
+    const position={x:center.x-115,y:center.y-91};
+    const id=crypto.randomUUID();
+    newNoteToReveal.current=id;
+    noteRevealSequence.current++;
+    setFocusEnabled(false);
+    setRegionSelection(null);
+    setPendingRegion(null);
+    setDockingNoteId(null);
+    setDockTarget(null);
     setNodes((current) => [
-      ...current,
+      ...current.map(n=>({...n,selected:false})),
       {
-        id: crypto.randomUUID(),
+        id,
         type: "note",
+        selected:true,
         dragHandle: ".node-grip",
         position,
         data: { title: "Заметка", text: "" },

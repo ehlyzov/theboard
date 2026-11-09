@@ -28,7 +28,9 @@ for(const method of ['trash','keyboard'])test(`MASK-16/17 ${method} removes only
  expect(data.nodes.filter((n:any)=>n.type==='screen').every((n:any)=>!n.data.regions.length)).toBe(true);
  expect(data.nodes.filter((n:any)=>n.type==='note').map((n:any)=>n.id)).toEqual(['n3']);
  const roundtrip=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();
+ const previousUrl=page.url();
  await page.getByLabel('Импорт архива').setInputFiles((await(await roundtrip).path())!);
+ await page.waitForURL(url=>url.href!==previousUrl,{waitUntil:'load'});
  await expect(page.getByTestId('screen-node')).toHaveCount(2);
  await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();await page.reload();
  expect((await exported(page)).nodes.filter((n:any)=>n.type==='screen').every((n:any)=>!n.data.regions.length)).toBe(true);

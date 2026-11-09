@@ -42,3 +42,5 @@ The W004 card carries provenance, human acceptance and pending product scope.
 | [W012](W012-demagnetize-icon.md) | Crossed-out magnet for the demagnetize action | done | TheBoard chat; independent reviewer | Technical9/9 and icon/reload PASS; shared rollout with W013 |
 
 | [W013](W013-note-owned-masks.md) | Note-owned masks, screen-core docks and visible nearest-boundary links | done | TheBoard chat; independent reviewer | Technical45/45, Pages2/2 and targeted recheck PASS; final rollout PR11; human acceptance pending |
+
+| [W014](W014-visible-notes.md) | Visible new notes, transparent composite corners and unobtrusive text focus | done | TheBoard chat; independent reviewer | Local48/48, Pages2/2 and independent review/recheck PASS; final protected CI/deployment/public verification record in PR13; human acceptance pending |

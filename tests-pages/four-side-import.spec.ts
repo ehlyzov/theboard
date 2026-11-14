@@ -9,7 +9,7 @@ async function fixture(page:Page){
 }
 test('SIDE-02/03 click, keyboard and endpoint archive persistence',async({page})=>{
  await fixture(page);await page.locator('[data-board-node-id="a"]').getByRole('button',{name:'Соединить снизу',exact:true}).press('Enter');await page.locator('[data-board-node-id="b"]').getByRole('button',{name:'Соединить сверху',exact:true}).click();
- await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);await page.reload();await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);
+ await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();await page.reload();await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива',exact:true}).click();const file=await download;const bytes=fs.readFileSync((await file.path())!);const doc=JSON.parse(strFromU8(unzipSync(bytes)['board.json']));expect(doc.edges[0]).toMatchObject({source:'a',target:'b',sourceHandle:'bottom',targetHandle:'top'});
  const before=page.url();await page.getByLabel('Импорт архива',{exact:true}).setInputFiles({name:'roundtrip.zip',mimeType:'application/zip',buffer:bytes});await page.waitForURL(u=>u.href!==before);await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);
 });

@@ -406,6 +406,14 @@ function Editor() {
   const [nodes, setNodes, onNodesChange] = useNodesState<BoardNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const updateNodeInternals=useUpdateNodeInternals();
+  const handleMeasureKey=JSON.stringify(nodes.filter(n=>n.type==='screen').map(n=>[n.id,n.measured?.width,n.measured?.height]));
+  useEffect(()=>{
+    // Controlled hydration can adopt cached dimensions without handle bounds.
+    // Refresh after each committed ID/dimension change, including the final
+    // measured state, rather than relying on a resize of an unchanged card.
+    const frame=requestAnimationFrame(()=>updateNodeInternals(nodes.filter(n=>n.type==='screen').map(n=>n.id)));
+    return()=>cancelAnimationFrame(frame);
+  },[handleMeasureKey,updateNodeInternals]);
   const [automatic,setAutomatic]=useState(false);
   const [layoutEngine,setLayoutEngine]=useState<EngineMetadata>();
   const [direction,setDirection]=useState<'RIGHT'|'DOWN'>('RIGHT');

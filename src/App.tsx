@@ -230,15 +230,18 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       {slot('right','3',2)}
       {slot('bottom','2',3)}
       {(['horizontal','vertical'] as const).map(axis=><div key={axis} className={axis==='horizontal'?'screen-flow-handles':'screen-vertical-handles'}>
-        {(axis==='horizontal'?['left','right']:['top','bottom']).map(side=>{
+        {(axis==='horizontal'?['right','left']:['top','bottom']).map(side=>{
           const label=side==='left'?'Завершить стрелку':side==='right'?'Начать стрелку':side==='top'?'Соединить сверху':'Соединить снизу';
           const activate=()=>actions.connecting ? actions.finish(id,side) : actions.begin(id,side);
-          return <Handle key={side} id={side} type={side==='left'?'target':'source'}
+          return <Handle key={side} id={side} type="source"
             position={{left:Position.Left,right:Position.Right,top:Position.Top,bottom:Position.Bottom}[side as Dock['side']]}
             role="button" tabIndex={0} aria-label={label} title={label}
             onClick={e=>{e.stopPropagation();activate();}}
             onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}}}/>;
         })}
+        {axis==='horizontal' && <Handle type="target" position={Position.Left}
+          className="legacy-target-handle" isConnectable={false} aria-hidden="true" tabIndex={-1}
+          style={{opacity:0,pointerEvents:'none'}}/>}
       </div>)}
     </article>
   );

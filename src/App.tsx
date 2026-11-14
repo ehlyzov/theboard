@@ -420,6 +420,7 @@ function Editor() {
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
   const connectingHandle=useRef<string | null>(null);
+  const cancelledDrag=useRef(false);
   const dragOrigin=useRef<{nodeId:string;handleId:string|null}|null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -908,6 +909,7 @@ function Editor() {
   useEffect(() => {
     const cancel = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if(dragOrigin.current)cancelledDrag.current=true;
         setConnecting(null);
         setDockingNoteId(null);
         setDockTarget(null);
@@ -933,6 +935,7 @@ function Editor() {
     if (connecting === id) setConnecting(null);
   };
   const connect = (incoming: Connection) => {
+    if(cancelledDrag.current)return;
     // Loose mode permits starting on the legacy target handle too. Keep the
     // user gesture direction (first block → second), rather than its DOM type.
     const origin=dragOrigin.current;
@@ -1388,8 +1391,8 @@ function Editor() {
                   nodesDraggable={!automatic&&!focusActive&&!dockingNoteId}
                   onNodeDragStart={()=>{if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));}}
                   onEdgesChange={onEdgesChange}
-                  onConnectStart={(_,p)=>{dragOrigin.current=p.nodeId?{nodeId:p.nodeId,handleId:p.handleId}:null;}}
-                  onConnectEnd={()=>{dragOrigin.current=null;}}
+                  onConnectStart={(_,p)=>{cancelledDrag.current=false;dragOrigin.current=p.nodeId?{nodeId:p.nodeId,handleId:p.handleId}:null;}}
+                  onConnectEnd={()=>{dragOrigin.current=null;cancelledDrag.current=false;}}
                   onConnect={connect}
                   connectionMode={ConnectionMode.Loose}
                   connectOnClick={false}
@@ -1467,7 +1470,7 @@ function Editor() {
             {connecting && (
               <div className="connection-hint" role="status">
                 <ArrowRight size={17} />
-                Нажмите левую точку другого экрана
+                Нажмите любую точку другого экрана
                 <button
                   className="icon-button"
                   aria-label="Отменить стрелку"
@@ -1625,7 +1628,7 @@ function Editor() {
                   <li>Загрузите скриншоты и измените подписи под ними.</li>
                   <li>Перемещайте экраны и заметки за верхнюю полоску.</li>
                   <li>
-                    Перетащите правую точку экрана к левой точке другого. Или
+                    Перетащите точку с любой стороны экрана к точке другого. Или
                     нажмите их по очереди.
                   </li>
                   <li>

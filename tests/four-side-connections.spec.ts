@@ -28,3 +28,10 @@ test('SIDE-02 dragging from legacy left handle keeps first-to-second direction; 
  await page.mouse.move(s!.x+s!.width/2,s!.y+s!.height/2);await page.mouse.down();await page.mouse.move(t!.x+t!.width/2,t!.y+t!.height/2,{steps:20});await page.mouse.up();await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива',exact:true}).click();const file=await download;const doc=JSON.parse(strFromU8(unzipSync(fs.readFileSync((await file.path())!))['board.json']));expect(doc.edges[0]).toMatchObject({source:'a',target:'b',sourceHandle:'left',targetHandle:'right'});
 });
+
+test('SIDE-02 Escape cancels active drag before mouse release',async({page})=>{
+ await fixture(page);const source=page.locator('[data-board-node-id="a"]').getByRole('button',{name:'Соединить снизу',exact:true}),target=page.locator('[data-board-node-id="b"]').getByRole('button',{name:'Соединить сверху',exact:true});
+ const a=await source.boundingBox(),b=await target.boundingBox();
+ await page.mouse.move(a!.x+a!.width/2,a!.y+a!.height/2);await page.mouse.down();await page.mouse.move(b!.x+b!.width/2,b!.y+b!.height/2,{steps:20});await page.keyboard.press('Escape');await page.mouse.up();await expect(page.locator('.react-flow__edge-path')).toHaveCount(0);
+ await source.press('Enter');await target.press('Enter');await expect(page.locator('.react-flow__edge-path')).toHaveCount(1);
+});

@@ -17,7 +17,13 @@ for(const side of ['left','right','top','bottom'])for(const direction of ['RIGHT
  // Manual handles use the core row, even when top/bottom notes shift it.
  await expect.poll(()=>source.evaluate(el=>{
   const core=el.querySelector('.screen-core')!.getBoundingClientRect();
-  return [...el.querySelectorAll('.react-flow__handle')].every(handle=>{
+  const vertical=[...el.querySelectorAll('.screen-vertical-handles .react-flow__handle')].every(handle=>{
+   const side=handle.classList.contains('react-flow__handle-top')?'top':'bottom';
+   const slot=el.querySelector('.docked-'+side),face=(side==='top'?slot?.firstElementChild:slot?.lastElementChild)??el.querySelector('.screen-core')!;
+   const box=face.getBoundingClientRect(),r=handle.getBoundingClientRect();
+   return Math.abs(r.x+r.width/2-(core.x+core.width/2))<2&&Math.abs(r.y+r.height/2-(side==='top'?box.top:box.bottom))<2;
+  });
+  return vertical && [...el.querySelectorAll('.screen-flow-handles .react-flow__handle')].every(handle=>{
    const r=handle.getBoundingClientRect();return Math.abs(r.y+r.height/2-(core.y+core.height/2))<2;
   });
  })).toBe(true);

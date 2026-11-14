@@ -33,6 +33,8 @@ def validate(document, paths):
         edge_ids.add(edge['id'])
         assert edge['source'] in screens and edge['target'] in screens and edge['source'] != edge['target'], 'Invalid edge endpoint'
         assert isinstance(edge.get('label', ''), str), 'Invalid edge label'
+        for field in ('sourceHandle', 'targetHandle'):
+            assert edge.get(field) in (None, 'left', 'right', 'top', 'bottom'), 'Invalid connection face'
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

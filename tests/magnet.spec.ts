@@ -13,6 +13,8 @@ async function setup(page:any){
   await page.getByLabel('Загрузить скриншоты').setInputFiles('tests/fixtures/Вход.png');
   await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();
   await page.getByLabel('Текст заметки',{exact:true}).fill('Magnetic note');
+  // New-note framing animates; obtain drag coordinates only after it settles.
+  let previous='';await expect.poll(async()=>{const box=JSON.stringify(await page.getByTestId('screen-node').boundingBox());const stable=box===previous;previous=box;return stable;}).toBe(true);
 }
 for(const [side,label] of Object.entries(sides))test(`DOCK-02 drag magnet to ${side} preserves canonical positions`,async({page})=>{
   await setup(page);

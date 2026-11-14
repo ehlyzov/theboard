@@ -22,7 +22,10 @@ array order is not an identity. Coordinates are explicit canvas pixels.
 
 Node IDs and edge IDs must be unique within their own collections. Supported
 node types are `screen` and `note`. Positions must have finite numeric `x/y`.
-Edges refer to two different screen IDs and are always directed. `label` is
+Edges refer to two different screen IDs and are always directed. Optional
+`sourceHandle`/`targetHandle` select `left`, `right`, `top` or `bottom`; omitted
+fields retain legacy right-to-left endpoints. Automatic/focus layout respects
+explicit faces while choosing unspecified faces from layout direction. `label` is
 plain text. Notes use `data.text`. The importer reconstructs visual arrowheads;
 there is no executable code, callback, HTML template, or hidden workflow state
 in the document. Source versions and audit explanations can be explicit notes

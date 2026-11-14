@@ -253,3 +253,10 @@ DOC-01..04, GitHub exchange and offline application startup remain unimplemented
   are not top/bottom connection areas; empty corners are never endpoints.
   Apply to incoming/outgoing automatic and focus routes in both directions;
   manual left/right handles remain centered on the screen row.
+
+## Four-side connection controls (2026-11-14)
+
+SIDE-01..03: connect screen blocks on left/right/top/bottom by drag or two-step
+click/keyboard, including vertically stacked blocks. Preserve chosen faces
+through browser persistence and portable archives; use outward dock faces,
+core-width top/bottom spans, and retain legacy endpoints. See W016.

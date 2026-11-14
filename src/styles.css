@@ -1330,3 +1330,8 @@ body,
 .dock-target-left { left: 0; }.dock-target-right { right: 0; }
 .dock-target-top { top: 0; }.dock-target-bottom { bottom: 0; }
 .dock-target.is-active,.dock-target:hover,.dock-target:focus-visible { background: #8d6ad477; border-style: solid; border-color: #7052c4; }
+
+/* Vertical connection faces span only the core column, including outward docks. */
+.screen-vertical-handles { grid-column: 2; grid-row: 1 / 4; position: relative; pointer-events: none; z-index: 6; }
+.screen-vertical-handles .react-flow__handle { pointer-events: all; }
+.screen-flow-handles { z-index: 6; }

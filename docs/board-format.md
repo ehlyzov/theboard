@@ -123,7 +123,8 @@ manual routing. General obstacle-aware routing with arbitrary fixed positions
 remains pending; manual mode is not a claim of collision-free routing.
 
 Focus changes visibility and viewport framing only. The current screen and its
-direct destinations remain the focused set. If fitting that set would shrink
+direct predecessors and destinations remain the focused set; only transitions
+incident to the current screen are shown. If fitting that set would shrink
 the view below50%, framing centers the current composite instead; destinations
 remain available by panning or clicking their emphasized sidebar entries.
 Clicking the current sidebar entry always recenters it. This does not move
@@ -136,8 +137,8 @@ available in that browser; transient old-mask Undo state is cleared on replace.
 
 ## Temporary focus view
 
-Focus computes a separate compact view of the current screen, its outgoing
-destinations and visible notes. Its node positions, routes and label placements
+Focus computes a separate compact view of the current screen, its direct incoming/outgoing
+neighbors and visible notes. Its node positions, routes and label placements
 are runtime-only: they never replace the canonical `layout` exported here or
 the board stored in IndexedDB. Reload recomputes that view. Leaving focus
 restores canonical placement and the normal-view viewport. Ordinary content

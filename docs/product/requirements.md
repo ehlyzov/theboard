@@ -83,7 +83,8 @@ remains under docs/work/drafts/documents.spec.ts, outside the current executable
 suite; it is not reported as passing or implemented.
 
 - FOCUS-01 (`approved_by_human`, direct instruction): focus mode shows the
-  selected screen and the direct destinations of its outgoing edges. Hide
+  selected screen and direct predecessors/destinations of its incoming and
+  outgoing edges (FOCUS-07, owner update2026-11-14). Hide
   unrelated canvas content without deleting or moving it. Selecting a visible
   destination changes the focus source; leaving focus restores the full board.
   Persist focus workspace preferences with the viewport. Browser and independent
@@ -162,7 +163,7 @@ suite; it is not reported as passing or implemented.
   outside the diagram. Apply this to the editor and the standalone example.
 
 - FOCUS-04..06 (`approved_by_human`, direct instruction): automatically arrange
-  the current screen and its outgoing destinations close together in focus.
+  the current screen and its direct incoming/outgoing neighbors close together in focus.
   This is temporary view geometry, never canonical board/archive geometry.
   Leaving focus restores all original block positions, routes and labels.
   Recompute on source changes/reload and discard stale results. Preserve note

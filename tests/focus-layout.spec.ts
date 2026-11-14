@@ -6,7 +6,7 @@ for (const automatic of [false, true]) {
   test(`FOCUS-04..06 temporary compact layout preserves canonical geometry (${automatic ? 'automatic' : 'manual'})`, async ({ page }) => {
     const board = {
       version: 1, title: 'Temporary focus',
-      nodes: ['a', 'b', 'c', 'd', 'e', 'z'].map((id, i) => ({ id, type: 'screen', position: { x: i * 7000, y: i * 4000 }, data: { title: id.toUpperCase(), image: 'assets/a.png' } })).concat([
+      nodes: ['a', 'b', 'c', 'd', 'e', 'z', 'zz'].map((id, i) => ({ id, type: 'screen', position: { x: i * 7000, y: i * 4000 }, data: { title: id.toUpperCase(), image: 'assets/a.png' } })).concat([
         { id: 'attached', type: 'note', position: { x: 0, y: 600 }, data: { title: 'Attached', text: 'Docked content' } },
         { id: 'linked', type: 'note', position: { x: -8000, y: -5000 }, data: { title: 'Linked', text: 'Linked content' } },
       ] as any),
@@ -15,19 +15,20 @@ for (const automatic of [false, true]) {
         { id: 'ac', source: 'a', target: 'c', label: 'Continue C' },
         { id: 'ae', source: 'a', target: 'e', label: 'Continue E' },
         { id: 'bd', source: 'b', target: 'd', label: 'Continue D' },
-        // An upstream screen makes A a later global rank, unlike its focus view.
+        // A two-hop upstream screen makes A a later global rank than its focus view.
         { id: 'za', source: 'z', target: 'a', label: 'Entry' },
+        { id: 'zz-z', source: 'zz', target: 'z', label: 'Two-hop entry' },
       ],
       layout: { docks: { attached: { screenId: 'a', side: 'bottom' } }, edges: { ab: { label: { x: 6000, y: -1000 }, manual: true, points: [{ x: 230, y: 200 }, { x: 7000, y: 200 }] } } },
     };
     (board.nodes[0].data as any).regions = [{ id: 'mask', x: .1, y: .1, width: .2, height: .2, comments: [], noteIds: ['linked'] }];
     await page.goto('/');
     await page.getByLabel('Импорт архива').setInputFiles({ name: 'focus.zip', mimeType: 'application/zip', buffer: Buffer.from(zipSync({ 'board.json': strToU8(JSON.stringify(board)), 'assets/a.png': fs.readFileSync('tests/fixtures/Вход.png') })) });
-    await expect(page.getByTestId('screen-node')).toHaveCount(6);
+    await expect(page.getByTestId('screen-node')).toHaveCount(7);
     if (automatic) {
       await page.getByRole('checkbox', { name: 'Автоматическая компоновка' }).click();
       await page.getByRole('button', { name: 'Включить автокомпоновку', exact: true }).click();
-      await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(5);
+      await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(6);
       await expect(page.getByText('Расчёт компоновки…', { exact: true })).toHaveCount(0);
     }
     const exported = async () => {
@@ -58,8 +59,8 @@ for (const automatic of [false, true]) {
     });
     const normalViewport = await storedViewport();
     await page.getByRole('switch', { name: 'Режим фокуса' }).click();
-    await expect(page.getByTestId('screen-node')).toHaveCount(4);
-    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(3);
+    await expect(page.getByTestId('screen-node')).toHaveCount(5);
+    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(4);
     await expect.poll(async () => {
       const positions = Object.values(await rootPositions()) as {x:number;y:number}[];
       return Math.max(...positions.map(p => p.x)) - Math.min(...positions.map(p => p.x));
@@ -78,23 +79,24 @@ for (const automatic of [false, true]) {
     expect(await storedViewport()).toEqual(normalViewport);
     // Visiting another source must not accumulate or commit previous focus geometry.
     await page.locator('.screen-list').getByRole('button', { name: /^02 B$/ }).click();
-    await expect(page.getByTestId('screen-node')).toHaveCount(2);
-    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(1);
+    await expect(page.getByTestId('screen-node')).toHaveCount(3);
+    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(2);
     expect((await exported()).layout).toEqual(before.layout);
     await source.click();
-    await expect(page.getByTestId('screen-node')).toHaveCount(4);
-    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(3);
+    await expect(page.getByTestId('screen-node')).toHaveCount(5);
+    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(4);
     if (!automatic) {
       await page.locator('[data-board-node-id="attached"]').getByLabel('Текст заметки').fill('Edited without moving the board');
+      expect((await exported()).nodes.find((n:any)=>n.id==='attached').data.text).toBe('Edited without moving the board');
     }
     await page.reload();
     await expect(page.getByRole('switch', { name: 'Режим фокуса' })).toBeChecked();
-    await expect(page.getByTestId('screen-node')).toHaveCount(4);
-    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(3);
+    await expect(page.getByTestId('screen-node')).toHaveCount(5);
+    await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(4);
     expect((await exported()).layout).toEqual(before.layout);
     expect(await storedViewport()).toEqual(normalViewport);
     await page.getByRole('switch', { name: 'Режим фокуса' }).click();
-    await expect(page.getByTestId('screen-node')).toHaveCount(6);
+    await expect(page.getByTestId('screen-node')).toHaveCount(7);
     await expect.poll(rootPositions).toEqual(rootsBefore);
     await expect.poll(storedViewport).toEqual(normalViewport);
     const after = await exported();

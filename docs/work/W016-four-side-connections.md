@@ -26,3 +26,11 @@ Author build PASS. Final local full suite60/61: manual-focus immediate edit/relo
 Optional sourceHandle/targetHandle fields preserve chosen faces across ZIP roundtrip; old omitted fields still use right→left. Explicit faces also guide automatic/focus routing. Top/bottom hit controls use only the core-width column and outward dock boundaries. Help now explains any face and Escape.
 
 Only this report/status follows the independently rechecked product bytes. PR15 records final protected checks, merge/deployment and public verification. Human acceptance pending. No new claims for touch, other browsers, or arbitrary overlapping/dense graphs. Next product work remains W005.
+
+## Production hydration follow-up — PR16
+
+PR15 merged593aee2; main43607709979 editor/Pages/deploy PASS. Public vertical gestures4/4 and hosted smoke2/2 passed, but explicit-face ZIP roundtrip intermittently retained semantic edge1 with SVG path0. Local production regression eb186e7 reproduced the failure. A settled diagnostic confirmed mode loose, measured nodes230x433, valid edgeLookup, and absent internal handleBounds on both screens. Cached dimensions alone did not establish usable connection geometry. Diagnostic callbacks and speculative port/initialization changes were removed; none were accepted fixes.
+
+61429e054d1c05f5d304b79d3b2afb9b1369af76 refreshes DOM handle bounds after canonical screen ID/dimension changes, including the final hydrated state. Author production suite repeated3:9/9 PASS; editor/archive/focus/active-face regression17/17 PASS. Independent bounded production import3/3 and manual/automatic exact focus invariants2/2 PASS; report `/tmp/theboard-w016-import-review/RECHECK.md`. Full canonical nodes/edges remain identical except the deliberately edited note text. The production test waits for the saved indicator before reload; it does not promise unsaved edits survive closing the page.
+
+Only report text follows these reviewed product/test bytes. PR16 records protected CI, deployment and renewed public checks for the final hydration fix. No private board or real account used.

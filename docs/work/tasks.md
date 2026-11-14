@@ -49,4 +49,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W016](W016-four-side-connections.md) | Four-side connections and reliable vertical drag | done | TheBoard chat; independent reviewer | Independent repair PASS; protected CI/Pages rollout in PR15, human acceptance pending |
 
-| [W017](W017-incoming-focus.md) | Incoming and outgoing direct neighbors in focus | active | TheBoard chat | Synthetic regression and independent review |
+| [W017](W017-incoming-focus.md) | Incoming and outgoing direct neighbors in focus | done | TheBoard chat; independent reviewer | Technical focus14/14, linked-note2/2, Pages5/5; protected CI/deployment record in branch PR; human acceptance pending |

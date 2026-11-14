@@ -93,10 +93,11 @@ export async function arrangeBoard(nodes: BoardNode[], edges: Edge[], direction:
         const incident=edges.filter(e=>(source?e.source:e.target)===n.id);
         return incident.map((edge,i)=>{
           const fraction=(i+1)/(incident.length+1),down=direction==='DOWN';
-          const face=down?(source?'bottom':'top'):(source?'right':'left');
+          const chosen=source?edge.sourceHandle:edge.targetHandle;
+          const face=chosen && ['left','right','top','bottom'].includes(chosen)?chosen as 'left'|'right'|'top'|'bottom':down?(source?'bottom':'top'):(source?'right':'left');
           const anchor={id:portId(),...activeAnchor(n,face,fraction)};
           (source?sourcePorts:targetPorts).set(edge.id,anchor);
-          const side=down ? (source?'SOUTH':'NORTH') : (source?'EAST':'WEST');
+          const side={left:'WEST',right:'EAST',top:'NORTH',bottom:'SOUTH'}[face];
           return {...anchor,width:0,height:0,layoutOptions:{'elk.port.side':side}};
         });
       };

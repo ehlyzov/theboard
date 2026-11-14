@@ -179,6 +179,11 @@ function text(v: unknown, max: number) {
   if (typeof v !== "string" || v.length > max) fail();
   return v as string;
 }
+function connectionFace(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string' || !['left','right','top','bottom'].includes(value)) fail();
+  return value as string;
+}
 export async function importBoard(file: File): Promise<BoardData> {
   if (file.size > MAX) throw new Error("Архив слишком большой (до 180 МБ)");
   let total = 0;
@@ -286,6 +291,8 @@ export async function importBoard(file: File): Promise<BoardData> {
       id,
       source: e.source,
       target: e.target,
+      sourceHandle: connectionFace(e.sourceHandle),
+      targetHandle: connectionFace(e.targetHandle),
       label: text(e.label ?? "", 500),
       type: "smoothstep",
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
@@ -390,6 +397,8 @@ export function exportBoard(board: BoardData): Uint8Array {
           id: e.id,
           source: e.source,
           target: e.target,
+          ...(e.sourceHandle ? {sourceHandle:e.sourceHandle} : {}),
+          ...(e.targetHandle ? {targetHandle:e.targetHandle} : {}),
           label: e.label ?? "",
         })),
       },

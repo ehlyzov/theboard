@@ -14,6 +14,7 @@ import {
   Background,
   BackgroundVariant,
   Handle,
+  ConnectionMode,
   Position,
   MarkerType,
   addEdge,
@@ -101,8 +102,8 @@ type Actions = {
   selectRegion: (screenId: string, regionId: string) => void;
   update: (id: string, patch: Partial<BoardNode["data"]>) => void;
   remove: (id: string) => void;
-  begin: (id: string) => void;
-  finish: (id: string) => void;
+  begin: (id: string, handle?: string) => void;
+  finish: (id: string, handle?: string) => void;
   connecting: string | null;
 };
 const ActionsContext = createContext<Actions>(null!);
@@ -228,44 +229,17 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
       </div>
       {slot('right','3',2)}
       {slot('bottom','2',3)}
-      <div className="screen-flow-handles">
-      <Handle
-        type="target"
-        position={Position.Left}
-        role="button"
-        tabIndex={0}
-        aria-label="Завершить стрелку"
-        title="Завершить стрелку"
-        onClick={(e) => {
-          e.stopPropagation();
-          actions.finish(id);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            actions.finish(id);
-          }
-        }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        role="button"
-        tabIndex={0}
-        aria-label="Начать стрелку"
-        title="Начать стрелку"
-        onClick={(e) => {
-          e.stopPropagation();
-          actions.begin(id);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            actions.begin(id);
-          }
-        }}
-      />
-      </div>
+      {(['horizontal','vertical'] as const).map(axis=><div key={axis} className={axis==='horizontal'?'screen-flow-handles':'screen-vertical-handles'}>
+        {(axis==='horizontal'?['left','right']:['top','bottom']).map(side=>{
+          const label=side==='left'?'Завершить стрелку':side==='right'?'Начать стрелку':side==='top'?'Соединить сверху':'Соединить снизу';
+          const activate=()=>actions.connecting ? actions.finish(id,side) : actions.begin(id,side);
+          return <Handle key={side} id={side} type={side==='left'?'target':'source'}
+            position={{left:Position.Left,right:Position.Right,top:Position.Top,bottom:Position.Bottom}[side as Dock['side']]}
+            role="button" tabIndex={0} aria-label={label} title={label}
+            onClick={e=>{e.stopPropagation();activate();}}
+            onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}}}/>;
+        })}
+      </div>)}
     </article>
   );
 }
@@ -442,6 +416,8 @@ function Editor() {
   const [dockingNoteId,setDockingNoteId]=useState<string|null>(null);
   const [dockTarget,setDockTarget]=useState<Dock|null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const connectingHandle=useRef<string | null>(null);
+  const dragOrigin=useRef<{nodeId:string;handleId:string|null}|null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [regionSelection, setRegionSelection] = useState<{
@@ -953,7 +929,13 @@ function Editor() {
     );
     if (connecting === id) setConnecting(null);
   };
-  const connect = (connection: Connection) => {
+  const connect = (incoming: Connection) => {
+    // Loose mode permits starting on the legacy target handle too. Keep the
+    // user gesture direction (first block → second), rather than its DOM type.
+    const origin=dragOrigin.current;
+    const connection=origin && incoming.target===origin.nodeId
+      ? {...incoming,source:incoming.target,target:incoming.source,sourceHandle:incoming.targetHandle,targetHandle:incoming.sourceHandle}
+      : incoming;
     if (connection.source === connection.target) return;
     // Dynamic composites can outlive an initial handle measurement. Refresh
     // after the connection render, as we do after automatic placement.
@@ -971,13 +953,13 @@ function Editor() {
     );
     setConnecting(null);
   };
-  const finish = (target: string) => {
+  const finish = (target: string, handle?: string) => {
     if (connecting)
       connect({
         source: connecting,
         target,
-        sourceHandle: null,
-        targetHandle: null,
+        sourceHandle: connectingHandle.current,
+        targetHandle: handle ?? null,
       });
   };
 
@@ -1118,7 +1100,7 @@ function Editor() {
         selectRegion: (screenId, regionId) =>
           setRegionSelection({ screenId, regionId }),
         remove,
-        begin: (id) => setConnecting(id),
+        begin: (id,handle) => {connectingHandle.current=handle??null;setConnecting(id);},
         finish,
         connecting,
       }}
@@ -1403,7 +1385,10 @@ function Editor() {
                   nodesDraggable={!automatic&&!focusActive&&!dockingNoteId}
                   onNodeDragStart={()=>{if(!automatic)setEdges(current=>current.map(e=>({...e,data:{...e.data,route:undefined}})));}}
                   onEdgesChange={onEdgesChange}
+                  onConnectStart={(_,p)=>{dragOrigin.current=p.nodeId?{nodeId:p.nodeId,handleId:p.handleId}:null;}}
+                  onConnectEnd={()=>{dragOrigin.current=null;}}
                   onConnect={connect}
+                  connectionMode={ConnectionMode.Loose}
                   connectOnClick={false}
                   onPaneClick={() => {setConnecting(null);setDockingNoteId(null);setDockTarget(null);}}
                   onNodesDelete={(deleted) => {

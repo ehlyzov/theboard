@@ -49,12 +49,12 @@ for(const side of ['left','right','top','bottom'])for(const direction of ['RIGHT
  };
  await check();
  await page.locator('.screen-list').getByRole('button',{name:'01 s',exact:true}).click();await page.getByRole('switch',{name:'Режим фокуса'}).click();
- // Focus shows only outgoing edges, so endpoint checks above remain global;
- // inspect each outgoing start on the same exposed source face in focus.
- await expect(page.locator('.react-flow__edge-path')).toHaveCount(3);
+ // Focus shows both directions; verify all six source/target face endpoints.
+ await expect(page.locator('.react-flow__edge-path')).toHaveCount(6);
+ await check();
  await expect.poll(()=>source.evaluate((el,{side,direction})=>{
   const face=direction==='DOWN'?'bottom':'right';const box=el.querySelector(side===face?'[data-testid="note-node"]':'.screen-core')!.getBoundingClientRect();
-  return [...document.querySelectorAll<SVGPathElement>('.react-flow__edge-path')].every(p=>{
+  return [...document.querySelectorAll<SVGPathElement>('.react-flow__edge[data-id^="out-"] .react-flow__edge-path')].every(p=>{
    const q=p.getPointAtLength(0).matrixTransform(p.getScreenCTM()!);
    return direction==='DOWN'?Math.abs(q.y-box.bottom)<2&&q.x>=box.left-1&&q.x<=box.right+1:Math.abs(q.x-box.right)<2&&q.y>=box.top-1&&q.y<=box.bottom+1;
   });

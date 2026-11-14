@@ -48,3 +48,5 @@ The W004 card carries provenance, human acceptance and pending product scope.
 | [W015](W015-composite-active-faces.md) | Transition endpoints use core spans and exposed dock faces | done | TheBoard chat; independent reviewer | Local56/56, Pages2/2 and targeted independent14/14 plus38 endpoint checks PASS; protected rollout record in PR14; human acceptance pending |
 
 | [W016](W016-four-side-connections.md) | Four-side connections and reliable vertical drag | done | TheBoard chat; independent reviewer | Independent repair PASS; protected CI/Pages rollout in PR15, human acceptance pending |
+
+| [W017](W017-incoming-focus.md) | Incoming and outgoing direct neighbors in focus | done | TheBoard chat; independent reviewer | Technical focus14/14, linked-note2/2, Pages5/5; protected CI/deployment record in branch PR; human acceptance pending |

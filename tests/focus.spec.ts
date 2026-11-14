@@ -15,10 +15,10 @@ test('FOCUS-02 distant neighbors retain readable source framing and current-menu
  for(let i=0;i<8;i++)await page.getByRole('button',{name:'Уменьшить масштаб'}).click();
  await current.click();await expect.poll(zoom).toBeGreaterThanOrEqual(50);
  await page.locator('.screen-list').getByRole('button',{name:/Far/}).click();
- await expect(page.getByTestId('screen-node')).toHaveCount(1);
- await expect(page.getByRole('textbox',{name:'Название экрана'})).toHaveValue('Far');
+ await expect(page.getByTestId('screen-node')).toHaveCount(2);
+ await expect(page.getByRole('textbox',{name:'Название экрана'}).last()).toHaveValue('Far');
 });
-test("FOCUS-01 one-hop outgoing destinations only; full board survives", async ({
+test("FOCUS-01 one-hop incoming and outgoing neighbors; full board survives", async ({
   page,
 }) => {
   await page.goto("/?board=focus-test");
@@ -51,16 +51,16 @@ test("FOCUS-01 one-hop outgoing destinations only; full board survives", async (
   await expect(outside).toHaveClass(/out-of-focus/);
   await expect(outside).toBeEnabled();
   await outside.click();
-  await expect(screens).toHaveCount(1);
-  await expect(page.getByRole('textbox', {name:'Название экрана'})).toHaveValue('Детали');
+  await expect(screens).toHaveCount(2);
+  await expect(page.getByRole('textbox', {name:'Название экрана'}).last()).toHaveValue('Детали');
   await page.locator('.screen-list').getByRole('button', {name:/Вход/}).click();
   await expect(screens).toHaveCount(2);
   // The sidebar starts a250ms fit; don't click a moving node mid-transition.
   await page.waitForTimeout(300);
   await screens.nth(1).locator(".node-grip").click();
-  await expect(screens).toHaveCount(2);
+  await expect(screens).toHaveCount(3);
   await expect(
-    page.getByRole("textbox", { name: "Название экрана" }).first(),
+    page.getByRole("textbox", { name: "Название экрана" }).nth(1),
   ).toHaveValue("Главная");
   await page.getByRole("switch", { name: "Режим фокуса" }).click();
   await expect(page.getByRole('switch',{name:'Режим фокуса'})).not.toBeChecked();

@@ -568,16 +568,10 @@ function Editor() {
   const brushScreens = nodes.filter(n => n.type === "screen");
   brushContextRef.current = brushScreens.find(n => n.selected)?.id
     ?? currentScreenId ?? (brushScreens.length === 1 ? brushScreens[0].id : undefined);
-  const focusIds = new Set(
-    currentScreenId
-      ? [
-          currentScreenId,
-          ...edges
-            .filter((e) => e.source === currentScreenId)
-            .map((e) => e.target),
-        ]
-      : [],
-  );
+  const focusEdges = edges.filter(e=>e.source===currentScreenId || e.target===currentScreenId);
+  const focusIds = new Set(currentScreenId
+    ? [currentScreenId,...focusEdges.flatMap(e=>[e.source,e.target])]
+    : []);
   const focusedNoteIds = new Set(
     nodes
       .filter((n) => focusIds.has(n.id))
@@ -594,7 +588,6 @@ function Editor() {
   const focusNodes = nodes.filter(n => focusIds.has(n.id) || focusedNoteIds.has(n.id) ||
     (n.data.dock && focusIds.has(n.data.dock.screenId)))
     .map(n => foreignFocusNote(n) ? {...n,data:{...n.data,dock:undefined}} : n);
-  const focusEdges = edges.filter(e => e.source === currentScreenId);
   const focusKey = focusActive ? JSON.stringify({ source:currentScreenId,direction,
     nodes:focusNodes.map(n=>({id:n.id,type:n.type,title:n.data.title,text:n.data.text,dock:n.data.dock,imageSize:n.data.imageSize,measured:n.measured,noteIds:annotationNoteIds(n)})),
     edges:focusEdges.map(e=>({id:e.id,source:e.source,target:e.target,label:e.label})),
@@ -609,7 +602,7 @@ function Editor() {
     hidden:(Boolean(n.data.dock)&&!foreignFocusNote(n))||(focusActive&&!focusIds.has(n.id)&&!focusedNoteIds.has(n.id)),
   }));
   const displayEdges = focusActive
-    ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId,
+    ? edges.map((e) => ({ ...e, hidden: e.source !== currentScreenId && e.target !== currentScreenId,
       data:{...e.data,route:undefined,labelPosition:undefined,labelManual:false,...focusGeometry?.edges.get(e.id)},
     }))
     : edges;
@@ -1367,7 +1360,7 @@ function Editor() {
                 aria-pressed={Boolean(focusActive)}
                 disabled={!currentScreenId}
                 onClick={() => setFocusEnabled((v) => !v)}
-                title="Выберите экран: только его исходящие переходы"
+                title="Выберите экран: входящие и исходящие переходы"
               >
                 <Scan size={18} />
                 <span>Фокус</span>

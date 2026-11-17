@@ -32,6 +32,64 @@ test('VIEW-04 normal navigation preserves explicitly chosen400 percent',async({p
   await expect(page.locator('.zoom-controls>span')).toHaveText('400%');
 });
 
+test('VIEW-05 zoomed navigation shows the top of the screenshot before docked notes',async({page})=>{
+  const board={version:1,title:'Frame the screenshot',nodes:[
+    {id:'a',type:'screen',position:{x:100,y:100},data:{title:'A',image:'assets/a.png'}},
+    {id:'b',type:'screen',position:{x:1900,y:900},data:{title:'B',image:'assets/a.png'}},
+    {id:'top',type:'note',position:{x:1900,y:700},data:{title:'Top note',text:'Above the screenshot'}},
+    {id:'bottom',type:'note',position:{x:1900,y:1300},data:{title:'Bottom note',text:'Below the screenshot'}},
+  ],edges:[{id:'ab',source:'a',target:'b',label:'Continue'}],layout:{docks:{
+    top:{screenId:'b',side:'top'},bottom:{screenId:'b',side:'bottom'},
+  }}};
+  await page.goto('./');
+  await page.getByLabel('Импорт архива',{exact:true}).setInputFiles({name:'framing.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
+    'board.json':strToU8(JSON.stringify(board)),
+    'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png'),
+  }))});
+  await expect(page.getByTestId('screen-node')).toHaveCount(2);
+  const row=(name:string)=>page.locator('.screen-list').getByRole('button',{name,exact:true});
+  const focus=page.getByRole('button',{name:'Режим фокуса',exact:true});
+  const screenshot=page.locator('[data-board-node-id="b"] .screen-core');
+  const zoomLabel=page.locator('.zoom-controls>span');
+  async function expectTopInView(){
+    await expect.poll(()=>screenshot.evaluate(el=>{
+      const core=el.getBoundingClientRect();
+      const canvas=el.closest('.react-flow')!.getBoundingClientRect();
+      const image=el.querySelector('[data-testid="annotation-image"]')!.getBoundingClientRect();
+      const top=core.top-canvas.top;
+      return top >= 0 && top <= 64 && image.top < canvas.bottom && core.bottom > canvas.bottom;
+    })).toBe(true);
+    await expect(zoomLabel).toHaveText('400%');
+  }
+  await row('01 A').click();
+  const zoomIn=page.getByRole('button',{name:'Увеличить масштаб',exact:true});
+  for(let i=0;i<24;i++)await zoomIn.click();
+  await expect(zoomLabel).toHaveText('400%');
+  await row('02 B').click();
+  await expectTopInView();
+  await row('01 A').click();
+  await focus.click();
+  await row('02 B').click();
+  await expect(page.getByText('Компоновка фокуса…',{exact:true})).toHaveCount(0);
+  await expectTopInView();
+
+  // A card that fits with only a small amount of room remains wholly visible.
+  const canvas=page.locator('.react-flow');
+  const viewport=page.viewportSize()!;
+  const chromeHeight=viewport.height-(await canvas.boundingBox())!.height;
+  const cardHeight=(await screenshot.boundingBox())!.height;
+  await page.setViewportSize({width:viewport.width,height:Math.ceil(chromeHeight+cardHeight+20)});
+  await row('02 B').click();
+  await expect.poll(()=>screenshot.evaluate(el=>{
+    const core=el.getBoundingClientRect();
+    const canvas=el.closest('.react-flow')!.getBoundingClientRect();
+    const top=core.top-canvas.top;
+    const bottom=canvas.bottom-core.bottom;
+    return top >= 0 && bottom >= 0 && Math.abs(top-bottom) < 2;
+  })).toBe(true);
+  await expect(zoomLabel).toHaveText('400%');
+});
+
 for(const automatic of [false,true])test(`FOCUS-08/VIEW-04 independent list filter and retained user zoom (${automatic})`,async({page})=>{
   const board={version:1,title:'Focus navigation',nodes:['a','b','c','d','other'].map((id,i)=>({id,type:'screen',position:{x:i*2000,y:i*1500},data:{title:id.toUpperCase(),image:'assets/a.png'}})),edges:[{id:'ab',source:'a',target:'b',label:'Enter'},{id:'bc',source:'b',target:'c',label:'Continue'},{id:'cd',source:'c',target:'d',label:'Next'}]};
   await page.goto('./');

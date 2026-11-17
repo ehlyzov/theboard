@@ -163,6 +163,11 @@ suite; it is not reported as passing or implemented.
   reload. Keep automatic framing before manual adjustment. “Show entire board”
   is an explicit fit request; its resulting scale becomes the navigation scale.
 
+- VIEW-05 (direct screenshot feedback, 2026-11-17): navigation at a chosen zoom
+  frames the screenshot independently of its attached notes. Center a screen
+  that fits. If it extends below the viewport, show its upper part first.
+  Apply this to ordinary navigation and focus navigation.
+
 - UI-03 (direct discoverability feedback): keep the mask tool easy to find in
   the full editor through a marker pictogram in each screen header, beside
   deletion. It is a screen operation, not a common board-level creation tool.
@@ -175,6 +180,11 @@ suite; it is not reported as passing or implemented.
 - UI-06 (direct screenshot feedback, 2026-11-17): the editor board title lives
   above the canvas and never covers screen cards while panning or zooming.
   Keep it in the application header at every supported width.
+
+- UI-07 (direct screenshot feedback, 2026-11-17): each screen card shows the
+  same number as its sidebar entry beside its editable title. Use full board
+  screen order even when the sidebar or canvas is filtered. Numbers are derived
+  from that order and kept outside saved titles and the archive format.
 
 - FOCUS-04..06 (`approved_by_human`, direct instruction): automatically arrange
   the current screen and its direct incoming/outgoing neighbors close together in focus.

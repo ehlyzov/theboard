@@ -84,6 +84,7 @@ type Actions = {
   cancelDock: () => void;
   pendingRegion: PendingRegion | null;
   nodes: BoardNode[];
+  screenNumbers: ReadonlyMap<string, string>;
   dockNote: (id: string, dock?: Dock) => void;
   selectNote: (id: string) => void;
   hoveredFlowNodes: string[];
@@ -218,6 +219,9 @@ function ScreenNode({ id, data, selected }: NodeProps<BoardNode>) {
         onSelect={(r) => actions.selectRegion(id, r)}
       />
       <div className="screen-caption">
+        <span className="screen-number" data-testid="screen-number">
+          {actions.screenNumbers.get(id)}
+        </span>
         <input
           className="nodrag"
           aria-label="Название экрана"
@@ -572,9 +576,12 @@ function Editor() {
   const [currentScreenId, setCurrentScreenId] = useState<string | undefined>(
     () => workspace(currentBoard()).currentScreenId,
   );
-  const brushScreens = nodes.filter(n => n.type === "screen");
-  brushContextRef.current = brushScreens.find(n => n.selected)?.id
-    ?? currentScreenId ?? (brushScreens.length === 1 ? brushScreens[0].id : undefined);
+  const screens = nodes.filter(n => n.type === "screen");
+  const screenNumbers = new Map(screens.map((screen, index) => [
+    screen.id, String(index + 1).padStart(2, "0"),
+  ]));
+  brushContextRef.current = screens.find(n => n.selected)?.id
+    ?? currentScreenId ?? (screens.length === 1 ? screens[0].id : undefined);
   const focusEdges = edges.filter(e=>e.source===currentScreenId || e.target===currentScreenId);
   const focusIds = new Set(currentScreenId
     ? [currentScreenId,...focusEdges.flatMap(e=>[e.source,e.target])]
@@ -806,6 +813,25 @@ function Editor() {
   const viewport = useViewport();
   const { zoom } = viewport;
   const gestureStartZoom = useRef<number | undefined>(undefined);
+  function frameScreenAtZoom(id: string, scale: number, duration: number) {
+    const canvas = board.current;
+    const core = canvas?.querySelector(
+      `[data-board-node-id="${CSS.escape(id)}"] .screen-core`,
+    );
+    if (!canvas || !core) return false;
+
+    const rect = core.getBoundingClientRect();
+    const topCenter = screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top });
+    const height = rect.height * scale / getViewport().zoom;
+    // Center a screen that fits. For a larger screen, show its top first.
+    const topInset = height > canvas.clientHeight ? 24 : (canvas.clientHeight - height) / 2;
+    void setViewport({
+      x: canvas.clientWidth / 2 - topCenter.x * scale,
+      y: topInset - topCenter.y * scale,
+      zoom: scale,
+    }, { duration });
+    return true;
+  }
   function revealNewNote(){
     const id=newNoteToReveal.current;
     if(!id)return;
@@ -904,12 +930,14 @@ function Editor() {
     if(!focusGeometry)return;
     const frame=requestAnimationFrame(()=>{
       updateNodeInternals([...focusGeometry.positions.keys()]);
+      if (navigationZoom !== undefined && currentScreenId &&
+          frameScreenAtZoom(currentScreenId, navigationZoom, 150)) return;
+
       void fitView({nodes:navigationZoom===undefined ? focusNodes.filter(n=>!n.data.dock).map(n=>({id:n.id})) : [{id:currentScreenId!}],
         padding:.2,minZoom:navigationZoom??.05,maxZoom:navigationZoom??1,duration:150});
     });
     return()=>cancelAnimationFrame(frame);
   },[focusGeometry]);
-  const screens = nodes.filter((n) => n.type === "screen");
   const notes = nodes.filter((n) => n.type === "note");
 
   useEffect(() => {
@@ -1076,6 +1104,7 @@ function Editor() {
       value={{
         pendingRegion,
         nodes,
+        screenNumbers,
         selectNote:(id)=>setNodes(current=>current.map(n=>({...n,selected:n.id===id}))),
         dockNote,
         dockingNoteId,dockTarget,
@@ -1224,7 +1253,7 @@ function Editor() {
                 </p>
               ) : (
                 <ol className="screen-list">
-                  {screens.map((screen, index) => focusActive&&onlyFocusedScreens&&!focusIds.has(screen.id) ? null : (
+                  {screens.map((screen) => focusActive&&onlyFocusedScreens&&!focusIds.has(screen.id) ? null : (
                     <li key={screen.id}>
                       <button
                         className={[screen.id===currentScreenId?'is-current':'',focusActive&&focusIds.has(screen.id)?'in-focus':'',focusActive&&!focusIds.has(screen.id)?'out-of-focus':''].join(' ')}
@@ -1232,7 +1261,9 @@ function Editor() {
                         title={screen.data.title}
                         onClick={() => {
                           setCurrentScreenId(screen.id);
-                          if (!focusActive || screen.id===currentScreenId) void fitView({
+                          if (focusActive && screen.id !== currentScreenId) return;
+                          if (navigationZoom !== undefined && frameScreenAtZoom(screen.id, navigationZoom, 250)) return;
+                          void fitView({
                             nodes: [{ id: screen.id }],
                             minZoom: navigationZoom??.05,
                             maxZoom: navigationZoom??1,
@@ -1240,7 +1271,7 @@ function Editor() {
                           });
                         }}
                       >
-                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <span>{screenNumbers.get(screen.id)}</span>
                         <span>{screen.data.title || "Без названия"}</span>
                         <ChevronRight size={13} />
                       </button>

@@ -1147,7 +1147,7 @@ function Editor() {
           <div className="breadcrumb">
             <span>Мои доски</span>
             <ChevronRight size={14} />
-            <strong>{title}</strong>
+            <h1 title={title}>{title}</h1>
           </div>
           <button
             className="archive-button"
@@ -1332,10 +1332,6 @@ function Editor() {
               panGesture.current = null;
             }}
           >
-            <div className="canvas-heading">
-              <h1>{title}</h1>
-              <p>От первого экрана до последнего шага</p>
-            </div>
             <div
               className="toolbar"
               role="toolbar"

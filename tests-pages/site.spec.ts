@@ -1,5 +1,34 @@
 import {test,expect} from '@playwright/test';
 import fs from 'node:fs/promises';
+import {zipSync,strToU8} from 'fflate';
+
+test('UI-06 board title stays above the canvas at 400% and narrow widths',async({page})=>{
+  const title='A long board title for checking how the editor header fits at narrow viewport widths';
+  const board={version:1,title,nodes:[{id:'a',type:'screen',position:{x:100,y:100},data:{title:'Screen A',image:'assets/a.png'}}],edges:[]};
+  await page.goto('./');
+  await page.getByLabel('Импорт архива',{exact:true}).setInputFiles({name:'heading.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
+    'board.json':strToU8(JSON.stringify(board)),
+    'assets/a.png':await fs.readFile('tests/fixtures/Вход.png'),
+  }))});
+  await expect(page.getByTestId('screen-node')).toHaveCount(1);
+  const zoom=page.getByRole('button',{name:'Увеличить масштаб',exact:true});
+  for(let i=0;i<24;i++)await zoom.click();
+  await expect(page.locator('.zoom-controls>span')).toHaveText('400%');
+  const header=page.getByRole('banner');
+  const heading=header.getByRole('heading',{level:1,name:title,exact:true});
+  const canvas=page.getByRole('main');
+  for(const width of [1440,1024,390]){
+    await page.setViewportSize({width,height:900});
+    await expect(heading).toBeVisible();
+    await expect(canvas.getByRole('heading',{name:title,exact:true})).toHaveCount(0);
+    const [titleBox,canvasBox]=await Promise.all([heading.boundingBox(),canvas.boundingBox()]);
+    expect(titleBox!.y+titleBox!.height).toBeLessThanOrEqual(canvasBox!.y);
+    expect(titleBox!.x+titleBox!.width).toBeLessThanOrEqual(width);
+    for(const name of ['Импорт ZIP','Экспорт архива']){
+      await expect(header.getByRole('button',{name,exact:true})).toBeInViewport();
+    }
+  }
+});
 
 test('PAGES-01 production prefix supports editor, lazy layout, reload and archive transfer',async({page,browser,baseURL})=>{
   const basePath=new URL(baseURL!).pathname;

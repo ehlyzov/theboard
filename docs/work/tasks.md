@@ -55,4 +55,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W019](W019-board-heading.md) | Keep the board title above the canvas | done | TheBoard chat and independent reviewer | Local Pages 10/10 and independent UI-06 PASS. Protected rollout in branch PR. Human acceptance pending |
 
-| [W020](W020-screen-card-number.md) | Show screen numbers on screen cards | active | TheBoard chat | Verify sidebar and card agreement in full view and focus |
+| [W020](W020-screen-card-number.md) | Show screen numbers and frame the top on navigation | active | TheBoard chat | Verify sidebar numbering and high-zoom navigation in full view and focus |

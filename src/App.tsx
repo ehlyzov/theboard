@@ -805,6 +805,7 @@ function Editor() {
   } = useReactFlow<BoardNode>();
   const viewport = useViewport();
   const { zoom } = viewport;
+  const gestureStartZoom = useRef<number | undefined>(undefined);
   function revealNewNote(){
     const id=newNoteToReveal.current;
     if(!id)return;
@@ -1420,7 +1421,12 @@ function Editor() {
                       setConnecting(null);
                   }}
                   defaultViewport={initialViewport}
-                  onMoveEnd={(event,view)=>{if(event)setNavigationZoom(view.zoom);}}
+                  onMoveStart={(event,view)=>{gestureStartZoom.current=event?view.zoom:undefined;}}
+                  onMoveEnd={(event,view)=>{
+                    if(event && gestureStartZoom.current!==undefined && Math.abs(view.zoom-gestureStartZoom.current)>1e-8)
+                      setNavigationZoom(view.zoom);
+                    gestureStartZoom.current=undefined;
+                  }}
                   minZoom={0.05}
                   maxZoom={4}
                   deleteKeyCode={

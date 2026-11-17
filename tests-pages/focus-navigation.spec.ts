@@ -72,6 +72,22 @@ test('VIEW-05 zoomed navigation shows the top of the screenshot before docked no
   await row('02 B').click();
   await expect(page.getByText('Компоновка фокуса…',{exact:true})).toHaveCount(0);
   await expectTopInView();
+
+  // A card that fits with only a small amount of room remains wholly visible.
+  const canvas=page.locator('.react-flow');
+  const viewport=page.viewportSize()!;
+  const chromeHeight=viewport.height-(await canvas.boundingBox())!.height;
+  const cardHeight=(await screenshot.boundingBox())!.height;
+  await page.setViewportSize({width:viewport.width,height:Math.ceil(chromeHeight+cardHeight+20)});
+  await row('02 B').click();
+  await expect.poll(()=>screenshot.evaluate(el=>{
+    const core=el.getBoundingClientRect();
+    const canvas=el.closest('.react-flow')!.getBoundingClientRect();
+    const top=core.top-canvas.top;
+    const bottom=canvas.bottom-core.bottom;
+    return top >= 0 && bottom >= 0 && Math.abs(top-bottom) < 2;
+  })).toBe(true);
+  await expect(zoomLabel).toHaveText('400%');
 });
 
 for(const automatic of [false,true])test(`FOCUS-08/VIEW-04 independent list filter and retained user zoom (${automatic})`,async({page})=>{

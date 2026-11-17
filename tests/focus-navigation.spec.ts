@@ -2,6 +2,25 @@ import {test,expect} from '@playwright/test';
 import fs from 'node:fs';
 import {zipSync,unzipSync,strToU8,strFromU8} from 'fflate';
 
+test('VIEW-04 native pan without a scale change retains automatic focus framing',async({page})=>{
+  const board={version:1,title:'Pan before zoom',nodes:['a','b','c','other'].map((id,i)=>({id,type:'screen',position:{x:i*3000,y:0},data:{title:id.toUpperCase(),image:'assets/a.png'}})),edges:[{id:'ab',source:'a',target:'b',label:'Enter'},{id:'bc',source:'b',target:'c',label:'Continue'}]};
+  await page.goto('./');const old=page.url();
+  await page.getByLabel('Импорт архива',{exact:true}).setInputFiles({name:'pan.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({'board.json':strToU8(JSON.stringify(board)),'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png')}))});
+  await page.waitForURL(url=>url.href!==old);await expect(page.getByTestId('screen-node')).toHaveCount(4);
+  await page.locator('.screen-list').getByRole('button',{name:'02 B',exact:true}).click();await page.waitForTimeout(300);
+  const viewport=page.locator('.react-flow__viewport');const before=await viewport.getAttribute('style');
+  const r=await page.locator('.react-flow').boundingBox();
+  await page.mouse.move(r!.x+r!.width*.8,r!.y+r!.height*.8);await page.mouse.down();
+  await page.mouse.move(r!.x+r!.width*.8+80,r!.y+r!.height*.8+30,{steps:10});await page.mouse.up();
+  await expect(viewport).not.toHaveAttribute('style',before!);
+  await page.getByRole('button',{name:'Режим фокуса',exact:true}).click();
+  await expect(page.getByTestId('screen-node')).toHaveCount(3);
+  await expect.poll(()=>page.getByTestId('screen-node').evaluateAll(els=>{
+    const canvas=document.querySelector('.react-flow')!.getBoundingClientRect();
+    return els.every(el=>{const b=el.getBoundingClientRect();return b.left>=canvas.left&&b.right<=canvas.right&&b.top>=canvas.top&&b.bottom<=canvas.bottom;});
+  })).toBe(true);
+});
+
 test('VIEW-04 normal navigation preserves explicitly chosen400 percent',async({page})=>{
   await page.goto('./');
   await page.getByLabel('Загрузить скриншоты').setInputFiles(['Вход','Главная'].map(name=>'tests/fixtures/'+name+'.png'));

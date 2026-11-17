@@ -172,6 +172,10 @@ suite; it is not reported as passing or implemented.
   and edge-label hints belong in the bottom status area with the other text,
   outside the diagram. Apply this to the editor and the standalone example.
 
+- UI-06 (direct screenshot feedback, 2026-11-17): the editor board title lives
+  above the canvas and never covers screen cards while panning or zooming.
+  Keep it in the application header at every supported width.
+
 - FOCUS-04..06 (`approved_by_human`, direct instruction): automatically arrange
   the current screen and its direct incoming/outgoing neighbors close together in focus.
   This is temporary view geometry, never canonical board/archive geometry.

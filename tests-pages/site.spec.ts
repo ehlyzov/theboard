@@ -30,6 +30,44 @@ test('UI-06 board title stays above the canvas at 400% and narrow widths',async(
   }
 });
 
+test('UI-07 screen cards keep their sidebar numbers in focus and after board edits',async({page})=>{
+  const screen=(id:string,x:number)=>({id,type:'screen',position:{x,y:100},data:{title:`Screen ${id}`,image:'assets/a.png'}});
+  const board={version:1,title:'Screen numbering',nodes:[
+    screen('A',100),
+    {id:'note',type:'note',position:{x:100,y:650},data:{title:'Note',text:'Between screens in the board file'}},
+    screen('B',450),screen('C',800),
+  ],edges:[]};
+  await page.goto('./');
+  await page.getByLabel('Импорт архива',{exact:true}).setInputFiles({name:'numbering.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({
+    'board.json':strToU8(JSON.stringify(board)),
+    'assets/a.png':await fs.readFile('tests/fixtures/Вход.png'),
+  }))});
+  await expect(page.getByTestId('screen-node')).toHaveCount(3);
+  const row=(name:string)=>page.locator('.screen-list').getByRole('button',{name,exact:true});
+  const card=(id:string)=>page.getByTestId('screen-node').filter({has:page.getByRole('img',{name:`Screen ${id}`,exact:true})});
+  const number=(id:string)=>card(id).getByTestId('screen-number');
+  await expect(number('A')).toHaveText('01');
+  await expect(number('B')).toHaveText('02');
+  await expect(number('C')).toHaveText('03');
+  await expect(page.getByTestId('note-node').getByTestId('screen-number')).toHaveCount(0);
+  await row('03 Screen C').click();
+  const focus=page.getByRole('button',{name:'Режим фокуса',exact:true});
+  await focus.click();
+  await page.getByRole('switch',{name:'Только выделенные экраны',exact:true}).click();
+  await expect(page.locator('.screen-list button')).toHaveCount(1);
+  await expect(row('03 Screen C')).toBeVisible();
+  await expect(number('C')).toHaveText('03');
+  await focus.click();
+  await row('01 Screen A').click();
+  await card('A').getByRole('button',{name:'Удалить экран',exact:true}).click();
+  await expect(number('C')).toHaveText('02');
+  await expect(row('02 Screen C')).toBeVisible();
+  await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();
+  await page.reload();
+  await expect(number('C')).toHaveText('02');
+  await expect(card('C').getByRole('textbox',{name:'Название экрана'})).toHaveValue('Screen C');
+});
+
 test('PAGES-01 production prefix supports editor, lazy layout, reload and archive transfer',async({page,browser,baseURL})=>{
   const basePath=new URL(baseURL!).pathname;
   const errors:string[]=[];

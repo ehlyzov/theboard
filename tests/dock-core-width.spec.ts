@@ -22,5 +22,5 @@ for(const image of ['Вход','landscape'])test(`DOCK-06 ${image} top/bottom no
  await check();
  await page.getByRole('checkbox',{name:'Автоматическая компоновка'}).click();await page.getByRole('button',{name:'Включить автокомпоновку',exact:true}).click();
  await expect(page.getByText('Расчёт компоновки…',{exact:true})).toHaveCount(0);await check();
- await page.locator('.screen-list').getByRole('button',{name:'01 Source',exact:true}).click();await page.getByRole('switch',{name:'Режим фокуса'}).click();await check();
+ await page.locator('.screen-list').getByRole('button',{name:'01 Source',exact:true}).click();await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();await check();
 });

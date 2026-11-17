@@ -54,12 +54,12 @@ for(const direction of ['RIGHT','DOWN']) test(`MASK-15 ${direction} keeps ordina
     expect(Math.abs(start.y-c.y-bottom)).toBeLessThan(1);
   }
   await page.locator('.screen-list').getByRole('button',{name:'03 C',exact:true}).click();
-  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+  await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
   await expect.poll(()=>page.getByTestId('screen-node').evaluateAll(elements=>elements.map(el=>el.getAttribute('data-board-node-id')).sort())).toEqual(['a','b','c','d','f']);
   await expect.poll(()=>page.locator('.react-flow__edge').evaluateAll(elements=>elements.map(el=>el.getAttribute('data-id')).sort())).toEqual(['ac','bc','cd','cf']);
   await expect.poll(()=>near('c','n-one')).toBeLessThan(100);
   expect((await exported()).layout).toEqual(before.layout);
-  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+  await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
   // An existing note gains a new, lower-ID primary source. No new note/edge is created.
   await page.locator('.screen-list').getByRole('button',{name:'02 B',exact:true}).click();
   await page.waitForTimeout(300);

@@ -51,11 +51,11 @@ for(const zoom of [.15,4])test(`NOTE-04 new notes are visible and ready for typi
 test('NOTE-04 creating a note exits focus and reveals it after automatic placement',async({page})=>{
  await populatedBoard(page,.47,true);
  await page.locator('.screen-list').getByRole('button',{name:'01 Source',exact:true}).click();
- await page.getByRole('switch',{name:'Режим фокуса'}).click();
- await expect(page.getByRole('switch',{name:'Режим фокуса'})).toBeChecked();
+ await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
+ await expect(page.getByRole('button', { name: 'Режим фокуса', exact: true })).toHaveAttribute('aria-pressed','true');
  await expect(page.getByTestId('note-node')).toHaveCount(0);
  await page.getByRole('button',{name:'Добавить заметку',exact:true}).click();
- await expect(page.getByRole('switch',{name:'Режим фокуса'})).not.toBeChecked();
+ await expect(page.getByRole('button', { name: 'Режим фокуса', exact: true })).toHaveAttribute('aria-pressed','false');
  await expect(page.getByTestId('note-node')).toHaveCount(61);
  const note=page.getByTestId('note-node').last();
  await expect(note).toHaveClass(/is-selected/);await expect(note.getByRole('textbox')).toBeFocused();

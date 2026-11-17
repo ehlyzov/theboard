@@ -58,7 +58,7 @@ for (const automatic of [false, true]) {
       return { x: saved.x, y: saved.y, zoom: saved.zoom };
     });
     const normalViewport = await storedViewport();
-    await page.getByRole('switch', { name: 'Режим фокуса' }).click();
+    await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
     await expect(page.getByTestId('screen-node')).toHaveCount(5);
     await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(4);
     await expect.poll(async () => {
@@ -90,12 +90,12 @@ for (const automatic of [false, true]) {
       expect((await exported()).nodes.find((n:any)=>n.id==='attached').data.text).toBe('Edited without moving the board');
     }
     await page.reload();
-    await expect(page.getByRole('switch', { name: 'Режим фокуса' })).toBeChecked();
+    await expect(page.getByRole('button', { name: 'Режим фокуса', exact: true })).toHaveAttribute('aria-pressed','true');
     await expect(page.getByTestId('screen-node')).toHaveCount(5);
     await expect(page.locator('.react-flow__edge-path[data-routed="true"]')).toHaveCount(4);
     expect((await exported()).layout).toEqual(before.layout);
     expect(await storedViewport()).toEqual(normalViewport);
-    await page.getByRole('switch', { name: 'Режим фокуса' }).click();
+    await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
     await expect(page.getByTestId('screen-node')).toHaveCount(7);
     await expect.poll(rootPositions).toEqual(rootsBefore);
     await expect.poll(storedViewport).toEqual(normalViewport);
@@ -103,9 +103,9 @@ for (const automatic of [false, true]) {
     expect(after.layout).toEqual(before.layout);
     if (!automatic) expect(after.nodes.find((n: any) => n.id === 'attached').data.text).toBe('Edited without moving the board');
     // A pending source change followed immediately by exit cannot apply later.
-    await page.getByRole('switch', { name: 'Режим фокуса' }).click();
+    await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
     await page.locator('.screen-list').getByRole('button', { name: /^02 B$/ }).click();
-    await page.getByRole('switch', { name: 'Режим фокуса' }).click();
+    await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
     await page.waitForTimeout(500);
     expect(await rootPositions()).toEqual(rootsBefore);
     expect((await exported()).layout).toEqual(before.layout);

@@ -42,12 +42,12 @@ for(const automatic of [false,true])test(`MASK-19 focus keeps a cross-parent doc
  const source=page.locator('[data-testid="screen-node"][data-board-node-id="s"]');await source.getByRole('button',{name:'Область 1',exact:true}).press('Enter');
  await expect(page.locator('.mask-note-connector[data-active="true"]')).toHaveCount(2);
  const exported=async()=>{await expect(page.getByRole('status').filter({hasText:'Сохранено'})).toBeVisible();const d=page.waitForEvent('download');await page.getByRole('button',{name:'Экспорт архива'}).click();return JSON.parse(strFromU8(unzipSync(fs.readFileSync((await(await d).path())!))['board.json']));};
- const before=await exported();await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ const before=await exported();await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
  await expect(page.getByTestId('screen-node')).toHaveCount(1);
  await expect(page.locator('[data-testid="note-node"][data-board-node-id="cross"]')).toBeVisible();
  await expect(page.locator('.mask-note-connector[data-active="true"]')).toHaveCount(2);
  expect(await exported()).toEqual(before);
- await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
  await expect(page.locator('[data-testid="screen-node"][data-board-node-id="other"] [data-testid="note-node"][data-board-node-id="cross"]')).toBeVisible();
  expect(await exported()).toEqual(before);
 });

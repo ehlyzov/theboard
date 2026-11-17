@@ -48,7 +48,7 @@ for(const side of ['left','right','top','bottom'])for(const direction of ['RIGHT
   },{side,direction})).toBe(true);
  };
  await check();
- await page.locator('.screen-list').getByRole('button',{name:'01 s',exact:true}).click();await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ await page.locator('.screen-list').getByRole('button',{name:'01 s',exact:true}).click();await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
  // Focus shows both directions; verify all six source/target face endpoints.
  await expect(page.locator('.react-flow__edge-path')).toHaveCount(6);
  await check();

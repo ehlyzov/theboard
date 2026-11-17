@@ -824,7 +824,7 @@ function Editor() {
     const topCenter = screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top });
     const height = rect.height * scale / getViewport().zoom;
     // Center a screen that fits. For a larger screen, show its top first.
-    const topInset = Math.max(24, (canvas.clientHeight - height) / 2);
+    const topInset = height > canvas.clientHeight ? 24 : (canvas.clientHeight - height) / 2;
     void setViewport({
       x: canvas.clientWidth / 2 - topCenter.x * scale,
       y: topInset - topCenter.y * scale,

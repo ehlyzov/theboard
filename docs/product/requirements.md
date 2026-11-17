@@ -163,6 +163,11 @@ suite; it is not reported as passing or implemented.
   reload. Keep automatic framing before manual adjustment. “Show entire board”
   is an explicit fit request; its resulting scale becomes the navigation scale.
 
+- VIEW-05 (direct screenshot feedback, 2026-11-17): navigation at a chosen zoom
+  frames the screenshot independently of its attached notes. Center a screen
+  that fits. If it extends below the viewport, show its upper part first.
+  Apply this to ordinary navigation and focus navigation.
+
 - UI-03 (direct discoverability feedback): keep the mask tool easy to find in
   the full editor through a marker pictogram in each screen header, beside
   deletion. It is a screen operation, not a common board-level creation tool.

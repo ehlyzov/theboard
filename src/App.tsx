@@ -813,6 +813,25 @@ function Editor() {
   const viewport = useViewport();
   const { zoom } = viewport;
   const gestureStartZoom = useRef<number | undefined>(undefined);
+  function frameScreenAtZoom(id: string, scale: number, duration: number) {
+    const canvas = board.current;
+    const core = canvas?.querySelector(
+      `[data-board-node-id="${CSS.escape(id)}"] .screen-core`,
+    );
+    if (!canvas || !core) return false;
+
+    const rect = core.getBoundingClientRect();
+    const topCenter = screenToFlowPosition({ x: rect.left + rect.width / 2, y: rect.top });
+    const height = rect.height * scale / getViewport().zoom;
+    // Center a screen that fits. For a larger screen, show its top first.
+    const topInset = Math.max(24, (canvas.clientHeight - height) / 2);
+    void setViewport({
+      x: canvas.clientWidth / 2 - topCenter.x * scale,
+      y: topInset - topCenter.y * scale,
+      zoom: scale,
+    }, { duration });
+    return true;
+  }
   function revealNewNote(){
     const id=newNoteToReveal.current;
     if(!id)return;
@@ -911,6 +930,9 @@ function Editor() {
     if(!focusGeometry)return;
     const frame=requestAnimationFrame(()=>{
       updateNodeInternals([...focusGeometry.positions.keys()]);
+      if (navigationZoom !== undefined && currentScreenId &&
+          frameScreenAtZoom(currentScreenId, navigationZoom, 150)) return;
+
       void fitView({nodes:navigationZoom===undefined ? focusNodes.filter(n=>!n.data.dock).map(n=>({id:n.id})) : [{id:currentScreenId!}],
         padding:.2,minZoom:navigationZoom??.05,maxZoom:navigationZoom??1,duration:150});
     });
@@ -1239,7 +1261,9 @@ function Editor() {
                         title={screen.data.title}
                         onClick={() => {
                           setCurrentScreenId(screen.id);
-                          if (!focusActive || screen.id===currentScreenId) void fitView({
+                          if (focusActive && screen.id !== currentScreenId) return;
+                          if (navigationZoom !== undefined && frameScreenAtZoom(screen.id, navigationZoom, 250)) return;
+                          void fitView({
                             nodes: [{ id: screen.id }],
                             minZoom: navigationZoom??.05,
                             maxZoom: navigationZoom??1,

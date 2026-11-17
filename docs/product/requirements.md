@@ -176,6 +176,11 @@ suite; it is not reported as passing or implemented.
   above the canvas and never covers screen cards while panning or zooming.
   Keep it in the application header at every supported width.
 
+- UI-07 (direct screenshot feedback, 2026-11-17): each screen card shows the
+  same number as its sidebar entry beside its editable title. Use full board
+  screen order even when the sidebar or canvas is filtered. Numbers are derived
+  from that order and kept outside saved titles and the archive format.
+
 - FOCUS-04..06 (`approved_by_human`, direct instruction): automatically arrange
   the current screen and its direct incoming/outgoing neighbors close together in focus.
   This is temporary view geometry, never canonical board/archive geometry.

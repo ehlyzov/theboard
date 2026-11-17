@@ -609,7 +609,16 @@ a {
   pointer-events: none;
 }
 .screen-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 9px 12px;
+}
+.screen-number {
+  flex-shrink: 0;
+  color: #647087;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 .screen-caption input {
   color: #526079;
@@ -617,7 +626,8 @@ a {
   border: 0;
   padding: 5px 0;
   background: transparent;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border-radius: 2px;
 }
 .screen-card.is-selected > .screen-core,

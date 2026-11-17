@@ -51,4 +51,4 @@ The W004 card carries provenance, human acceptance and pending product scope.
 
 | [W017](W017-incoming-focus.md) | Incoming and outgoing direct neighbors in focus | done | TheBoard chat; independent reviewer | Technical focus14/14, linked-note2/2, Pages5/5; protected CI/deployment record in branch PR; human acceptance pending |
 
-| [W018](W018-focus-filter-zoom.md) | Independent focused-list filtering and retained navigation zoom | active | TheBoard chat | Synthetic test-first regression and exact-candidate independent review |
+| [W018](W018-focus-filter-zoom.md) | Independent focused-list filtering and retained navigation zoom | done | TheBoard chat; independent reviewer | Repair PASS6/6 plus independent3/3; Pages9/9; protected rollout record in branch PR; human acceptance pending |

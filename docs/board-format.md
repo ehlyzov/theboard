@@ -130,6 +130,18 @@ remain available by panning or clicking their emphasized sidebar entries.
 Clicking the current sidebar entry always recenters it. This does not move
 objects or alter stored graph relationships.
 
+The sidebar list filter is independent of canvas focus: “Show all” keeps the
+full clickable list with current/neighborhood emphasis; “Only selected” hides
+other rows, preserving original numbering. It does not change canvas geometry.
+With focus off the full list is shown. The preference is browser workspace
+state, not part of `board.json`.
+
+Automatic framing applies until the user chooses a scale with wheel/pinch or
+zoom controls. Subsequent navigation recenters while retaining that scale,
+including focus entry/recomputation/exit and reload. “Show entire board” is an
+explicit fit action whose resulting scale is retained for later navigation.
+This navigation preference is also workspace-only, outside the archive schema.
+
 Normal import creates a new board. “Replace board from ZIP” validates first,
 saves the old board under a recovery ID, then replaces the current board while
 keeping its URL. Invalid archives leave it unchanged. A recovery link remains

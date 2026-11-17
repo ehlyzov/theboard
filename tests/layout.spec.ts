@@ -112,8 +112,8 @@ test('IMAGE-01 cached image dimensions survive focus remount before the load eve
   }));
   await expect.poll(ratios).toEqual([.6,1.67]);
   await page.locator('.screen-list').getByRole('button',{name:/01 Вход/}).click();
-  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+  await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
   await expect(page.getByTestId('screen-node')).toHaveCount(1);
-  await page.getByRole('switch',{name:'Режим фокуса'}).click();
+  await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
   await expect.poll(ratios).toEqual([.6,1.67]);
 });

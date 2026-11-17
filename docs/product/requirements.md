@@ -136,8 +136,8 @@ suite; it is not reported as passing or implemented.
   transition/endpoint highlighting; hide the leader at rest.
 
 - FOCUS-02 (`approved_by_human`, direct screenshot feedback): in focus mode,
-  gray out sidebar screens outside the current visible neighborhood. Keep them
-  clickable; clicking any screen changes the focus source to that screen.
+  “Show all” grays out sidebar screens outside the current visible neighborhood.
+  Keep them clickable; clicking any screen changes the focus source to that screen.
 
 - AUTO-01 (`approved_by_human`, direct instruction): integrate the demonstrated
   layout into the full editor, preserving its existing tools and persistence.
@@ -148,10 +148,20 @@ suite; it is not reported as passing or implemented.
   replacing the contents of the current board from a validated ZIP while keeping
   its URL. Keep a recovery copy. Normal import still creates an independent board.
 
-- FOCUS-03 (`approved_by_human`, direct screenshot feedback): clearly emphasize
-  the current screen and its visible destinations in the sidebar. Add a left
-  sidebar switch for showing all versus the focused neighborhood, synchronized
-  with the existing focus control. Inactive items remain clickable.
+- FOCUS-03/08 (`approved_by_human`, owner clarification2026-11-17): clearly
+  emphasize the current screen and its direct predecessors/destinations in the
+  sidebar. The sidebar “Only selected” switch filters that list independently
+  of the canvas focus button. Hide nonhighlighted rows and retain original
+  numbering. “Show all” restores the full clickable list without exiting focus
+  or changing its canvas view. With focus off the full list is visible; retain
+  the filter preference for the next focus session. Persist it as workspace state.
+
+- VIEW-04 (`approved_by_human`, direct instruction2026-11-17): after manual
+  wheel/pinch or +/- zoom changes, screen navigation must retain the chosen
+  scale, including400%, and only recenter the view. This applies to sidebar
+  and canvas navigation, focus entry/source changes/recomputation/exit and
+  reload. Keep automatic framing before manual adjustment. “Show entire board”
+  is an explicit fit request; its resulting scale becomes the navigation scale.
 
 - UI-03 (direct discoverability feedback): keep the mask tool easy to find in
   the full editor through a marker pictogram in each screen header, beside

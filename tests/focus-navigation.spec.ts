@@ -82,5 +82,15 @@ for(const automatic of [false,true])test(`FOCUS-08/VIEW-04 independent list filt
   await focus.click();await expect.poll(ids).toEqual(['a','b','c']);
   await expect.poll(rowNames).toEqual(['01A','02B','03C']);
   await page.waitForTimeout(300);expect(await zoom()).toBeCloseTo(wheelZoom,5);
+  for(let i=0;i<24;i++)await page.getByRole('button',{name:'Уменьшить масштаб',exact:true}).click();
+  await expect.poll(zoom).toBe(.05);
+  await page.locator('[data-board-node-id="c"] [data-testid="annotation-image"]').click();
+  await expect.poll(ids).toEqual(['b','c','d']);
+  await page.waitForTimeout(300);expect(await zoom()).toBe(.05);
+  await page.getByRole('button',{name:'Показать всю доску',exact:true}).click();
+  await expect.poll(zoom).toBeGreaterThan(.05);
+  await page.waitForTimeout(300);const fittedZoom=await zoom();
+  await item('04 D').click();await expect.poll(ids).toEqual(['c','d']);
+  await page.waitForTimeout(300);expect(await zoom()).toBeCloseTo(fittedZoom,5);
   expect(await exported()).toEqual(before);
 });

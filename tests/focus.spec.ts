@@ -6,14 +6,14 @@ test('FOCUS-02 distant neighbors retain readable source framing and current-menu
  const board={version:1,title:'Distant flow',nodes:[['a','Near',70,100],['b','Far',10000,100],['c','Below',70,12000]].map(([id,title,x,y])=>({id,type:'screen',position:{x,y},data:{title,image:'assets/a.png'}})),edges:[{id:'ab',source:'a',target:'b',label:'Go far'},{id:'ac',source:'a',target:'c',label:'Go below'}]};
  await page.goto('/');await page.getByLabel('Импорт архива').setInputFiles({name:'distant.zip',mimeType:'application/zip',buffer:Buffer.from(zipSync({'board.json':strToU8(JSON.stringify(board)),'assets/a.png':fs.readFileSync('tests/fixtures/Вход.png')}))});
  const current=page.locator('.screen-list').getByRole('button',{name:/Near/});await current.click();
- await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
  // Let the fixed150/250ms viewport transitions complete before judging framing.
  await page.waitForTimeout(300);
  const zoom=async()=>Number((await page.locator('.zoom-controls>span').innerText()).replace(/[^\d.]/g,''));
  await expect.poll(zoom).toBeGreaterThanOrEqual(50);
  await expect(page.getByTestId('screen-node')).toHaveCount(3);
  for(let i=0;i<8;i++)await page.getByRole('button',{name:'Уменьшить масштаб'}).click();
- await current.click();await expect.poll(zoom).toBeGreaterThanOrEqual(50);
+ const chosenZoom=await zoom();await current.click();await page.waitForTimeout(300);expect(await zoom()).toBe(chosenZoom);
  await page.locator('.screen-list').getByRole('button',{name:/Far/}).click();
  await expect(page.getByTestId('screen-node')).toHaveCount(2);
  await expect(page.getByRole('textbox',{name:'Название экрана'}).last()).toHaveValue('Far');
@@ -42,7 +42,7 @@ test("FOCUS-01 one-hop incoming and outgoing neighbors; full board survives", as
     .click();
   await screens.nth(0).locator(".node-grip").click();
   await page.getByRole("button", { name: "Режим фокуса" }).click();
-  await expect(page.getByRole('switch',{name:'Режим фокуса'})).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Режим фокуса', exact: true })).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('.screen-list .is-current')).toHaveCount(1);
   await expect(page.locator('.screen-list .in-focus')).toHaveCount(2);
   await expect(screens).toHaveCount(2);
@@ -62,8 +62,8 @@ test("FOCUS-01 one-hop incoming and outgoing neighbors; full board survives", as
   await expect(
     page.getByRole("textbox", { name: "Название экрана" }).nth(1),
   ).toHaveValue("Главная");
-  await page.getByRole("switch", { name: "Режим фокуса" }).click();
-  await expect(page.getByRole('switch',{name:'Режим фокуса'})).not.toBeChecked();
+  await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Режим фокуса', exact: true })).toHaveAttribute('aria-pressed','false');
   await expect(screens).toHaveCount(3);
   await expect(page.locator(".react-flow__edge")).toHaveCount(2);
   await expect(page.locator('.screen-list .out-of-focus')).toHaveCount(0);

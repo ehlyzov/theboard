@@ -562,6 +562,13 @@ function Editor() {
   const [focusEnabled, setFocusEnabled] = useState(() =>
     Boolean(workspace(currentBoard()).focusEnabled),
   );
+  const [onlyFocusedScreens, setOnlyFocusedScreens] = useState(() =>
+    Boolean(workspace(currentBoard()).onlyFocusedScreens),
+  );
+  const [navigationZoom, setNavigationZoom] = useState<number | undefined>(() => {
+    const value=workspace(currentBoard()).navigationZoom;
+    return Number.isFinite(value) && value>=.05 && value<=4 ? value : undefined;
+  });
   const [currentScreenId, setCurrentScreenId] = useState<string | undefined>(
     () => workspace(currentBoard()).currentScreenId,
   );
@@ -849,7 +856,12 @@ function Editor() {
     if(focusEnabled && !wasFocused.current) normalViewport.current=getViewport();
     if(!focusEnabled && wasFocused.current){
       restoringViewport.current=true;
-      void setViewport(normalViewport.current,{duration:150}).finally(()=>{restoringViewport.current=false;});
+      const previous=normalViewport.current;
+      const scale=(navigationZoom??previous.zoom)/previous.zoom;
+      const cx=(board.current?.clientWidth??0)/2,cy=(board.current?.clientHeight??0)/2;
+      const restored={x:cx-(cx-previous.x)*scale,y:cy-(cy-previous.y)*scale,zoom:navigationZoom??previous.zoom};
+      normalViewport.current=restored;
+      void setViewport(restored,{duration:150}).finally(()=>{restoringViewport.current=false;});
     }
     wasFocused.current=focusEnabled;
   },[focusEnabled]);
@@ -858,7 +870,7 @@ function Editor() {
       localStorage.setItem("theboard:last-board", boardId);
       localStorage.setItem(
         "theboard:workspace:" + boardId,
-        JSON.stringify({ ...(focusEnabled || restoringViewport.current ? normalViewport.current : viewport), focusEnabled, currentScreenId }),
+        JSON.stringify({ ...(focusEnabled || restoringViewport.current ? normalViewport.current : viewport), focusEnabled, currentScreenId, onlyFocusedScreens, navigationZoom }),
       );
     } catch {}
   }, [
@@ -868,6 +880,8 @@ function Editor() {
     boardId,
     focusEnabled,
     currentScreenId,
+    onlyFocusedScreens,
+    navigationZoom,
   ]);
   useEffect(()=>{
     if(!ready || !focusKey){setFocusLayout(null);return;}
@@ -889,8 +903,8 @@ function Editor() {
     if(!focusGeometry)return;
     const frame=requestAnimationFrame(()=>{
       updateNodeInternals([...focusGeometry.positions.keys()]);
-      void fitView({nodes:focusNodes.filter(n=>!n.data.dock).map(n=>({id:n.id})),
-        padding:.2,maxZoom:1,duration:150});
+      void fitView({nodes:navigationZoom===undefined ? focusNodes.filter(n=>!n.data.dock).map(n=>({id:n.id})) : [{id:currentScreenId!}],
+        padding:.2,minZoom:navigationZoom??.05,maxZoom:navigationZoom??1,duration:150});
     });
     return()=>cancelAnimationFrame(frame);
   },[focusGeometry]);
@@ -1193,8 +1207,8 @@ function Editor() {
             <div className="sidebar-section">
               <div className="focus-mode-switch">
                 <span>Показывать все</span>
-                <button type="button" role="switch" aria-label="Режим фокуса" aria-checked={focusEnabled} disabled={!screens.length}
-                  onClick={()=>{if(!currentScreenId)setCurrentScreenId(screens[0]?.id);setFocusEnabled(v=>!v);}}><i/></button>
+                <button type="button" role="switch" aria-label="Только выделенные экраны" aria-checked={onlyFocusedScreens} disabled={!focusActive}
+                  onClick={()=>setOnlyFocusedScreens(v=>!v)}><i/></button>
                 <span>Только выделенное</span>
               </div>
               {focusActive && focusLayout?.key !== focusKey && <p role="status">Компоновка фокуса…</p>}
@@ -1209,7 +1223,7 @@ function Editor() {
                 </p>
               ) : (
                 <ol className="screen-list">
-                  {screens.map((screen, index) => (
+                  {screens.map((screen, index) => focusActive&&onlyFocusedScreens&&!focusIds.has(screen.id) ? null : (
                     <li key={screen.id}>
                       <button
                         className={[screen.id===currentScreenId?'is-current':'',focusActive&&focusIds.has(screen.id)?'in-focus':'',focusActive&&!focusIds.has(screen.id)?'out-of-focus':''].join(' ')}
@@ -1219,7 +1233,8 @@ function Editor() {
                           setCurrentScreenId(screen.id);
                           if (!focusActive || screen.id===currentScreenId) void fitView({
                             nodes: [{ id: screen.id }],
-                            maxZoom: 1,
+                            minZoom: navigationZoom??.05,
+                            maxZoom: navigationZoom??1,
                             duration: 250,
                           });
                         }}
@@ -1405,6 +1420,7 @@ function Editor() {
                       setConnecting(null);
                   }}
                   defaultViewport={initialViewport}
+                  onMoveEnd={(event,view)=>{if(event)setNavigationZoom(view.zoom);}}
                   minZoom={0.05}
                   maxZoom={4}
                   deleteKeyCode={
@@ -1496,14 +1512,14 @@ function Editor() {
             <div className="zoom-controls">
               <button
                 aria-label="Уменьшить масштаб"
-                onClick={() => void zoomOut()}
+                onClick={() => void zoomOut().then(()=>setNavigationZoom(getViewport().zoom))}
               >
                 <Minus size={17} />
               </button>
               <span>{Math.round(zoom * 100)}%</span>
               <button
                 aria-label="Увеличить масштаб"
-                onClick={() => void zoomIn()}
+                onClick={() => void zoomIn().then(()=>setNavigationZoom(getViewport().zoom))}
               >
                 <Plus size={17} />
               </button>
@@ -1511,7 +1527,7 @@ function Editor() {
               <button
                 aria-label="Показать всю доску"
                 onClick={() =>
-                  void fitView({ padding: 0.2, maxZoom: 1, duration: 200 })
+                  void fitView({ padding: 0.2, maxZoom: 1, duration: 200 }).then(()=>setNavigationZoom(getViewport().zoom))
                 }
               >
                 <Maximize size={17} />

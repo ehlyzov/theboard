@@ -15,7 +15,7 @@ test('AUTO-01 hidden docked-note coordinates follow their composite when directi
    const p=el.getBoundingClientRect(),n=el.querySelector('[data-testid="note-node"]')!.getBoundingClientRect(),scale=p.width/(el as HTMLElement).offsetWidth;
    return {x:(n.x-p.x)/scale,y:(n.y-p.y)/scale};
  });
- await page.locator('.screen-list').getByRole('button',{name:/01 A/}).click();await page.getByRole('switch',{name:'Режим фокуса'}).click();
+ await page.locator('.screen-list').getByRole('button',{name:/01 A/}).click();await page.getByRole('button', { name: 'Режим фокуса', exact: true }).click();
  const path=await page.locator('.react-flow__edge-path').first().getAttribute('d');await page.getByLabel('Направление компоновки').selectOption('DOWN');
  await expect(page.locator('.react-flow__edge-path').first()).not.toHaveAttribute('d',path!);
  // Focus now has its own temporary routes; their change does not signal that
